@@ -1,0 +1,16 @@
+## Integration
+
+<!-- Sergio Alías, 20231216 -->
+<!-- Last modified 20231216 -->
+
+### UMAP splitted by secondary condition: `{r sec_cond}`
+
+```{r umap, echo = FALSE, results = "asis"}
+
+for (i in 1:length(list_seu)) {
+  seu_name <- list_seu[[i]]@project.name
+  cat(seu_name)
+  print(DimPlot(list_seu[[i]], reduction = "umap", split.by = sec_cond))
+}
+```
+

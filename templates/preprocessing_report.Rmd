@@ -1,0 +1,107 @@
+---  
+title: "scRNA-seq: Pre-processing Report"
+author: "SysBioLab"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+    fig_width: 12
+---
+
+<!-- Sergio Alías, 20230606 -->
+<!-- Last modified 20230928 -->
+
+<style type='text/css'>
+    body .main-container {
+        max-width: 90%;
+
+    }
+
+    .plot_real_size {
+      overflow: scroll;
+      max-height: 600px;
+    }
+
+    .plot_real_size img{
+      max-width: none;
+      max-height: none;
+    }
+
+    embed {
+   
+  }   
+</style>
+
+<style>
+.dropdown-content {
+  display: none;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+</style>
+
+<style>
+  .superbigimage{
+      overflow-x:scroll;
+      white-space: nowrap;
+  }
+
+  .superbigimage img{
+     max-width: none;
+  }
+
+
+</style>
+
+# `r name` of project `r experiment`
+
+Report of single-cell pre-processing using Seurat
+
+```{r setup, echo = FALSE}
+library(ggplot2)
+library(patchwork)
+library(kableExtra)
+```
+
+```{r child="qc.Rmd", eval = TRUE}
+```
+
+```{r child="feature_selection.Rmd", eval = TRUE}
+```
+
+```{r child="clustering.Rmd", eval = TRUE}
+```
+
+```{r child="dimensionality_reduction.Rmd", eval = TRUE}
+```
+
+```{r child="marker_gene_selection.Rmd", eval = TRUE}
+```
+
+---
+
+<details>
+<summary>**Code references**</summary>
+<br>
+
+- [https://satijalab.org/seurat/](https://satijalab.org/seurat/)
+
+- [https://nbisweden.github.io/workshop-scRNAseq/labs/compiled/seurat/seurat_01_qc.html](https://nbisweden.github.io/workshop-scRNAseq/labs/compiled/seurat/seurat_01_qc.html)
+
+- [https://holab-hku.github.io/Fundamental-scRNA/downstream.html#standard-pre-processing-workflow](https://holab-hku.github.io/Fundamental-scRNA/downstream.html#standard-pre-processing-workflow)
+
+- [https://www.singlecellcourse.org/single-cell-rna-seq-analysis-using-seurat.html#normalization-and-dimensionality-reduction](https://www.singlecellcourse.org/single-cell-rna-seq-analysis-using-seurat.html#normalization-and-dimensionality-reduction)
+
+</details>
+
+<details>
+<summary>**Session Info**</summary>
+
+```{r sessionInfo, echo = FALSE}
+sessionInfo()
+```
+
+</details>

@@ -1,0 +1,139 @@
+## Quality Control
+
+<!-- Sergio Alías, 20230616 -->
+<!-- Last modified 20230928 -->
+
+### Before filtering
+
+#### Nº of features
+<div class="superbigimage">
+```{r violin_before_1, echo = FALSE}
+make_vln(before.seu, 'nFeature_scRNAseq')
+```
+</div>
+
+#### Nº of counts
+<div class="superbigimage">
+```{r violin_before_2, echo = FALSE}
+make_vln(before.seu, 'nCount_scRNAseq')
+```
+</div>
+<div class="superbigimage">
+
+#### Percentage of reads that map to mitochondrial genes
+```{r violin_before_3, echo = FALSE}
+make_vln(before.seu, 'percent.mt')
+```
+</div>
+
+#### Percentage of reads that map to ribosomal genes
+<div class="superbigimage">
+```{r violin_before_4, echo = FALSE}
+make_vln(before.seu, 'percent.rb')
+```
+</div>
+
+<details>
+<summary>**How to interpret**</summary>
+<br>
+
+- **nFeature_scRNAseq**: number of expressed (detected) genes/features per cell
+- **nCount_scRNAseq**: number of reads per cell
+- **percent.mt**: percentage of mitochondrial counts per cell
+- **percent.rb**: percentage of ribosomal counts per cell
+
+Some notes on when we should filter cells:
+
+- **Features**: Features are genes, we count the number of unique genes detected in each cell. Low-quality cells or empty droplets will often have very few genes.<sup>1</sup>
+- **Counts**: Counts are the total number of molecules detected within a cell. This should correlate strongly with the number of features. Cell doublets or multiplets may exhibit an aberrantly high gene count.<sup>1</sup>
+- **Mitochondrial counts**: The percentage of reads that map to the mitochondrial genome. Low-quality / dying cells often exhibit extensive mitochondrial contamination.<sup>1</sup>
+
+
+*References:*
+
+1. Ilicic, Tomislav, Jong Kyoung Kim, Aleksandra A Kolodziejczyk, Frederik Otzen Bagger, Davis James McCarthy, John C Marioni, and Sarah A Teichmann. 2016. “Classification of Low Quality Cells from Single-Cell Rna-Seq Data.” *Genome Biology* 17 (1): 1–15.
+
+</details>
+
+<!-- ### Metadata features correlation -->
+
+
+<!-- #### Mito counts VS nº of reads -->
+
+```{r scatter1, echo = FALSE}
+
+#FeatureScatter(before.seu, feature1 = "nCount_scRNAseq", feature2 = "percent.mt")
+```
+
+<!-- #### Nº of features VS nº of reads -->
+
+```{r scatter2, echo = FALSE}
+
+#FeatureScatter(before.seu, feature1 = "nCount_scRNAseq", feature2 = "nFeature_scRNAseq")
+```
+
+<!-- #### Ribosomal counts VS nº of reads -->
+
+```{r scatter3, echo = FALSE}
+
+#FeatureScatter(before.seu, feature1 = "nCount_scRNAseq", feature2 = "percent.rb")
+```
+
+<!-- #### Mito counts VS ribosomal counts -->
+
+```{r scatter4, echo = FALSE}
+
+#FeatureScatter(before.seu, feature1 = "percent.rb", feature2 = "percent.mt")
+```
+
+
+### Filtering parameters
+
+```{r qc_filter, echo = FALSE}
+
+met_seu <- extract_metadata(before.seu)
+
+kable_styling(kbl(table(met_seu[["orig.ident"]], met_seu[["QC"]])),
+              bootstrap_options = c("striped",
+                                    "hover"),
+              full_width = FALSE
+              )
+
+```
+
+- **High_MT**: Cells with more than **`r percentmt`%** of mitochondrial counts
+- **High_MT,Low_nFeature**: Cells with more than **`r percentmt`%** of mitochondrial counts AND less than **`r minqcfeats`** detected genes/features
+- **Pass**: Cells that passed the QC (less than **`r percentmt`%** of mitochondrial counts)
+
+### After filtering
+
+
+#### Nº of features
+<div class="superbigimage">
+```{r violin_after_1, echo = FALSE}
+make_vln(seu, 'nFeature_scRNAseq')
+```
+</div>
+
+#### Nº of counts
+<div class="superbigimage">
+```{r violin_after_2, echo = FALSE}
+make_vln(seu, 'nCount_scRNAseq')
+```
+</div>
+
+#### Percentage of reads that map to mitochondrial genes
+<div class="superbigimage">
+```{r violin_after_3, echo = FALSE}
+make_vln(seu, 'percent.mt')
+```
+</div>
+
+#### Percentage of reads that map to ribosomal genes
+<div class="superbigimage">
+```{r violin_after_4, echo = FALSE}
+make_vln(seu, 'percent.rb')
+```
+</div>
+
+If the plots after filtering are not as good as expected, try changing the QC parameters at `config_daemon`

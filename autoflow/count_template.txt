@@ -1,0 +1,19 @@
+# Sergio Alías, 20230516
+# Last modified 20230922
+
+####################
+### Count template. Parameters can be customized at config_deamon
+
+
+run_count){
+ resources: -c 52 -t 2-00:00:00 -m '100gb'
+ module load cellranger/7.0.0
+ ?
+ cellranger count --id=$sample \
+                  --sample=$sample \
+                  --transcriptome=$count_transcriptome \
+                  --fastqs=$read_path \
+                  --localcores=[cpu] \
+                  --localmem=50
+ #find -name "possorted_genome_bam.bam" -exec rm {} \;
+}

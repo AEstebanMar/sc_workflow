@@ -1,0 +1,305 @@
+---  
+title: "scRNA-seq: QC Report"
+author: "SysBioLab"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+    fig_width: 12
+---
+
+<!-- Sergio Alías, 20230706 -->
+<!-- Last modified 20230928 -->
+
+<style type='text/css'>
+    body .main-container {
+        max-width: 90%;
+
+    }
+
+    .plot_real_size {
+      overflow: scroll;
+      max-height: 600px;
+    }
+
+    .plot_real_size img{
+      max-width: none;
+      max-height: none;
+    }
+
+    embed {
+   
+  }   
+</style>
+
+<style>
+.dropdown-content {
+  display: none;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+</style>
+
+<style>
+  .superbigimage{
+      overflow-x:scroll;
+      white-space: nowrap;
+  }
+
+  .superbigimage img{
+     max-width: none;
+  }
+
+
+</style>
+
+# `r name` of project `r experiment`
+
+Report of quality of FASTQ files using FastQC and Cell Ranger
+
+## FastQC metrics
+
+```{r setup, echo = FALSE}
+library(patchwork)
+library(ggplot2)
+
+metric_df <- read.table(file = metrics, sep = '\t', header = TRUE)
+long_metric_df <- read.table(file = long_metrics, sep = '\t', header = FALSE)
+cellranger_metric_df <- read.table(file = cellranger_metrics, sep = '\t', header = TRUE)
+cellranger_long_metric_df <- read.table(file = cellranger_long_metrics, sep = '\t', header = FALSE)
+```
+
+<details>
+<summary>**How to interpret**</summary>
+<br>
+
+Metrics from the FASTQ files:
+
+- **Number of sequences**: Total number of sequences in the FASTQ file. More sequences means more sequencing depth.
+- **Read maximum length**: Maximum read length. It is usual that R2 reads have more length than R1.
+- **Read minimum length**: Minimum read legnth. They do not have to be the same as the maximum reading lengths, but they should be consistent with them.
+- **GC content**: Guanine-cytosine content. Percentage of nitrogenous bases that are either guanine (G) or cytosine (C). We expect values around 50%.
+- **Quality scores - mean quality per base**: Quality is measured with the Phred score (Q), which is typically in the range 2 - 40, but higher and lower values are sometimes used. The higher the Phred score, the higher the quality.
+- **Quality scores - mean quality per base in lower quartile**: Same as the previous one, but focusing in the lower quartile.
+- **Quality scores - mean quality per base in 10th decile**: Same as the previous one, but focusing in the tenth decile.
+- **Quality scores - weigthed quality per sequence**: Same as the previous one, but the mean is calculated by sequence and weighted by sequence length.
+- **Mean indeterminations per base**: Mean of the percent of bases at each position with no base call (N).
+- **Weigthed read length**: Weighted mean of read length.
+
+</details>
+
+<div class="superbigimage">
+```{r initial_total_sequences, eval=TRUE, results='asis', echo=FALSE}
+
+cat("\n\n### **Number of sequences**\n\n")
+
+make_barplot(metric_df, "initial_total_sequences")
+
+```
+</div>
+
+<div class="superbigimage">
+```{r initial_read_max_length, eval=TRUE, results='asis', echo=FALSE}
+
+cat("\n\n### **Read maximum length**\n\n")
+
+make_barplot(metric_df, "initial_read_max_length")
+
+```
+</div>
+
+<div class="superbigimage">
+```{r initial_read_min_length, eval=TRUE, results='asis', echo=FALSE}
+
+cat("\n\n### **Read minimum length**\n\n")
+
+make_barplot(metric_df, "initial_read_min_length")
+
+```
+</div>
+
+<div class="superbigimage">
+```{r initial_gc, eval=TRUE, results='asis', echo=FALSE}
+
+cat("\n\n### **GC content**\n\n")
+
+make_barplot(metric_df, "initial_.gc")
+
+```
+</div>
+
+<div class="superbigimage">
+```{r quality_scores, eval=TRUE, results='asis', echo=FALSE}
+
+cat("\n\n### **Quality scores for samples - lowest scores (min/10th decile) and weighted average**\n\n")
+
+make_hplot(long_metric_df, 
+           c("initial_mean_qual_per_base",
+             "initial_min_qual_per_base_in_lower_quartile",
+             "initial_min_qual_per_base_in_10th_decile", 
+             "initial_weigthed_qual_per_sequence"))
+
+```
+</div>
+
+<!-- <div class="superbigimage"> -->
+<!-- ```{r initial_mean_indeterminations_per_base, eval=TRUE, results='asis', echo=FALSE} -->
+
+<!-- cat("\n\n### **Mean indeterminations per base**\n\n") -->
+
+<!-- make_barplot(metric_df, "initial_mean_indeterminations_per_base") -->
+
+<!-- ``` -->
+<!-- </div> -->
+
+<div class="superbigimage">
+```{r initial_weigthed_read_length, eval=TRUE, results='asis', echo=FALSE}
+
+cat("\n\n### **Weigthed read length**\n\n")
+
+make_barplot(metric_df, "initial_weigthed_read_length")
+
+```
+</div>
+
+## Cell Ranger metrics
+
+<details>
+<summary>**How to interpret**</summary>
+<br>
+
+Metrics from the Cell Ranger alignment/single-cell matrix:
+
+- **Estimated Number of Cells**: Number of barcodes associated with at least one cell.
+- **Mean Reads per Cell**: Total number of sequenced reads divided by the number of barcodes associated with cell-containing partitions.
+- **Median Genes per Cell**: Median number of genes detected per cell-associated barcode. Detection is defined as the presence of at least 1 UMI count.
+- **Valid Barcodes percentage**: Fraction of reads with barcodes that match the whitelist after barcode correction.
+- **Sequencing Saturation**: Fraction of reads originating from an already-observed UMI. This is a function of library complexity and sequencing depth. More specifically, this is the fraction of confidently mapped, valid cell-barcode, valid UMI reads that had a non-unique (cell-barcode, UMI, gene).
+- **Q30 Bases in Barcode**: Fraction of cell barcode bases with Q-score >= 30, excluding very low quality/no-call (Q <= 2) bases from the denominator.
+- **Q30 Bases in RNA Read**: Fraction of RNA read bases with Q-score >= 30, excluding very low quality/no-call (Q <= 2) bases from the denominator. 
+- **Q30 Bases in UMI**: Fraction of UMI bases with Q-score >= 30, excluding very low quality/no-call (Q <= 2) bases from the denominator.
+- **Reads Mapped to Genome**: Fraction of reads that mapped to the genome.
+- **Reads Mapped Confidently to Genome**: Fraction of reads that mapped uniquely to the genome. If a gene mapped to exonic loci from a single gene and also to non-exonic loci, it is considered uniquely mapped to one of the exonic loci.
+- **Reads Mapped Confidently to Intergenic Regions**: Fraction of reads that mapped uniquely to an intergenic region of the genome.
+- **Reads Mapped Confidently to Intronic Regions**: Fraction of reads that mapped uniquely to an intronic region of the genome.
+- **Reads Mapped Confidently to Exonic Regions**: Fraction of reads that mapped uniquely to an exonic region of the genome.
+- **Reads Mapped Confidently to Transcriptome**: Fraction of reads that mapped to a unique gene in the transcriptome. The read must be consistent with annotated splice junctions. These reads are considered for UMI counting.
+- **Reads Mapped Antisense to Gene**: Fraction of reads confidently mapped to the transcriptome, but on the opposite strand of their annotated gene. A read is counted as antisense if it has any alignments that are consistent with an exon of a transcript but antisense to it, and has no sense alignments. Ideal < 20%. Rates of up to 40% are common for single nuclei samples. Higher fraction of antisense reads may indicate use of an incorrect chemistry type, or an issue with the reference transcriptome.
+- **Fraction Reads in Cells**: Fraction of valid-barcode, confidently-mapped reads with cell-associated barcodes.
+- **Total Genes Detected**: Number of genes with at least one UMI count in any cell.
+- **Median UMI Counts per Cell**: The median number of UMI counts per %s cell-associated barcode.
+
+</details>
+
+<div class="superbigimage">
+```{r Estimated_Number_of_Cells, eval=TRUE, results='asis', echo=FALSE}
+
+cat("\n\n### **Estimated Number of Cells**\n\n")
+
+make_barplot(cellranger_metric_df, "Estimated_Number_of_Cells")
+
+```
+</div>
+
+<div class="superbigimage">
+```{r Mean_Reads_per_Cell, eval=TRUE, results='asis', echo=FALSE}
+
+cat("\n\n### **Mean Reads per Cell**\n\n")
+
+make_barplot(cellranger_metric_df, "Mean_Reads_per_Cell")
+
+```
+</div>
+
+<div class="superbigimage">
+```{r Median_Genes_per_Cell, eval=TRUE, results='asis', echo=FALSE}
+
+cat("\n\n### **Median Genes per Cell**\n\n")
+
+make_barplot(cellranger_metric_df, "Median_Genes_per_Cell")
+
+```
+</div>
+
+<div class="superbigimage">
+```{r Valid_Barcodes, eval=TRUE, results='asis', echo=FALSE}
+
+cat("\n\n### **Valid Barcodes percentage**\n\n")
+
+make_barplot(cellranger_metric_df, "Valid_Barcodes")
+
+```
+</div>
+
+<div class="superbigimage">
+```{r Sequencing_Saturation, eval=TRUE, results='asis', echo=FALSE}
+
+cat("\n\n### **Sequencing Saturation**\n\n")
+
+make_barplot(cellranger_metric_df, "Sequencing_Saturation")
+
+```
+</div>
+
+<div class="superbigimage">
+```{r q30_bases_metrics, eval=TRUE, results='asis', echo=FALSE}
+
+cat("\n\n### **Q30 Bases metrics**\n\n")
+
+make_hplot(cellranger_long_metric_df, 
+           c("Q30_Bases_in_Barcode",
+             "Q30_Bases_in_RNA_Read",
+             "Q30_Bases_in_UMI"))
+
+```
+</div>
+
+<div class="superbigimage">
+```{r mapped_reads_metrics, eval=TRUE, results='asis', echo=FALSE}
+
+cat("\n\n### **Mapped reads metrics**\n\n")
+
+make_hplot(cellranger_long_metric_df, 
+           c("Reads_Mapped_to_Genome",
+             "Reads_Mapped_Confidently_to_Genome",
+             "Reads_Mapped_Confidently_to_Intergenic_Regions",
+             "Reads_Mapped_Confidently_to_Intronic_Regions",
+             "Reads_Mapped_Confidently_to_Exonic_Regions",
+             "Reads_Mapped_Confidently_to_Transcriptome",
+             "Reads_Mapped_Antisense_to_Gene"))
+
+```
+</div>
+
+<div class="superbigimage">
+```{r Fraction_Reads_in_Cells, eval=TRUE, results='asis', echo=FALSE}
+
+cat("\n\n### **Fraction Reads in Cells**\n\n")
+
+make_barplot(cellranger_metric_df, "Fraction_Reads_in_Cells")
+
+```
+</div>
+
+<div class="superbigimage">
+```{r Total_Genes_Detected, eval=TRUE, results='asis', echo=FALSE}
+
+cat("\n\n### **Total Genes Detected**\n\n")
+
+make_barplot(cellranger_metric_df, "Total_Genes_Detected")
+
+```
+</div>
+
+<div class="superbigimage">
+```{r Median_UMI_Counts_per_Cell, eval=TRUE, results='asis', echo=FALSE}
+
+cat("\n\n### **Median UMI Counts per Cell**\n\n")
+
+make_barplot(cellranger_metric_df, "Median_UMI_Counts_per_Cell")
+
+```
+</div>
