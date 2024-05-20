@@ -1,0 +1,75 @@
+#qc_seqtrimbb){
+#	resources: -c 5 -t 2-00:00:00 -m '30gb'
+#	module unload java
+# 	source ~soft_bio_267/initializes/init_stbb  
+# 	?
+# 	seqtrimbb -t $TRIM_TEMPLATE \
+# 	       -Q $read_path"/"$sample"_"$SNUM"_L00"$lane_num"_R1_001.fastq.gz,"$read_path"/"$sample"_"$SNUM"_L00"$lane_num"_R2_001.fastq.gz" \
+# 	       -P "minlength=65" \
+# 	       -w [cpu] \
+# 	       --full_throttle \
+# 	       -O output_files
+# }
+
+
+before_fastqc){
+	resources: -c 2 -t 2-00:00:00 -m '30gb'
+	module load fastqc/0.11.9
+	 . ~soft_bio_267/initializes/init_ruby
+	for f in $read_path/$sample*; 
+	do  
+	?
+	fastqc --noextract $f -o . -t [cpu]
+	pair=`echo $f | grep -Eo 'R[12]'`
+	lane=`echo $f | grep -Eo 'L[0-9]+'`
+	fastqc_results=`basename -s .fastq.gz $f`
+	get_fastqc_data.rb -i $fastqc_results"_fastqc.zip" -T -H | awk '{print "'$sample'" "_" "'$lane'" "_" "'$pair'" "\tinitial_" $0 }' >> ../metrics
+	done
+}
+
+%run_count){
+	resources: -c 52 -t 2-00:00:00 -m '100gb'
+	module load cellranger/7.0.0
+	?
+	cellranger count --id=$sample \
+	              --sample=$sample \
+	              --transcriptome=$transcriptome \
+	              --fastqs=$read_path \
+	              --localcores=[cpu] \
+	              --localmem=50
+	input_file="$sample/outs/metrics_summary.csv"
+	get_cellranger_metrics.sh $input_file $sample >> ../cellranger_metrics
+}
+
+
+bam_quality_control){
+	. ~soft_bio_267/initializes/init_qualimap
+	unset DISPLAY # This line disable $DISPLAY definition to avoid errors in Qualimap html report rendering.
+	?
+	qualimap bamqc -nt [cpu] -bam run_count)/$name/outs/possorted_genome_bam.bam -outdir results --java-mem-size=20G
+	#rm run_count)/$name/outs/possorted_genome_bam.bam
+}
+
+%sc_preprocessing){
+	resources: -c 2 -t 2-00:00:00 -m '150gb'
+	. ~soft_bio_267/initializes/init_R 
+	mkdir -p results
+	echo [cpu]
+	?
+	preprocessing.R --input run_count)/"$sample"/outs \
+	             --output results \
+	             --name $sample \
+	             --filter $preproc_filter \
+	             --mincells $preproc_init_min_cells \
+	             --minfeats $preproc_init_min_feats \
+	             --minqcfeats $preproc_qc_min_feats \
+	             --percentmt $preproc_max_percent_mt \
+	             --normalmethod $preproc_norm_method \
+	             --scalefactor $preproc_scale_factor \
+	             --hvgs $preproc_select_hvgs \
+	             --ndims $preproc_pca_n_dims \
+	             --dimheatmapcells $preproc_pca_n_cells \
+	             --report_folder results \
+	             --experiment_name $experiment_name \
+	             --resolution $preproc_resolution
+}

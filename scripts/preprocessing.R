@@ -1,5 +1,6 @@
 #! /usr/bin/env Rscript
 
+
 # Sergio Alías, 20230606
 # Last modified 20231226
 
@@ -61,8 +62,8 @@ option_list <- list(
               help="Experiment name"),
   make_option(c("--resolution"), type = "double",
               help="Granularity of the clustering"),
-  make_option(c("--integrate"), type = "character",
-              help="TRUE if integrative analysis, FALSE otherwise")
+  make_option(c("--integrate"), type = "logical", default=FALSE, action = "store_true",
+              help="Perform integrative analysis")
 )  
 
 

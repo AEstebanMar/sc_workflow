@@ -15,38 +15,16 @@
 
 # Setup
 
+. ~soft_bio_267/initializes/init_ruby
+. ~soft_bio_267/initializes/init_R
 hostname
 
 mkdir -p $report_folder
+mkdir -p $PREPROC_RESULTS_FOLDER
 
 
-## TODO fix code below
-
-while IFS= read -r name; do
-  if [ -d "$COUNT_RESULTS_FOLDER/$name" ]; then
-    input_file="$COUNT_RESULTS_FOLDER/$name/cellranger_0000/$name/outs/metrics_summary.csv"
-    cat $input_file | perl -pe 's/(\d),(\d)/$1$2/g'| sed '1 s/ /_/g' | sed 's/%//g' | sed 's/"//g' | sed 's/ /\n/g' | sed 's/,/\t/g' | awk '
-{ 
-    for (i=1; i<=NF; i++)  {
-        a[NR,i] = $i
-    }
-}
-NF>p { p = NF }
-END {    
-    for(j=1; j<=p; j++) {
-        str=a[1,j]
-        for(i=2; i<=NR; i++){
-            str=str" "a[i,j];
-        }
-        print str
-    }
-}' | awk -v var="$name" 'BEGIN {FS=OFS="\t"} {print var, $0}' | sed 's/ /\t/g' >> $experiment_folder'/cellranger_metrics'
-  fi
-done < $SAMPLES_FILE
-
-
-. ~soft_bio_267/initializes/init_ruby
-. ~soft_bio_267/initializes/init_R
+cat $FULL_RESULTS/*/metrics > $experiment_folder'/metrics'
+cat $FULL_RESULTS/*/cellranger_metrics > $experiment_folder'/cellranger_metrics'
 create_metric_table.rb $experiment_folder'/metrics' sample $experiment_folder'/metric_table'
 create_metric_table.rb $experiment_folder'/cellranger_metrics' sample $experiment_folder'/cellranger_metric_table'
 
@@ -58,3 +36,52 @@ create_metric_table.rb $experiment_folder'/cellranger_metrics' sample $experimen
                                                    -e $experiment_name \
                                                    --cellranger_metrics $experiment_folder'/cellranger_metric_table' \
                                                    --cellranger_long_metrics $experiment_folder'/cellranger_metrics'
+
+
+if [ "$integrative_analysis" == "TRUE" ] ; then
+    export SAMPLES_FILE=$integration_file
+    Rscript scripts/prior_integration.R --exp_design $exp_design \
+                                        --output $RESULTS_FOLDER \
+                                        --condition $subset_column \
+                                        --integration_file $integration_file \
+                                        --experiment_name $experiment_name \
+                                        --count_folder $COUNT_RESULTS_FOLDER
+    export SAMPLES_FILE=$integration_file
+    preprocessing.R --input run_count)/"$sample"/outs \
+                 --output results \
+                 --name $sample \
+                 --filter $preproc_filter \
+                 --mincells $preproc_init_min_cells \
+                 --minfeats $preproc_init_min_feats \
+                 --minqcfeats $preproc_qc_min_feats \
+                 --percentmt $preproc_max_percent_mt \
+                 --normalmethod $preproc_norm_method \
+                 --scalefactor $preproc_scale_factor \
+                 --hvgs $preproc_select_hvgs \
+                 --ndims $preproc_pca_n_dims \
+                 --dimheatmapcells $preproc_pca_n_cells \
+                 --report_folder results \
+                 --experiment_name $experiment_name \
+                 --resolution $preproc_resolution \
+                 --integrative_analysis    
+fi
+
+# Main
+
+/usr/bin/time general_report.R --input $SAMPLES_FILE \
+                               --output $report_folder \
+                               --filter $preproc_filter \
+                               --mincells $preproc_init_min_cells \
+                               --minfeats $preproc_init_min_feats \
+                               --minqcfeats $preproc_qc_min_feats \
+                               --percentmt $preproc_max_percent_mt \
+                               --normalmethod $preproc_norm_method \
+                               --scalefactor $preproc_scale_factor \
+                               --hvgs $preproc_select_hvgs \
+                               --ndims $preproc_pca_n_dims \
+                               --dimheatmapcells $preproc_pca_n_cells \
+                               --experiment_name $experiment_name \
+                               --results_folder $PREPROC_RESULTS_FOLDER \
+                               --resolution $preproc_resolution \
+                               --integrative_analysis $integrative_analysis \
+                               --int_sec_cond $int_sec_cond
