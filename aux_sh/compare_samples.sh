@@ -7,7 +7,7 @@
 
 #SBATCH -J compare_samples.sh
 #SBATCH --cpus-per-task=3
-#SBATCH --mem='5gb'
+#SBATCH --mem='50gb'
 #SBATCH --constraint=cal
 #SBATCH --time=0-01:00:00
 #SBATCH --error=job.comp.%J.err
@@ -20,7 +20,6 @@
 hostname
 
 mkdir -p $report_folder
-mkdir -p $PREPROC_RESULTS_FOLDER
 
 
 cat $FULL_RESULTS/*/metrics > $experiment_folder'/metrics'
@@ -38,16 +37,36 @@ create_metric_table.rb $experiment_folder'/cellranger_metrics' sample $experimen
                                                    --cellranger_long_metrics $experiment_folder'/cellranger_metrics'
 
 
+# Main
+
+/usr/bin/time general_report.R --input $SAMPLES_FILE \
+                               --output $report_folder \
+                               --filter $preproc_filter \
+                               --mincells $preproc_init_min_cells \
+                               --minfeats $preproc_init_min_feats \
+                               --minqcfeats $preproc_qc_min_feats \
+                               --percentmt $preproc_max_percent_mt \
+                               --normalmethod $preproc_norm_method \
+                               --scalefactor $preproc_scale_factor \
+                               --hvgs $preproc_select_hvgs \
+                               --ndims $preproc_pca_n_dims \
+                               --dimheatmapcells $preproc_pca_n_cells \
+                               --experiment_name $experiment_name \
+                               --results_folder $FULL_RESULTS"/*/preprocessing.R_0000/*" \
+                               --resolution $preproc_resolution \
+                               --int_sec_cond $int_sec_cond
+
+
+
 if [ "$integrative_analysis" == "TRUE" ] ; then
-    export SAMPLES_FILE=$integration_file
     Rscript scripts/prior_integration.R --exp_design $exp_design \
                                         --output $RESULTS_FOLDER \
                                         --condition $subset_column \
                                         --integration_file $integration_file \
                                         --experiment_name $experiment_name \
-                                        --count_folder $COUNT_RESULTS_FOLDER
-    export SAMPLES_FILE=$integration_file
-    preprocessing.R --input run_count)/"$sample"/outs \
+                                        --count_path $FULL_RESULTS"/*/cellranger_0000/*" \
+                                        --suffix "outs/filtered_feature_bc_matrix"
+    preprocessing.R --input $RESULTS_FOLDER/"all"/$experiment_name".all.before.seu.RDS" \
                  --output results \
                  --name $sample \
                  --filter $preproc_filter \
@@ -66,22 +85,3 @@ if [ "$integrative_analysis" == "TRUE" ] ; then
                  --integrative_analysis    
 fi
 
-# Main
-
-/usr/bin/time general_report.R --input $SAMPLES_FILE \
-                               --output $report_folder \
-                               --filter $preproc_filter \
-                               --mincells $preproc_init_min_cells \
-                               --minfeats $preproc_init_min_feats \
-                               --minqcfeats $preproc_qc_min_feats \
-                               --percentmt $preproc_max_percent_mt \
-                               --normalmethod $preproc_norm_method \
-                               --scalefactor $preproc_scale_factor \
-                               --hvgs $preproc_select_hvgs \
-                               --ndims $preproc_pca_n_dims \
-                               --dimheatmapcells $preproc_pca_n_cells \
-                               --experiment_name $experiment_name \
-                               --results_folder $PREPROC_RESULTS_FOLDER \
-                               --resolution $preproc_resolution \
-                               --integrative_analysis $integrative_analysis \
-                               --int_sec_cond $int_sec_cond
