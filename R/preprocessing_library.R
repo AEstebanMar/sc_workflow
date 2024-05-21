@@ -223,7 +223,12 @@ add_exp_design <- function(seu, name, exp_design){
 #' @keywords preprocessing, merging, integration
 #' 
 #' @return Merged Seurat object
-merge_condition <- function(exp_cond, samples, exp_design, count_path){
+merge_condition <- function(exp_cond, samples, exp_design, count_path, suffix=''){
+  # seu.list <- sapply(Sys.glob(count_path), function(sample_path){
+  #     sample <- basename(sample_path)
+  #     input_file <- file.path(sample_path, suffix)
+
+  #   })
   seu.list <- sapply(samples, function(i){ # Loading
     d10x <- Read10X(file.path(count_path, i, "cellranger_0000", i, "outs", "filtered_feature_bc_matrix"))
     colnames(d10x) <- paste(sapply(strsplit(colnames(d10x),split="-"),'[[',1L),i,sep="-") # Adds sample same at the end of cell names
@@ -287,19 +292,19 @@ main_preprocessing_analysis <- function(name, experiment, input, output, filter,
 
   # Input selection
   
-  if (filter == "TRUE"){
-    input <- file.path(input, "filtered_feature_bc_matrix")
-  } else {
-    input <- file.path(input, "raw_feature_bc_matrix")
-  }
-  
   # Input reading and integration variables setup
 
   if (integrate) {
-    seu <- readRDS(file.path(output, name, paste0(experiment, ".", name, ".before.seu.RDS")))
+    seu <- readRDS(input)
     dimreds_to_do <- c("pca") # For dimensionality reduction
     embeddings_to_use <- "harmony"
   } else {
+    if (filter == "TRUE"){
+      count_matrix <- "filtered_feature_bc_matrix"
+    } else {
+      count_matrix <- "raw_feature_bc_matrix"
+    }
+    input <- file.path(input, count_matrix)
     seu <- read_input(name = name, 
                       input = input,
                       mincells = mincells,
