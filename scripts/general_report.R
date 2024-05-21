@@ -24,7 +24,6 @@ library(Seurat)
 root_path <- Sys.getenv("CODE_PATH") # daemon
 source(file.path(root_path, "R", "preprocessing_library.R"))
 
-
 ############
 ### Args ###
 ############
@@ -72,55 +71,23 @@ opt <- parse_args(OptionParser(option_list = option_list))
 ############
 ### Main ###
 ############
+both_seu_paths <- Sys.glob(paste0(opt$results_folder, "seu.RDS"))
+seu_paths <- grep("before", both_seu_paths, invert = TRUE, value = TRUE)
+raw_seu_paths <- grep("before", both_seu_paths, value = TRUE)
+marker_gene_paths <- Sys.glob(paste0(opt$results_folder, ".markers.RDS"))
 
-seu_list <- list()
-raw_seu_list <- list()
-marker_gene_list <- list()
-rds_files <- scan(opt$input,
-                  what = character())
-main_folder <- opt$results_folder
+seu <- lapply(seu_paths, readRDS)
+before.seu <- lapply(raw_seu_paths, readRDS)
+marker_gene_list <- lapply(marker_gene_paths, readRDS)
+
+main_folder <- opt$results_folder #Reuse
 experiment_name <- opt$experiment_name
 
-for (name in rds_files) {
-      
-  rds_object <- readRDS(file.path(main_folder,
-                                  name,
-                                  "preprocessing.R_0000",
-                                   paste0(experiment_name,
-                                          ".",
-                                         name,
-                                         ".seu.RDS")))
-  seu_list <- append(seu_list, rds_object)
-
-  raw_object <- readRDS(file.path(main_folder,
-                                  name,
-                                  "preprocessing.R_0000",
-                                  paste0(experiment_name,
-                                         ".",
-                                         name,
-                                         ".before.seu.RDS")))
-  raw_seu_list <- append(raw_seu_list, raw_object)
-
-  marker_genes <- readRDS(file.path(main_folder,
-                                    name,
-                                    "preprocessing.R_0000",
-                                    paste0(experiment_name,
-                                           ".",
-                                           name,
-                                           ".markers.RDS")))
-  marker_gene_list <- append(marker_gene_list, marker_genes)
-}
-
-
-seu <- seu_list
-before.seu <- raw_seu_list
 if (isTRUE(opt$integrative_analysis)){
   report_name <- "All integrated samples"
 } else {
   report_name <- "All samples"
-  }
-
-
+}
 
 write_preprocessing_report(name = report_name,
                            experiment = experiment_name,
