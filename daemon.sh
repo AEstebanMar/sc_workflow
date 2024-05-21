@@ -38,9 +38,10 @@ if [ "$module" == "1" ] ; then
     while IFS= read sample; do
         echo $sample
             AF_VARS=`echo "
-            \\$sample=$sample
+            \\$sample=$sample,
+            \\$read_path=$read_path
             " | tr -d [:space:]`
-            AutoFlow -w $TEMPLATES"/full_workflow.txt" -V "$AF_VARS" $2 -o $FULL_RESULTS/$sample #$RESOURCES
+            AutoFlow -w $TEMPLATES"/full_workflow.txt" -V "$AF_VARS" $3 -o $FULL_RESULTS/$sample #$RESOURCES
     done < $SAMPLES_FILE
 
 elif [ "$module" == "2" ] ; then

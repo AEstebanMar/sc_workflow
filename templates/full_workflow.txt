@@ -3,7 +3,7 @@
 #	module unload java
 # 	source ~soft_bio_267/initializes/init_stbb  
 # 	?
-# 	seqtrimbb -t $TRIM_TEMPLATE \
+# 	seqtrimbb -t transcriptomics.txt \
 # 	       -Q $read_path"/"$sample"_"$SNUM"_L00"$lane_num"_R1_001.fastq.gz,"$read_path"/"$sample"_"$SNUM"_L00"$lane_num"_R2_001.fastq.gz" \
 # 	       -P "minlength=65" \
 # 	       -w [cpu] \
