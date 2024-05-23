@@ -27,7 +27,7 @@ before_fastqc){
 	done
 }
 
-%run_count){
+run_count){
 	resources: -c 52 -t 2-00:00:00 -m '100gb'
 	module load cellranger/7.0.0
 	?
@@ -46,11 +46,11 @@ bam_quality_control){
 	. ~soft_bio_267/initializes/init_qualimap
 	unset DISPLAY # This line disable $DISPLAY definition to avoid errors in Qualimap html report rendering.
 	?
-	qualimap bamqc -nt [cpu] -bam run_count)/$name/outs/possorted_genome_bam.bam -outdir results --java-mem-size=20G
+	qualimap bamqc -nt [cpu] -bam run_count)/$sample/outs/possorted_genome_bam.bam -outdir results --java-mem-size=20G
 	#rm run_count)/$name/outs/possorted_genome_bam.bam
 }
 
-%sc_preprocessing){
+sc_preprocessing){
 	resources: -c 2 -t 2-00:00:00 -m '150gb'
 	. ~soft_bio_267/initializes/init_R 
 	mkdir -p results
