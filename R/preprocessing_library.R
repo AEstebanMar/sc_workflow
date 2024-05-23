@@ -61,7 +61,7 @@ read_input <- function(name, input, mincells, minfeats){
 #' @keywords preprocessing, qc
 #' 
 #' @return Seurat object
-do_qc <- function(name, experiment, seu, minqcfeats, percentmt, save_before_seu = TRUE){
+do_qc <- function(seu, minqcfeats, percentmt){
   #### QC ####
   
   ##### Reads mapped to mitochondrial genes #####
@@ -82,18 +82,7 @@ do_qc <- function(name, experiment, seu, minqcfeats, percentmt, save_before_seu 
   seu[['QC']] <- ifelse(seu@meta.data$nFeature_scRNAseq < minqcfeats & seu@meta.data$QC != 'Pass' & seu@meta.data$QC != 'Low_nFeature',paste('Low_nFeature',seu@meta.data$QC,sep = ','),seu@meta.data$QC)
   seu[['QC']] <- ifelse(seu@meta.data$percent.mt > percentmt & seu@meta.data$QC == 'Pass','High_MT',seu@meta.data$QC)
   seu[['QC']] <- ifelse(seu@meta.data$nFeature_scRNAseq < minqcfeats & seu@meta.data$QC != 'Pass' & seu@meta.data$QC != 'High_MT',paste('High_MT',seu@meta.data$QC,sep = ','),seu@meta.data$QC)
-  table(seu[['QC']])
-  
-  # Save before version
-  
-  if (save_before_seu){
-    saveRDS(seu, paste0(experiment, ".", name, ".before.seu.RDS"))
-  }
-  
-  table(seu[['QC']])
 
-  seu <- subset(seu, subset = QC != 'High_MT,Low_nFeature')
-  
   return(seu)
 }
 
@@ -161,9 +150,10 @@ do_clustering <- function(seu, ndims, resolution, reduction){
 #' @keywords preprocessing, marker, gene
 #' 
 #' @return Nothing
-do_marker_gene_selection <- function(seu, name, experiment){
+do_marker_gene_selection <- function(seu, out_path=NULL){
   markers <- FindAllMarkers(seu, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
-  saveRDS(markers, paste0(experiment, ".", name, ".markers.RDS"))
+  if(!is.null(out_path)){ saveRDS(markers, paste0(out_path, ".markers.RDS"))}
+  return(markers)
 }
 
 
@@ -282,63 +272,23 @@ do_harmony <- function(seu, exp_cond){
 #' @keywords preprocessing, main
 #' 
 #' @return Seurat object
-main_preprocessing_analysis <- function(name, experiment, input, output, filter, mincells, minfeats, minqcfeats,
-                                        percentmt, normalmethod, scalefactor, hvgs, ndims, resolution,
+main_preprocessing_analysis <- function(raw_seu, out_path = NULL, minqcfeats,
+                                        percentmt, normalmethod, scalefactor, hvgs, ndims, resolution, dimreds_to_do, embeddings_to_use,
                                         integrate = FALSE){
 
-  # Input selection
-  
-  # Input reading and integration variables setup
-
-  if (integrate) {
-    seu <- readRDS(input)
-    dimreds_to_do <- c("pca") # For dimensionality reduction
-    embeddings_to_use <- "harmony"
-  } else {
-    if (filter == "TRUE"){
-      count_matrix <- "filtered_feature_bc_matrix"
-    } else {
-      count_matrix <- "raw_feature_bc_matrix"
-    }
-    input <- file.path(input, count_matrix)
-    seu <- read_input(name = name, 
-                      input = input,
-                      mincells = mincells,
-                      minfeats = minfeats)
-    dimreds_to_do <- c("pca", "tsne", "umap") # For dimensionality reduction
-    embeddings_to_use <- "pca"
-  }
-  
-  # QC
-  
-  seu <- do_qc(name = name,
-               experiment = experiment,
-               seu = seu,
+  raw_seu <- do_qc(out_path= out_path,
+               seu = raw_seu,
                minqcfeats = minqcfeats, 
                percentmt = percentmt)
-  
-  # Normalization
-
+  if (!is.null(out_path)){ saveRDS(raw_seu, paste0(out_path, ".before.seu.RDS"))} # Save before version
+  seu <- subset(raw_seu, subset = QC != 'High_MT,Low_nFeature')
   seu <- NormalizeData(seu, normalization.method = normalmethod, scale.factor = scalefactor)
-  
-  # Feature selection
-  
   seu <- FindVariableFeatures(seu, nfeatures = hvgs)
-  
-  # Data scaling
-  
   seu <- ScaleData(seu, features = rownames(seu))
-  
-  # Dimensionality reduction (PCA/UMAP/tSNE)
-  
   seu <- do_dimred(seu = seu,
                    ndims = ndims,
-                   dimreds = dimreds_to_do)
-  
-
-  # Harmony integration and remaining dimreds (only for integrative analysis)
-
-  if (integrate){
+                   dimreds = dimreds_to_do) # (PCA/UMAP/tSNE)  
+  if (integrate){ # Harmony integration and remaining dimreds 
     seu <- do_harmony(seu = seu,
                       exp_cond = "code")
     seu <- do_dimred(seu = seu,
@@ -346,30 +296,15 @@ main_preprocessing_analysis <- function(name, experiment, input, output, filter,
                      dimreds = c("tsne", "umap"),
                      reduction = embeddings_to_use)
   }
-
-  # Clustering
-  
   seu <- do_clustering(seu = seu,
                        ndims = ndims,
                        resolution = resolution,
-                       reduction = embeddings_to_use)
-                       
-  # Marker gene selection
+                       reduction = embeddings_to_use)                       
+  markers <- do_marker_gene_selection(seu = seu,
+                           out_path = out_path)  
   
-  do_marker_gene_selection(seu = seu,
-                           name = name,
-                           experiment = experiment)
-  
-  # Save final Seurat object
-
-  saveRDS(seu, paste0(experiment, ".", name, ".seu.RDS"))
-
-
-  # Move the before.seu objects to the directory created by Autoflow (only for integrative analysis)
-
-  if (integrate){
-    file.remove(file.path(output, name, paste0(experiment, ".", name, ".before.seu.RDS")))
-  }
+  if(!is.null(out_path)){saveRDS(seu, paste0(out_path, ".seu.RDS"))}
+  return (list(seu, raw_seu, markers))
 }
 
 
@@ -393,36 +328,20 @@ main_preprocessing_analysis <- function(name, experiment, input, output, filter,
 #' @keywords preprocessing, write, report
 #' 
 #' @return nothing
-write_preprocessing_report <- function(name, experiment, template, outdir, intermediate_files, minqcfeats, percentmt, hvgs, resolution, all_seu = NULL){
-  int_files <- file.path(outdir, intermediate_files)
-  if (!file.exists(int_files)){
-    dir.create(int_files)
-  }
+write_preprocessing_report <- function(all_seu = NULL, template, outpath, intermediate_files, minqcfeats, percentmt, hvgs, resolution){
+  int_files <- file.path(outpath, intermediate_files)
+  if (!file.exists(int_files)){ dir.create(int_files) }
   if (is.null(all_seu)){
-  
-    seu <- readRDS(paste0(experiment,
-                    ".",
-                    name,
-                    ".seu.RDS"))
-    before.seu <- readRDS(paste0(experiment,
-                     ".",
-                     name,
-                     ".before.seu.RDS"))
-    markers <- readRDS(paste0(experiment,
-                    ".",
-                    name,
-                    ".markers.RDS"))
+    seu <- readRDS(paste0(outpath, ".seu.RDS"))
+    before.seu <- readRDS(paste0(outpath, ".before.seu.RDS"))
+    markers <- readRDS(paste0(outpath, ".markers.RDS"))
   } else {
     seu <- all_seu[[1]]
     before.seu <- all_seu[[2]]
     markers <- all_seu[[3]]
   }  
   rmarkdown::render(template,
-                    output_file = file.path(outdir,
-                                            paste0(experiment,
-                                                   "_",
-                                                   name,
-                                                   "_preprocessing_report.html")), 
+                    output_file =paste0(outpath, "_preprocessing_report.html"), 
                     clean = TRUE,
                     intermediates_dir = int_files)
 }
