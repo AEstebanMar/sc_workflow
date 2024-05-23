@@ -6,10 +6,10 @@
 # STAGE 2 SAMPLES COMPARISON
 
 #SBATCH -J compare_samples.sh
-#SBATCH --cpus-per-task=3
-#SBATCH --mem='50gb'
+#SBATCH --cpus-per-task=12
+#SBATCH --mem='200gb'
 #SBATCH --constraint=cal
-#SBATCH --time=0-01:00:00
+#SBATCH --time=0-23:00:00
 #SBATCH --error=job.comp.%J.err
 #SBATCH --output=job.comp.%J.out
 
@@ -37,7 +37,7 @@ create_metric_table.rb $experiment_folder'/cellranger_metrics' sample $experimen
                                                    --cellranger_long_metrics $experiment_folder'/cellranger_metrics'
 
 
-# Main
+# # Main
 
 /usr/bin/time general_report.R --input $SAMPLES_FILE \
                                --output $report_folder \
@@ -59,29 +59,32 @@ create_metric_table.rb $experiment_folder'/cellranger_metrics' sample $experimen
 
 
 if [ "$integrative_analysis" == "TRUE" ] ; then
-    Rscript scripts/prior_integration.R --exp_design $exp_design \
-                                        --output $RESULTS_FOLDER \
-                                        --condition $subset_column \
-                                        --integration_file $integration_file \
-                                        --experiment_name $experiment_name \
-                                        --count_path $FULL_RESULTS"/*/cellranger_0000/*" \
-                                        --suffix "outs/filtered_feature_bc_matrix"
-    preprocessing.R --input $RESULTS_FOLDER/"all"/$experiment_name".all.before.seu.RDS" \
-                 --output results \
-                 --name $sample \
-                 --filter $preproc_filter \
-                 --mincells $preproc_init_min_cells \
-                 --minfeats $preproc_init_min_feats \
-                 --minqcfeats $preproc_qc_min_feats \
-                 --percentmt $preproc_max_percent_mt \
-                 --normalmethod $preproc_norm_method \
-                 --scalefactor $preproc_scale_factor \
-                 --hvgs $preproc_select_hvgs \
-                 --ndims $preproc_pca_n_dims \
-                 --dimheatmapcells $preproc_pca_n_cells \
-                 --report_folder results \
-                 --experiment_name $experiment_name \
-                 --resolution $preproc_resolution \
-                 --integrative_analysis    
+    mkdir -p $FULL_RESULTS/$subset_column
+    prior_integration.R --exp_design $exp_design \
+                        --output $FULL_RESULTS/$subset_column \
+                        --condition $subset_column \
+                        --integration_file $integration_file \
+                        --experiment_name $experiment_name \
+                        --count_path $FULL_RESULTS"/*/cellranger_0000/*" \
+                        --suffix "outs/filtered_feature_bc_matrix"
+    while IFS= read group; do
+        preprocessing.R --input $FULL_RESULTS/$subset_column/$experiment_name"."$group".before.seu.RDS" \
+                     --output $FULL_RESULTS/$subset_column \
+                     --name $subset_column \
+                     --filter $preproc_filter \
+                     --mincells $preproc_init_min_cells \
+                     --minfeats $preproc_init_min_feats \
+                     --minqcfeats $preproc_qc_min_feats \
+                     --percentmt $preproc_max_percent_mt \
+                     --normalmethod $preproc_norm_method \
+                     --scalefactor $preproc_scale_factor \
+                     --hvgs $preproc_select_hvgs \
+                     --ndims $preproc_pca_n_dims \
+                     --dimheatmapcells $preproc_pca_n_cells \
+                     --report_folder $report_folder \
+                     --experiment_name $experiment_name \
+                     --resolution $preproc_resolution \
+                     --integrate   
+    done < $integration_file
 fi
 
