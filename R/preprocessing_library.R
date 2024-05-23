@@ -211,7 +211,6 @@ add_exp_design <- function(seu, name, exp_design){
 
 ##########################################################################
 
-
 #' merge_condition
 #' Merge samples sharing an experimental condition
 #'
@@ -224,20 +223,17 @@ add_exp_design <- function(seu, name, exp_design){
 #' 
 #' @return Merged Seurat object
 merge_condition <- function(exp_cond, samples, exp_design, count_path, suffix=''){
-  # seu.list <- sapply(Sys.glob(count_path), function(sample_path){
-  #     sample <- basename(sample_path)
-  #     input_file <- file.path(sample_path, suffix)
-
-  #   })
-  seu.list <- sapply(samples, function(i){ # Loading
-    d10x <- Read10X(file.path(count_path, i, "cellranger_0000", i, "outs", "filtered_feature_bc_matrix"))
-    colnames(d10x) <- paste(sapply(strsplit(colnames(d10x),split="-"),'[[',1L),i,sep="-") # Adds sample same at the end of cell names
-    seu <- CreateSeuratObject(counts = d10x, project = i, min.cells = 1, min.features = 1, assay = "scRNAseq")
+  full_paths <- Sys.glob(paste(count_path, suffix, sep = "/"))
+  seu.list <- sapply(full_paths, function(sample_path){
+    sample <- gsub(".*cellranger_0000/(.+)/outs.*", "\\1", sample_path)
+    d10x <- Read10X(sample_path)
+    colnames(d10x) <- paste(sapply(strsplit(colnames(d10x),split="-"),'[[', 1L), sample, sep="-") # Adds sample name at the end of cell names
+    seu <- CreateSeuratObject(counts = d10x, project = sample, min.cells = 1, min.features = 1, assay = "scRNAseq")
     seu <- add_exp_design(seu = seu,
-                          name = i,
+                          name = sample,
                           exp_design = exp_design)
     return(seu)
-  })
+    })
   merged_seu <- scCustomize::Merge_Seurat_List(list_seurat = seu.list, project = exp_cond)
   return(merged_seu)
 }
