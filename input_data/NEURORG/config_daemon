@@ -11,26 +11,23 @@
 ######  EXPERIMENT VARIABLES #######
 
 export experiment_name=NEURORG    #-------#    Experiment name
+export exp_data_folder=$CODE_PATH"/input_data/"$experiment_name  #-------#    Experiment name
+export SAMPLES_FILE=$exp_data_folder"/samples_to_process.lst"    #-------#    A list with sample names. File name must be unique and in must not include paired-end information or file extension. (e.g. For file "sample_ex_1.fastq.gz" and "sample_ex_2.fastq.gz", filename is "sample_ex")
+export read_path=$exp_data_folder"/raw_data"                     #-------#    New path where samples were linked and renamed
+export exp_design=$exp_data_folder"/experiment_design.tbl"       #-------#    CSV file with experiment design details 8useful for integration)
+export integration_file=$exp_data_folder"/int_names.lst"    	 #-------#    Integration subset names file, will be created if integrative_analysis=TRUE
 
 
 ######  EXECUTION VARIABLES #######
 
 export RESOURCES="-c 10 -t '2-00:00:00' -m '30gb'"                          #-------#    AutoFlow resources general setting 
 export launch_login=FALSE                                                   #-------#    Login execution mode. Set this variable to 'TRUE' to execute all modules at login.
-export project_folder=$FSCRATCH"/NGS_projects"                              #-------#    Global execution folder
-export experiment_folder=$project_folder"/"$experiment_name                 #-------#    Experiment execution folder
+export experiment_folder=$FSCRATCH"/NGS_projects/"$experiment_name                 #-------#    Experiment execution folder
 export FULL_RESULTS=$experiment_folder"/full_results"                       #-------#    Count execution path
-export QMAP_RESULTS_FOLDER=$experiment_folder"/qualimap_results"            #-------#    QualiMap execution path
 export INTEGRATE_RESULTS_FOLDER=$experiment_folder"/integrate_results"      #-------#    Integrative analysis execution path
-export TRIM_TEMPLATE="transcriptomics.txt"                                  #-------#    Trimming template
 export LAB_SCRIPTS="/mnt/home/soft/soft_bio_267/programs/x86_64/scripts"    #-------#    Folder with the lab scripts in Picasso (bio_267)
-export transcriptome=$CODE_PATH"/refdata-gex-GRCh38-2020-A"    #-------#    Transcriptome for reference (MOUSE -> mm10, HUMAN -> GRCh38)
+export transcriptome=$CODE_PATH"/references/refdata-gex-GRCh38-2020-A"    #-------#    Transcriptome for reference (MOUSE -> mm10, HUMAN -> GRCh38)
 
-######  SAMPLES VARIABLES #######
-
-export SAMPLES_FILE=$CODE_PATH"/samples_to_process.lst"    #-------#    A list with sample names. File name must be unique and in must not include paired-end information or file extension. (e.g. For file "sample_ex_1.fastq.gz" and "sample_ex_2.fastq.gz", filename is "sample_ex")
-export read_path=$CODE_PATH"/raw_data"                     #-------#    New path where samples were linked and renamed
-export exp_design=$CODE_PATH"/experiment_design.tbl"       #-------#    CSV file with experiment design details 8useful for integration)
 
 ######  REPORT VARIABLES #######
 
@@ -42,12 +39,12 @@ export report_folder=$experiment_folder'/reports'        #-------#    Reports ou
 ## DAEMON STAGES ##
 ###################################
 
-######  STAGE 0 CONVERTING BCL FILES INTO FASTQ #######
+# ######  STAGE 0 CONVERTING BCL FILES INTO FASTQ #######
 
-export bcl_folder=cellranger-tiny-bcl-1.2.0                          #-------#    BCL directory
-export bcl_simple_csv=cellranger-tiny-bcl-simple-1.2.0.csv           #-------#    Simple CSV file
-export bcl_use_sample_sheet=FALSE                                    #-------#    Set this variable to 'TRUE' to use the sample sheet CSV instead of the simple CSV
-export bcl_sample_sheet=cellranger-tiny-bcl-samplesheet-1.2.0.csv    #-------#    Sample sheet CSV file
+# export bcl_folder=cellranger-tiny-bcl-1.2.0                          #-------#    BCL directory
+# export bcl_simple_csv=cellranger-tiny-bcl-simple-1.2.0.csv           #-------#    Simple CSV file
+# export bcl_use_sample_sheet=FALSE                                    #-------#    Set this variable to 'TRUE' to use the sample sheet CSV instead of the simple CSV
+# export bcl_sample_sheet=cellranger-tiny-bcl-samplesheet-1.2.0.csv    #-------#    Sample sheet CSV file
 
 
 ######  STAGE 3 PREPROCESSING #######
@@ -63,7 +60,6 @@ export preproc_select_hvgs=2000                       #-------#    Number of HVG
 export preproc_pca_n_dims=20                          #-------#    Number of PC to use for clustering / UMAP / tSNE
 export preproc_resolution=0.5                         #-------#    Granularity of the clustering (higher values -> greater number of clusters)
 export preproc_pca_n_cells=500                        #-------#    Heatmap plots the 'extreme' cells on both ends of the spectrum -> dramatically speeds plotting for large datasets
-export integrative_analysis=FALSE                     #-------#    TRUE for samples integration, FALSE otherwise
-export subset_column=All                              #-------#    Integration condition
-export integration_file=$CODE_PATH"/int_names.lst"    #-------#    Integration subset names file, will be created if integrative_analysis=TRUE
+export integrative_analysis=TRUE                    #-------#    TRUE for samples integration, FALSE otherwise
+export subset_column=time                             #-------#    Integration condition
 export int_sec_cond=Genotype                          #-------#    Integration secondary condition for grouped /splitted UMAPs
