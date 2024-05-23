@@ -68,23 +68,23 @@ if [ "$integrative_analysis" == "TRUE" ] ; then
                         --count_path $FULL_RESULTS"/*/cellranger_0000/*" \
                         --suffix "outs/filtered_feature_bc_matrix"
     while IFS= read group; do
-        preprocessing.R --input $FULL_RESULTS/$subset_column/$experiment_name"."$group".before.seu.RDS" \
-                     --output $FULL_RESULTS/$subset_column \
-                     --name $subset_column \
-                     --filter $preproc_filter \
-                     --mincells $preproc_init_min_cells \
-                     --minfeats $preproc_init_min_feats \
-                     --minqcfeats $preproc_qc_min_feats \
-                     --percentmt $preproc_max_percent_mt \
-                     --normalmethod $preproc_norm_method \
-                     --scalefactor $preproc_scale_factor \
-                     --hvgs $preproc_select_hvgs \
-                     --ndims $preproc_pca_n_dims \
-                     --dimheatmapcells $preproc_pca_n_cells \
-                     --report_folder $report_folder \
-                     --experiment_name $experiment_name \
-                     --resolution $preproc_resolution \
-                     --integrate   
+    preprocessing.R --input $FULL_RESULTS/$subset_column/$experiment_name"."$group".before.seu.RDS" \
+                 --output $FULL_RESULTS/$subset_column \
+                 --name $subset_column \
+                 --filter $preproc_filter \
+                 --mincells $preproc_init_min_cells \
+                 --minfeats $preproc_init_min_feats \
+                 --minqcfeats $preproc_qc_min_feats \
+                 --percentmt $preproc_max_percent_mt \
+                 --normalmethod $preproc_norm_method \
+                 --scalefactor $preproc_scale_factor \
+                 --hvgs $preproc_select_hvgs \
+                 --ndims $preproc_pca_n_dims \
+                 --dimheatmapcells $preproc_pca_n_cells \
+                 --report_folder $report_folder \
+                 --experiment_name $experiment_name \
+                 --resolution $preproc_resolution \
+                 --integrate   
     done < $integration_file
 fi
 
