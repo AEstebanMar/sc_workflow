@@ -41,14 +41,14 @@ option_list <- list(
               help="Name of file that will contain integration subset names"),
   make_option(c("-e", "--experiment_name"), type = "character",
               help="Experiment name"),
-  make_option(c("--count_folder"), type = "character",
-              help="Count results folder")
+  make_option(c("--count_path"), type = "character",
+              help="Count results folder"),
+  make_option(c("--suffix"), type = "character",
+              help="Suffix to specific file")
 )  
 
 
 opt <- parse_args(OptionParser(option_list = option_list))
-
-
 
 ############
 ### Main ###
@@ -75,13 +75,14 @@ cat(names(exp_subsets), file = opt$integration_file, sep = "\n", append = FALSE)
 # Create and save the "before" (with no preprocessing) Seurat object
 
 for (cond in names(exp_subsets)){
-  folder_name <- file.path(opt$output, cond)
+  folder_name <- opt$output
   if (!file.exists(folder_name)) {
     dir.create(folder_name)
   }
   seu <- merge_condition(exp_cond = cond,
                          samples = exp_subsets[[cond]],
                          exp_design = opt$exp_design,
-                         count_path = opt$count_folder)
+                         count_path = opt$count_path,
+                         suffix = opt$suffix)
   saveRDS(seu, file = file.path(folder_name, paste0(opt$experiment_name, ".", cond, ".before.seu.RDS")))
 }
