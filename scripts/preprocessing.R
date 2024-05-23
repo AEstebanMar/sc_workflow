@@ -74,13 +74,28 @@ opt <- parse_args(OptionParser(option_list = option_list))
 ### Main ###
 ############
 
-main_preprocessing_analysis(name = opt$name,
-                            experiment = opt$experiment_name,
-                            input = opt$input,
-                            output = opt$output,
-                            filter = opt$filter,
-                            mincells = opt$mincells,
-                            minfeats = opt$minfeats,
+out_path = file.path(opt$report_folder, paste0(opt$experiment_name, '.', opt$name))
+# Input selection
+
+# Input reading and integration variables setup
+
+if (integrate) {
+  seu <- readRDS(input)
+  dimreds_to_do <- c("pca") # For dimensionality reduction
+  embeddings_to_use <- "harmony"
+} else {
+  input <- file.path(opt$input, ifelse(opt$filter, 
+      "filtered_feature_bc_matrix", "raw_feature_bc_matrix"))
+  seu <- read_input(name = opt$name, 
+                    input = input,
+                    mincells = opt$mincells,
+                    minfeats = opt$minfeats)
+  dimreds_to_do <- c("pca", "tsne", "umap") # For dimensionality reduction
+  embeddings_to_use <- "pca"
+}
+
+all_seu <- main_preprocessing_analysis(seu = seu,
+                            out_path = out_path,
                             minqcfeats = opt$minqcfeats,
                             percentmt = opt$percentmt,
                             normalmethod = opt$normalmethod,
@@ -88,14 +103,15 @@ main_preprocessing_analysis(name = opt$name,
                             hvgs = opt$hvgs,
                             ndims = opt$ndims,
                             resolution = opt$resolution,
+                            dimreds_to_do = dimreds_to_do,
+                            embeddings_to_use = embeddings_to_use,
                             integrate = as.logical(opt$integrate))
 
-write_preprocessing_report(name = opt$name,
-                           experiment = opt$experiment_name,
+write_preprocessing_report(all_seu = all_seu,
                            template = file.path(root_path, 
                                                 "templates",
                                                 "preprocessing_report.Rmd"),
-                           outdir = opt$report_folder,
+                           out_path = out_path,
                            intermediate_files = "int_files",
                            minqcfeats = opt$minqcfeats,
                            percentmt = opt$percentmt,
