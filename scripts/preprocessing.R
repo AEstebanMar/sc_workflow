@@ -78,9 +78,8 @@ out_path = file.path(opt$report_folder, paste0(opt$experiment_name, '.', opt$nam
 # Input selection
 
 # Input reading and integration variables setup
-
-if (integrate) {
-  seu <- readRDS(input)
+if(opt$integrate) {
+  seu <- readRDS(opt$input)
   dimreds_to_do <- c("pca") # For dimensionality reduction
   embeddings_to_use <- "harmony"
 } else {
@@ -94,7 +93,7 @@ if (integrate) {
   embeddings_to_use <- "pca"
 }
 
-all_seu <- main_preprocessing_analysis(seu = seu,
+all_seu <- main_preprocessing_analysis(raw_seu = seu,
                             out_path = out_path,
                             minqcfeats = opt$minqcfeats,
                             percentmt = opt$percentmt,
