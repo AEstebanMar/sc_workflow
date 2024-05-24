@@ -22,7 +22,6 @@ library(optparse)
 root_path <- Sys.getenv("CODE_PATH") # daemon
 source(file.path(root_path, "R", "qc_library.R"))
 
-
 ############
 ### Args ###
 ############
