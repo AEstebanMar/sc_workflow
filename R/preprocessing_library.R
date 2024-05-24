@@ -214,10 +214,10 @@ add_exp_design <- function(seu, name, exp_design){
 #' @return Merged Seurat object
 merge_condition <- function(exp_cond, samples, exp_design, count_path, suffix=''){
   full_paths <- Sys.glob(paste(count_path, suffix, sep = "/"))
-  seu.list <- sapply(full_paths, function(sample_path){
-    sample <- gsub(".*cellranger_0000/(.+)/outs.*", "\\1", sample_path)
+  seu.list <- sapply(samples, function(sample){
+    sample_path <- grep(sample, full_paths, value = TRUE)
     d10x <- Read10X(sample_path)
-    colnames(d10x) <- paste(sapply(strsplit(colnames(d10x),split="-"),'[[', 1L), sample, sep="-") # Adds sample name at the end of cell names
+    colnames(d10x) <- paste(sapply(strsplit(colnames(d10x), split="-"), '[[', 1L), sample, sep="-") # Adds sample name at the end of cell names
     seu <- CreateSeuratObject(counts = d10x, project = sample, min.cells = 1, min.features = 1, assay = "scRNAseq")
     seu <- add_exp_design(seu = seu,
                           name = sample,
@@ -276,35 +276,26 @@ main_preprocessing_analysis <- function(raw_seu, out_path = NULL, minqcfeats,
                                         percentmt, normalmethod, scalefactor, hvgs, ndims, resolution, dimreds_to_do, embeddings_to_use,
                                         integrate = FALSE){
 
-  raw_seu <- do_qc(out_path= out_path,
-               seu = raw_seu,
-               minqcfeats = minqcfeats, 
-               percentmt = percentmt)
-  if (!is.null(out_path)){ saveRDS(raw_seu, paste0(out_path, ".before.seu.RDS"))} # Save before version
+  raw_seu <- do_qc(seu = raw_seu, minqcfeats = minqcfeats, 
+                   percentmt = percentmt)
+  if (!is.null(out_path)) saveRDS(raw_seu, paste0(out_path, ".before.seu.RDS")) # Save before version
   seu <- subset(raw_seu, subset = QC != 'High_MT,Low_nFeature')
-  seu <- NormalizeData(seu, normalization.method = normalmethod, scale.factor = scalefactor)
+  seu <- NormalizeData(seu, normalization.method = normalmethod,
+                       scale.factor = scalefactor)
   seu <- FindVariableFeatures(seu, nfeatures = hvgs)
   seu <- ScaleData(seu, features = rownames(seu))
-  seu <- do_dimred(seu = seu,
-                   ndims = ndims,
-                   dimreds = dimreds_to_do) # (PCA/UMAP/tSNE)  
+  # dimreds_to_do: PCA/UMAP/tSNE
+  seu <- do_dimred(seu = seu, ndims = ndims, dimreds = dimreds_to_do)   
   if (integrate){ # Harmony integration and remaining dimreds 
-    seu <- do_harmony(seu = seu,
-                      exp_cond = "code")
-    seu <- do_dimred(seu = seu,
-                     ndims = ndims,
-                     dimreds = c("tsne", "umap"),
+    seu <- do_harmony(seu = seu, exp_cond = "code")
+    seu <- do_dimred(seu = seu, ndims = ndims, dimreds = c("tsne", "umap"),
                      reduction = embeddings_to_use)
   }
-  seu <- do_clustering(seu = seu,
-                       ndims = ndims,
-                       resolution = resolution,
+  seu <- do_clustering(seu = seu, ndims = ndims, resolution = resolution,
                        reduction = embeddings_to_use)                       
-  markers <- do_marker_gene_selection(seu = seu,
-                           out_path = out_path)  
-  
-  if(!is.null(out_path)){saveRDS(seu, paste0(out_path, ".seu.RDS"))}
-  return (list(seu, raw_seu, markers))
+  markers <- do_marker_gene_selection(seu = seu, out_path = out_path)  
+  if(!is.null(out_path)) saveRDS(seu, paste0(out_path, ".seu.RDS")) 
+  return(list(seu, raw_seu, markers))
 }
 
 
