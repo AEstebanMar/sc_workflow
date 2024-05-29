@@ -27,17 +27,12 @@ cat $FULL_RESULTS/*/cellranger_metrics > $experiment_folder'/cellranger_metrics'
 create_metric_table.rb $experiment_folder'/metrics' sample $experiment_folder'/metric_table'
 create_metric_table.rb $experiment_folder'/cellranger_metrics' sample $experiment_folder'/cellranger_metric_table'
 
-# Main
-
 /usr/bin/time $CODE_PATH/scripts/compare_samples.R -o $report_folder \
                                                    -m $experiment_folder'/metric_table' \
                                                    -l $experiment_folder'/metrics' \
                                                    -e $experiment_name \
                                                    --cellranger_metrics $experiment_folder'/cellranger_metric_table' \
                                                    --cellranger_long_metrics $experiment_folder'/cellranger_metrics'
-
-
-# # Main
 
 /usr/bin/time general_report.R --input $SAMPLES_FILE \
                                --output $report_folder \
@@ -55,8 +50,6 @@ create_metric_table.rb $experiment_folder'/cellranger_metrics' sample $experimen
                                --results_folder $FULL_RESULTS"/*/preprocessing.R_0000/*" \
                                --resolution $preproc_resolution \
                                --int_sec_cond $int_sec_cond
-
-
 
 if [ "$integrative_analysis" == "TRUE" ] ; then
     mkdir -p $FULL_RESULTS/$subset_column
