@@ -56,7 +56,7 @@ output:
 
 </style>
 
-# `r name` of project `r experiment`
+# `r out_path`
 
 Report of single-cell pre-processing using Seurat
 
