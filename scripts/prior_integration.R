@@ -1,54 +1,46 @@
 #! /usr/bin/env Rscript
 
-# Sergio Alías, 20231011
-# Last modified 20231226
 
+##########################################
+## LOAD LIBRARIES
+##########################################
+# Obtain this script directory
+full.fpath <- normalizePath(unlist(strsplit(commandArgs()[grep('^--file=', 
+                commandArgs())], '='))[2])
 
-#################################
-###   STAGE 3 PREPROCESSING   ###
-###   prior_integration.R     ###
-#################################
+main_path_script <- dirname(full.fpath)
+root_path <- file.path(main_path_script)
+# Load custom libraries
+# devtools::load_all(file.path(root_path))
 
-#################
-### Libraries ###
-#################
-
-library(optparse)
+source_folder <- file.path(root_path, 'lib')
 library(Seurat)
 library(scCustomize)
+source(file.path(source_folder, "preprocessing_library.R"))
 
-
-###################
-### Custom libs ###
-###################
-
-root_path <- Sys.getenv("CODE_PATH") # daemon (TODO decide what to to with this)
-source(file.path(root_path, "R", "preprocessing_library.R"))
-
-
-############
-### Args ###
-############
+##########################################
+## OPTPARSE
+##########################################
 
 option_list <- list(
-  make_option(c("-d", "--exp_design"), type = "character",
+  optparse::make_option(c("-d", "--exp_design"), type = "character",
               help="Input file with the experiment design"),
-  make_option(c("-o", "--output"), type = "character",
+  optparse::make_option(c("-o", "--output"), type = "character",
               help="Output folder"),
-  make_option(c("-c", "--condition"), type = "character",
+  optparse::make_option(c("-c", "--condition"), type = "character",
               help="Name of the column in the experimental design file we want to use for integration"),
-  make_option(c("-i", "--integration_file"), type = "character",
+  optparse::make_option(c("-i", "--integration_file"), type = "character",
               help="Name of file that will contain integration subset names"),
-  make_option(c("-e", "--experiment_name"), type = "character",
+  optparse::make_option(c("-e", "--experiment_name"), type = "character",
               help="Experiment name"),
-  make_option(c("--count_path"), type = "character",
+  optparse::make_option(c("--count_path"), type = "character",
               help="Count results folder"),
-  make_option(c("--suffix"), type = "character",
+  optparse::make_option(c("--suffix"), type = "character",
               help="Suffix to specific file")
 )  
 
 
-opt <- parse_args(OptionParser(option_list = option_list))
+opt <- optparse::parse_args(optparse::OptionParser(option_list = option_list))
 
 ############
 ### Main ###
@@ -70,7 +62,6 @@ if (file.exists(opt$integration_file)) { # Integration subsets file creation (mu
 }
 
 cat(names(exp_subsets), file = opt$integration_file, sep = "\n", append = FALSE) # the second quotes are for having an extra empty line at the end (see README in Github for details)
-
 
 # Create and save the "before" (with no preprocessing) Seurat object
 

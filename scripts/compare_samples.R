@@ -1,47 +1,43 @@
 #! /usr/bin/env Rscript
 
-# Sergio Alías, 20230707
-# Last modified 20230721
 
+##########################################
+## LOAD LIBRARIES
+##########################################
+# Obtain this script directory
+full.fpath <- normalizePath(unlist(strsplit(commandArgs()[grep('^--file=', 
+                commandArgs())], '='))[2])
 
-######################################
-###   STAGE 2 SAMPLES COMPARISON   ###
-###   compare_samples.R            ###
-######################################
+main_path_script <- dirname(full.fpath)
+root_path <- file.path(main_path_script)
+template_path <- file.path(root_path, "..", "templates")
+# Load custom libraries
+# devtools::load_all(file.path(root_path))
 
-#################
-### Libraries ###
-#################
-
+source_folder <- file.path(root_path, 'lib')
 library(optparse)
+source(file.path(source_folder, "qc_library.R"))
 
-###################
-### Custom libs ###
-###################
-
-root_path <- Sys.getenv("CODE_PATH") # daemon
-source(file.path(root_path, "R", "qc_library.R"))
-
-############
-### Args ###
-############
+##########################################
+## OPTPARSE
+##########################################
 
 option_list <- list(
-  make_option(c("-m", "--metrics"), type = "character",
+  optparse::make_option(c("-m", "--metrics"), type = "character",
               help="Metrics file in wide format"),
-  make_option(c("-l", "--long_metrics"), type = "character",
+  optparse::make_option(c("-l", "--long_metrics"), type = "character",
               help="Metrics file in long format"),
-  make_option(c("--cellranger_metrics"), type = "character",
+  optparse::make_option(c("--cellranger_metrics"), type = "character",
               help="Cell Ranger metrics file in wide format"),
-  make_option(c("--cellranger_long_metrics"), type = "character",
+  optparse::make_option(c("--cellranger_long_metrics"), type = "character",
               help="Cell Ranger Metrics file in long format"),
-  make_option(c("-o", "--output"), type = "character",
+  optparse::make_option(c("-o", "--output"), type = "character",
               help="Output folder"),
-  make_option(c("-e", "--experiment_name"), type = "character",
+  optparse::make_option(c("-e", "--experiment_name"), type = "character",
               help="Experiment name")
 )  
 
-opt <- parse_args(OptionParser(option_list = option_list))
+opt <- optparse::parse_args(optparse::OptionParser(option_list = option_list))
 
 
 ############
@@ -50,9 +46,7 @@ opt <- parse_args(OptionParser(option_list = option_list))
 
 write_qc_report(name = "All samples",
                 experiment = opt$experiment_name,
-                template = file.path(root_path,
-                                     "templates",
-                                     "fastqc_report.Rmd"),
+                template = file.path(template_path, "fastqc_report.Rmd"),
                 outdir = opt$output,
                 intermediate_files = "int_files",
                 metrics = opt$metrics,
