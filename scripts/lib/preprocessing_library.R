@@ -319,22 +319,20 @@ main_preprocessing_analysis <- function(raw_seu, out_path = NULL, minqcfeats,
 #' @keywords preprocessing, write, report
 #' 
 #' @return nothing
-write_preprocessing_report <- function(all_seu = NULL, template, outpath, intermediate_files, minqcfeats, percentmt, hvgs, resolution){
-  int_files <- file.path(outpath, intermediate_files)
+write_preprocessing_report <- function(all_seu = NULL, template, out_path, intermediate_files, minqcfeats, percentmt, hvgs, resolution){
+  int_files <- file.path(out_path, intermediate_files)
   if (!file.exists(int_files)){ dir.create(int_files) }
   if (is.null(all_seu)){
-    seu <- readRDS(paste0(outpath, ".seu.RDS"))
-    before.seu <- readRDS(paste0(outpath, ".before.seu.RDS"))
-    markers <- readRDS(paste0(outpath, ".markers.RDS"))
+    seu <- readRDS(paste0(out_path, ".seu.RDS"))
+    before.seu <- readRDS(paste0(out_path, ".before.seu.RDS"))
+    markers <- readRDS(paste0(out_path, ".markers.RDS"))
   } else {
     seu <- all_seu[[1]]
     before.seu <- all_seu[[2]]
     markers <- all_seu[[3]]
   }  
-  rmarkdown::render(template,
-                    output_file =paste0(outpath, "_preprocessing_report.html"), 
-                    clean = TRUE,
-                    intermediates_dir = int_files)
+  rmarkdown::render(template, clean = TRUE, intermediates_dir = int_files,
+                    output_file = paste0(out_path,"_preprocessing_report.html"))
 }
 
 
