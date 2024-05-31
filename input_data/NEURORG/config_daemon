@@ -14,7 +14,7 @@ export experiment_name=NEURORG    #-------#    Experiment name
 export exp_data_folder=$CODE_PATH"/input_data/"$experiment_name  #-------#    Experiment name
 export SAMPLES_FILE=$exp_data_folder"/samples_to_process.lst"    #-------#    A list with sample names. File name must be unique and in must not include paired-end information or file extension. (e.g. For file "sample_ex_1.fastq.gz" and "sample_ex_2.fastq.gz", filename is "sample_ex")
 export read_path=$exp_data_folder"/raw_data"                     #-------#    New path where samples were linked and renamed
-export exp_design=$exp_data_folder"/experiment_design.tbl"       #-------#    CSV file with experiment design details 8useful for integration)
+export exp_design=$exp_data_folder"/experiment_design.tbl"       #-------#    CSV file with experiment design details (useful for integration. if sample name are defined subset_column will be ignored, and samples specified in this variable will be merged in integration.)
 export integration_file=$exp_data_folder"/int_names.lst"    	 #-------#    Integration subset names file, will be created if integrative_analysis=TRUE
 
 
@@ -63,3 +63,4 @@ export preproc_pca_n_cells=500                        #-------#    Heatmap plots
 export integrative_analysis=TRUE                    #-------#    TRUE for samples integration, FALSE otherwise
 export subset_column=time                             #-------#    Integration condition
 export int_sec_cond=Genotype                          #-------#    Integration secondary condition for grouped /splitted UMAPs
+	
