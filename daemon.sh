@@ -35,13 +35,60 @@ export TEMPLATES=$CODE_PATH'/templates'
 # el
 if [ "$module" == "1" ] ; then
     mkdir -p $FULL_RESULTS
+    echo Launching workflow
     while IFS= read sample; do
-        echo $sample
-            AF_VARS=`echo "
-            \\$sample=$sample,
-            \\$read_path=$read_path
-            " | tr -d [:space:]`
-            AutoFlow -w $TEMPLATES"/full_workflow.txt" -V "$AF_VARS" $3 -o $FULL_RESULTS/$sample #$RESOURCES
+        echo Launching $sample
+        AF_VARS=`echo "
+        \\$sample=$sample,
+        \\$read_path=$read_path,
+        \\$aux_sh_dir=$CODE_PATH/aux_sh,
+        \\$script_dir=$CODE_PATH/scripts,
+        \\$preproc_filter=$preproc_filter,
+        \\$preproc_init_min_cells=$preproc_init_min_cells,
+        \\$preproc_init_min_feats=$preproc_init_min_feats,
+        \\$preproc_qc_min_feats=$preproc_qc_min_feats,
+        \\$preproc_max_percent_mt=$preproc_max_percent_mt,
+        \\$preproc_norm_method=$preproc_norm_method,
+        \\$preproc_scale_factor=$preproc_scale_factor,
+        \\$preproc_select_hvgs=$preproc_select_hvgs,
+        \\$preproc_pca_n_dims=$preproc_pca_n_dims,
+        \\$preproc_pca_n_cells=$preproc_pca_n_cells,
+        \\$experiment_name=$experiment_name,
+        \\$preproc_resolution=$preproc_resolution
+        " | tr -d [:space:]`
+        AutoFlow -w $TEMPLATES"/full_workflow.txt" -V "$AF_VARS" $3 -o $FULL_RESULTS/$sample
+    done < $SAMPLES_FILE
+
+elif [ "$module" == "1b" ] ; then
+    echo Checking workflow execution
+    while IFS= read sample; do
+        flow_logger -e $FULL_RESULTS/$sample -w -r all
+    done < $SAMPLES_FILE
+
+elif [ "$module" == "1c" ] ; then
+    echo Regenerating code
+    while IFS= read sample; do
+        AF_VARS=`echo "
+        \\$sample=$sample,
+        \\$read_path=$read_path,
+        \\$aux_sh_dir=$CODE_PATH/aux_sh,
+        \\$script_dir=$CODE_PATH/scripts,
+        \\$preproc_filter=$preproc_filter,
+        \\$preproc_init_min_cells=$preproc_init_min_cells,
+        \\$preproc_init_min_feats=$preproc_init_min_feats,
+        \\$preproc_qc_min_feats=$preproc_qc_min_feats,
+        \\$preproc_max_percent_mt=$preproc_max_percent_mt,
+        \\$preproc_norm_method=$preproc_norm_method,
+        \\$preproc_scale_factor=$preproc_scale_factor,
+        \\$preproc_select_hvgs=$preproc_select_hvgs,
+        \\$preproc_pca_n_dims=$preproc_pca_n_dims,
+        \\$preproc_pca_n_cells=$preproc_pca_n_cells,
+        \\$experiment_name=$experiment_name,
+        \\$preproc_resolution=$preproc_resolution
+        " | tr -d [:space:]`
+        AutoFlow -w $TEMPLATES"/full_workflow.txt" -V "$AF_VARS" $3 -o $FULL_RESULTS/$sample -v
+        echo Launching pending and failed jobs for $sample
+        flow_logger -e $FULL_RESULTS/$sample -w -l -p
     done < $SAMPLES_FILE
 
 elif [ "$module" == "2" ] ; then
