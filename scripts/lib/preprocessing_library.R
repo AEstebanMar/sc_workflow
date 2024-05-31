@@ -294,7 +294,7 @@ main_preprocessing_analysis <- function(raw_seu, out_path = NULL, minqcfeats,
   seu <- do_clustering(seu = seu, ndims = ndims, resolution = resolution,
                        reduction = embeddings_to_use)                       
   markers <- do_marker_gene_selection(seu = seu, out_path = out_path)  
-  if(!is.null(out_path)) saveRDS(seu, paste0(out_path, ".seu.RDS")) 
+  if(!is.null(out_path)) saveRDS(seu, paste0(out_path, ".seu.RDS"))
   return(list(seu, raw_seu, markers))
 }
 
@@ -319,9 +319,12 @@ main_preprocessing_analysis <- function(raw_seu, out_path = NULL, minqcfeats,
 #' @keywords preprocessing, write, report
 #' 
 #' @return nothing
-write_preprocessing_report <- function(all_seu = NULL, template, out_path, intermediate_files, minqcfeats, percentmt, hvgs, resolution){
+write_preprocessing_report <- function(all_seu = NULL, template, out_path,
+                                       intermediate_files, minqcfeats,
+                                       percentmt, hvgs, resolution,
+                                       condition = NULL){
   int_files <- file.path(out_path, intermediate_files)
-  if (!file.exists(int_files)){ dir.create(int_files) }
+  if (!file.exists(int_files)) dir.create(int_files)
   if (is.null(all_seu)){
     seu <- readRDS(paste0(out_path, ".seu.RDS"))
     before.seu <- readRDS(paste0(out_path, ".before.seu.RDS"))
@@ -332,7 +335,8 @@ write_preprocessing_report <- function(all_seu = NULL, template, out_path, inter
     markers <- all_seu[[3]]
   }  
   rmarkdown::render(template, clean = TRUE, intermediates_dir = int_files,
-                    output_file = paste0(out_path,"_preprocessing_report.html"))
+                    output_file = paste0(out_path,
+                                      "_preprocessing_report.html"))
 }
 
 
