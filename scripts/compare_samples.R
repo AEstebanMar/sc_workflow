@@ -40,9 +40,9 @@ option_list <- list(
 opt <- optparse::parse_args(optparse::OptionParser(option_list = option_list))
 
 
-############
-### Main ###
-############
+##########################################
+## MAIN
+##########################################
 
 write_qc_report(name = "All samples",
                 experiment = opt$experiment_name,

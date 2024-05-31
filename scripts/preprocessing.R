@@ -64,29 +64,23 @@ option_list <- list(
 
 opt <- optparse::parse_args(optparse::OptionParser(option_list = option_list))
 
-
-############
-### Main ###
-############
+##########################################
+## MAIN
+##########################################
 
 out_path = file.path(opt$report_folder, paste0(opt$experiment_name, '.', opt$name))
 # Input selection
 
 # Input reading and integration variables setup
-if(opt$integrate) {
-  seu <- readRDS(opt$input)
-  dimreds_to_do <- c("pca") # For dimensionality reduction
-  embeddings_to_use <- "harmony"
-} else {
-  input <- file.path(opt$input, ifelse(opt$filter, 
-      "filtered_feature_bc_matrix", "raw_feature_bc_matrix"))
-  seu <- read_input(name = opt$name, 
-                    input = input,
-                    mincells = opt$mincells,
-                    minfeats = opt$minfeats)
-  dimreds_to_do <- c("pca", "tsne", "umap") # For dimensionality reduction
-  embeddings_to_use <- "pca"
-}
+
+input <- file.path(opt$input, ifelse(opt$filter, 
+    "filtered_feature_bc_matrix", "raw_feature_bc_matrix"))
+seu <- read_input(name = opt$name, 
+                  input = input,
+                  mincells = opt$mincells,
+                  minfeats = opt$minfeats)
+dimreds_to_do <- c("pca", "tsne", "umap") # For dimensionality reduction
+embeddings_to_use <- "pca"
 
 all_seu <- main_preprocessing_analysis(raw_seu = seu,
                             out_path = out_path,
