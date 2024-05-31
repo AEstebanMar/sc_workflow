@@ -53,6 +53,8 @@ bam_quality_control){
 sc_preprocessing){
 	resources: -c 2 -t 2-00:00:00 -m '150gb'
 	. ~soft_bio_267/initializes/init_R 
+	export PATH=$aux_sh_dir:$PATH
+	export PATH=$script_dir:$PATH
 	mkdir -p results
 	echo [cpu]
 	?
@@ -69,7 +71,7 @@ sc_preprocessing){
 	             --hvgs $preproc_select_hvgs \
 	             --ndims $preproc_pca_n_dims \
 	             --dimheatmapcells $preproc_pca_n_cells \
-	             --report_folder results \
+	             --report_folder `pwd`/results \
 	             --experiment_name $experiment_name \
 	             --resolution $preproc_resolution
 }
