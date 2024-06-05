@@ -9,8 +9,8 @@
 #' append_message
 #' Append experiments names with a Hello World message. Useful for testing :D
 #'
-#' @param name: expermient name
-#' @param message: message to append. Default: "Hello World"
+#' @param name expermient name
+#' @param message message to append. Default: "Hello World"
 #' 
 #' @keywords test
 #' 
@@ -24,10 +24,10 @@ append_message <- function(name, message = "Hello World") {paste(name, message)}
 #' read_input
 #' Read Cellranger input into Seurat
 #'
-#' @param name: sample name
-#' @param input: directory with the single-cell data
-#' @param mincells: min number of cells for which a feature is recorded
-#' @param minfeats: min number of features for which a cell is recorded
+#' @param name sample name
+#' @param input directory with the single-cell data
+#' @param mincells min number of cells for which a feature is recorded
+#' @param minfeats min number of features for which a cell is recorded
 #' 
 #' @keywords preprocessing, input
 #' 
@@ -51,12 +51,12 @@ read_input <- function(name, input, mincells, minfeats){
 #' do_qc
 #' Perform Quality Control
 #'
-#' @param name: sample name
-#' @param expermient: experiment name
-#' @param seu: Seurat object
-#' @param minqcfeats: Min number of features for which a cell is selected
-#' @param percentmt: Max percentage of reads mapped to mitochondrial genes for which a cell is selected
-#' @param save_before_seu: Whether to save Seurat object before QC
+#' @param name sample name
+#' @param expermient experiment name
+#' @param seu Seurat object
+#' @param minqcfeats Min number of features for which a cell is selected
+#' @param percentmt Max percentage of reads mapped to mitochondrial genes for which a cell is selected
+#' @param save_before_seu Whether to save Seurat object before QC
 #'
 #' @keywords preprocessing, qc
 #' 
@@ -93,10 +93,10 @@ do_qc <- function(seu, minqcfeats, percentmt){
 #' do_dimred
 #' Perform linear (PCA) and non-linear (UMAP/tSNE) dimensionality reduction
 #'
-#' @param seu: Seurat object
-#' @param ndims: Number of PC to be used for UMAP / tSNE
-#' @param dimreds: character vector with the dimensional reductions to perform. E.g. c("pca", "tsne", "umap")
-#' @param reduction: Dimensional reduction to use for UMAP /tSNE. "pca" if no integration, or "harmony" if integration
+#' @param seu Seurat object
+#' @param ndims Number of PC to be used for UMAP / tSNE
+#' @param dimreds character vector with the dimensional reductions to perform. E.g. c("pca", "tsne", "umap")
+#' @param reduction Dimensional reduction to use for UMAP /tSNE. "pca" if no integration, or "harmony" if integration
 #'
 #' @keywords preprocessing, dimensionality, reduction, PCA, UMAP, tSNE
 #' 
@@ -121,10 +121,10 @@ do_dimred <- function(seu, ndims, dimreds, reduction = "pca"){
 #' do_clustering
 #' Perform clustering of cells
 #'
-#' @param seu: Seurat object
-#' @param ndims: Number of PC to be used for clustering
-#' @param resolution: Granularity of the downstream clustering (higher values -> greater number of clusters)
-#' @param reduction: Dimensional reduction to use for clustering. "pca" if no integration, or "harmony" if integration
+#' @param seu Seurat object
+#' @param ndims Number of PC to be used for clustering
+#' @param resolution Granularity of the downstream clustering (higher values -> greater number of clusters)
+#' @param reduction Dimensional reduction to use for clustering. "pca" if no integration, or "harmony" if integration
 #' 
 #' @keywords preprocessing, clustering
 #' 
@@ -143,9 +143,9 @@ do_clustering <- function(seu, ndims, resolution, reduction){
 #' Perform marker gene selection
 #' TODO this function is harcoded - make proper variables
 #'
-#' @param seu: Seurat object
-#' @param name: sample name
-#' @param expermient: experiment name
+#' @param seu Seurat object
+#' @param name sample name
+#' @param expermient experiment name
 #' 
 #' @keywords preprocessing, marker, gene
 #' 
@@ -163,8 +163,8 @@ do_marker_gene_selection <- function(seu, out_path=NULL){
 #' do_subsetting
 #' Subset samples according to experimental condition
 #'
-#' @param exp_design: Experiment design table in TSV format
-#' @param column: Column with the condition used for subsetting
+#' @param exp_design Experiment design table in TSV format
+#' @param column Column with the condition used for subsetting
 #' 
 #' @keywords preprocessing, subsetting, integration
 #' 
@@ -182,9 +182,9 @@ do_subsetting <- function(exp_design, column){
 #' add_exp_design
 #' Add experimental condition to Seurat metadata
 #'
-#' @param seu: Seurat object
-#' @param name: Sample name
-#' @param exp_design: Experiment design table in CSV format
+#' @param seu Seurat object
+#' @param name Sample name
+#' @param exp_design Experiment design table in CSV format
 #' 
 #' @keywords preprocessing, subsetting, integration
 #' 
@@ -204,10 +204,10 @@ add_exp_design <- function(seu, name, exp_design){
 #' merge_condition
 #' Merge samples sharing an experimental condition
 #'
-#' @param exp_cond: Experimental condition
-#' @param samples: Vector of samples with that experimental condition
-#' @param exp_design: Experiment design table in CSV format
-#' @param count_path: Directory with count results
+#' @param exp_cond Experimental condition
+#' @param samples Vector of samples with that experimental condition
+#' @param exp_design Experiment design table in CSV format
+#' @param count_path Directory with count results
 #' 
 #' @keywords preprocessing, merging, integration
 #' 
@@ -270,11 +270,31 @@ get_sc_DEGs <- function(seu, cond) {
   return(markers)
 }
 
+#' subset_seurat
+#' `subset_seurat` allows subsetting a seurat object without requiring
+#' literal strings.
+#'
+#' @param seu Seurat object on which DEG analysis will be performed
+#' @param col Metadata column by which to subset
+#' @param value Condition to subset
+#' @returns A subsetted seurat object
+
+subset_seurat <- function(seu, col) {
+  subset_names <- unique(seu@meta.data[[col]])
+  expr <- FetchData(seu, vars = col)
+  subs_seu <- list()
+  subs_seu <- lapply(subset_names, function (name) {
+                                  subs_seu[[name]] <- seu[, which(expr == name)]
+    })
+  names(subs_seu) <- subset_names
+  return(subs_seu)
+}
+
 #' do_harmony
 #' Perform integration of a merged Seurat object with Harmony
 #'
-#' @param seu: Merged Seurat object
-#' @param exp_cond: Seurat metadata column with the sample names
+#' @param seu Merged Seurat object
+#' @param exp_cond Seurat metadata column with the sample names
 #' 
 #' @keywords preprocessing, integration
 #' 
@@ -292,7 +312,7 @@ do_harmony <- function(seu, exp_cond){
 #' Main preprocessing function that performs all the analyses (individually or combining all samples with and without integration)
 #'
 #' @param name sample name, or condition if integrate is TRUE
-#' @param expermient: experiment name
+#' @param expermient experiment name
 #' @param input directory with the single-cell data
 #' @param output output directory (used when integrate is TRUE)
 #' @param filter TRUE for using only detected cell-associated barcodes, FALSE for using all detected barcodes
@@ -334,6 +354,7 @@ main_preprocessing_analysis <- function(raw_seu, out_path = NULL, minqcfeats,
   }
   seu <- do_clustering(seu = seu, ndims = ndims, resolution = resolution,
                        reduction = embeddings_to_use)
+  seu <- JoinLayers(seu)
   markers <- do_marker_gene_selection(seu = seu, out_path = out_path)
   if(!is.null(clusters_annotation)) {
     seu <- annotate_clusters(seu = seu, anno_table = clusters_annotation)
@@ -349,16 +370,16 @@ main_preprocessing_analysis <- function(raw_seu, out_path = NULL, minqcfeats,
 #' write_preprocessing_report
 #' Write preprocessing HTML report
 #' 
-#' @param name: sample name
-#' @param expermient: experiment name
-#' @param template: Rmd template
-#' @param outdir: output directory
-#' @param intermediate_files: directory for saving intermediate files in case pandoc fails
-#' @param minqcfeats: min number of features for which a cell is selected
-#' @param percentmt: max percentage of reads mapped to mitochondrial genes for which a cell is selected
-#' @param hvgs: Number of HVGs to be selected
-#' @param resolution: Granularity of the downstream clustering (higher values -> greater number of clusters)
-#' @param all_seu: NULL if creating an individual report (daemon 3a). A list of 2 Seurat objects and a matrix of markers if creating a general report (daemon 3b)
+#' @param name sample name
+#' @param expermient experiment name
+#' @param template Rmd template
+#' @param outdir output directory
+#' @param intermediate_files directory for saving intermediate files in case pandoc fails
+#' @param minqcfeats min number of features for which a cell is selected
+#' @param percentmt max percentage of reads mapped to mitochondrial genes for which a cell is selected
+#' @param hvgs Number of HVGs to be selected
+#' @param resolution Granularity of the downstream clustering (higher values -> greater number of clusters)
+#' @param all_seu NULL if creating an individual report (daemon 3a). A list of 2 Seurat objects and a matrix of markers if creating a general report (daemon 3b)
 #' 
 #' @keywords preprocessing, write, report
 #' 
@@ -367,9 +388,12 @@ write_preprocessing_report <- function(all_seu = NULL, template, out_path,
                                        intermediate_files, minqcfeats,
                                        percentmt, hvgs, resolution,
                                        condition = NULL, markers_general = NULL,
-                                       markers_specific = NULL){
-  markers_general <- read.table(markers_general, header = FALSE, sep = "\t", stringsAsFactors = FALSE)
-  markers_specific <- read.table(markers_specific, header = FALSE, sep = "\t", stringsAsFactors = FALSE)
+                                       markers_specific = NULL,
+                                       sec_cond = NULL){
+  markers_general <- read.table(markers_general, header = FALSE, sep = "\t",
+                                stringsAsFactors = FALSE)
+  markers_specific <- read.table(markers_specific, header = FALSE, sep = "\t",
+                                stringsAsFactors = FALSE)
   int_files <- file.path(out_path, intermediate_files)
   if (!file.exists(int_files)) dir.create(int_files)
   if (is.null(all_seu)){
@@ -393,7 +417,7 @@ write_preprocessing_report <- function(all_seu = NULL, template, out_path,
 #' extract_metadata
 #' Extract metadata dataframe from Seurat objects
 #' 
-#' @param seu: Seurat object / list of Seurat objects
+#' @param seu Seurat object / list of Seurat objects
 #' 
 #' @keywords preprocessing, report, metadata
 #' 
@@ -413,8 +437,8 @@ return(seu)
 #' make_vln
 #' Make Violin plot
 #' 
-#' @param seu: Seurat object / list of Seurat objects
-#' @param feature: metadata feature to plot
+#' @param seu Seurat object / list of Seurat objects
+#' @param feature metadata feature to plot
 #' 
 #' @keywords preprocessing, report, plot, violin
 #' 
@@ -448,7 +472,7 @@ make_vln <- function(seu, feature){
 #' ensure_list
 #' Makes sure you have list of Seurat objects (even if you have only one)
 #' 
-#' @param seu: Seurat object / list of Seurat objects
+#' @param seu Seurat object / list of Seurat objects
 #' 
 #' @keywords preprocessing, report, list
 #' 
