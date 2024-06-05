@@ -217,20 +217,58 @@ merge_condition <- function(exp_cond, samples, exp_design, count_path, suffix=''
   seu.list <- sapply(samples, function(sample){
     sample_path <- grep(sample, full_paths, value = TRUE)
     d10x <- Read10X(sample_path)
-    colnames(d10x) <- paste(sapply(strsplit(colnames(d10x), split="-"), '[[', 1L), sample, sep="-") # Adds sample name at the end of cell names
-    seu <- CreateSeuratObject(counts = d10x, project = sample, min.cells = 1, min.features = 1, assay = "scRNAseq")
-    seu <- add_exp_design(seu = seu,
-                          name = sample,
-                          exp_design = exp_design)
+    # Add sample name at the end of cell names
+    colnames(d10x) <- paste(sapply(strsplit(colnames(d10x), split="-"),
+                                   '[[', 1L), sample, sep="-") 
+    seu <- CreateSeuratObject(counts = d10x, project = sample, min.cells = 1,
+                              min.features = 1, assay = "scRNAseq")
+    seu <- add_exp_design(seu = seu, name = sample, exp_design = exp_design)
+    seu[["percent.mt"]] <- PercentageFeatureSet(seu, pattern = "^MT-")
+    seu <- subset(seu, subset = nFeature_scRNAseq > 500 & nCount_scRNAseq > 1000
+                                & percent.mt < 20)
     return(seu)
     })
   merged_seu <- scCustomize::Merge_Seurat_List(list_seurat = seu.list, project = exp_cond)
   return(merged_seu)
 }
 
+#' annotate_clusters
+#' `annotate_clusters` renames seurat clusters according to dictionary
+#'
+#' @param seu Non-annotated seu with markers
+#' @param anno_table Path to file containing cluster annotation
+#' @returns Annotated seu object
 
-##########################################################################
+annotate_clusters <- function(seu, anno_table) {
+  new_clusters <- read.table(file = anno_table, sep = '\t', header = FALSE)[, 1]
+  names(new_clusters) <- levels(seu)
+  seu[['seurat_annotations']] <- new_clusters
+  Idents(seu) <- "seurat_annotations"
+  return(seu)
+}
 
+#' get_sc_DEGs
+#' `get_sc_DEGs` performs differential expression analysis on a seurat object.
+#'
+#' @param seu Seurat object on which DEG analysis will be performed
+#' @param cond A string. Condition by which to perform DEG analysis.
+#' @returns A data frame. Rows contain markers, and columns are p_value,
+#' average log2FC, pct.1 ? and pct.2 ?. Also adjusted p-value.
+
+get_sc_DEGs <- function(seu, cond) {
+  if(!cond %in% names(seu@meta.data)) {
+    stop("Specified condition does not exist in seurat object metadata.
+          DEG analysis impossible.")
+  }
+  Idents(seu) <- cond
+  conds <- unique(seu[[cond]][[1]])
+  if(length(cond) != 2) {
+    stop(paste0("Error: Two groups must be supplied for DEG analysis. Provided ",
+                length(cond)))
+  }
+  markers <- FindMarkers(seu, ident.1 = conds[1], ident.2 = conds[2])
+  return(markers)
+}
 
 #' do_harmony
 #' Perform integration of a merged Seurat object with Harmony
@@ -253,49 +291,55 @@ do_harmony <- function(seu, exp_cond){
 #' main_preprocessing_analysis
 #' Main preprocessing function that performs all the analyses (individually or combining all samples with and without integration)
 #'
-#' @param name: sample name, or condition if integrate is TRUE
+#' @param name sample name, or condition if integrate is TRUE
 #' @param expermient: experiment name
-#' @param input: directory with the single-cell data
-#' @param output: output directory (used when integrate is TRUE)
-#' @param filter: TRUE for using only detected cell-associated barcodes, FALSE for using all detected barcodes
-#' @param mincells: min number of cells for which a feature is recorded
-#' @param minfeats: min number of features for which a cell is recorded
-#' @param minqcfeats: min number of features for which a cell is selected
-#' @param percentmt: max percentage of reads mapped to mitochondrial genes for which a cell is selected
-#' @param normalmethod: Normalization method
-#' @param scalefactor: Scale factor for cell-level normalization
-#' @param hvgs: Number of HVGs to be selected
-#' @param ndims: Number of PC to be used for clustering / UMAP / tSNE
-#' @param resolution: Granularity of the downstream clustering (higher values -> greater number of clusters)
-#' @param integrate: FALSE if we don't run integrative analysis, TRUE otherwise
+#' @param input directory with the single-cell data
+#' @param output output directory (used when integrate is TRUE)
+#' @param filter TRUE for using only detected cell-associated barcodes, FALSE for using all detected barcodes
+#' @param mincells min number of cells for which a feature is recorded
+#' @param minfeats min number of features for which a cell is recorded
+#' @param minqcfeats min number of features for which a cell is selected
+#' @param percentmt max percentage of reads mapped to mitochondrial genes for which a cell is selected
+#' @param normalmethod Normalization method
+#' @param scalefactor Scale factor for cell-level normalization
+#' @param hvgs Number of HVGs to be selected
+#' @param ndims Number of PC to be used for clustering / UMAP / tSNE
+#' @param resolution Granularity of the downstream clustering (higher values -> greater number of clusters)
+#' @param integrate FALSE if we don't run integrative analysis, TRUE otherwise
+#' @param clusters_annotation Path to clusters annotation file.
 #'
 #' @keywords preprocessing, main
 #' 
 #' @return Seurat object
 main_preprocessing_analysis <- function(raw_seu, out_path = NULL, minqcfeats,
-                                        percentmt, normalmethod, scalefactor, hvgs, ndims, resolution, dimreds_to_do, embeddings_to_use,
-                                        integrate = FALSE){
+                                        percentmt, normalmethod, scalefactor,
+                                        hvgs, ndims, resolution, dimreds_to_do,
+                                        embeddings_to_use, integrate = FALSE,
+                                        clusters_annotation = NULL){
 
   raw_seu <- do_qc(seu = raw_seu, minqcfeats = minqcfeats, 
                    percentmt = percentmt)
   if (!is.null(out_path)) saveRDS(raw_seu, paste0(out_path, ".before.seu.RDS")) # Save before version
   seu <- subset(raw_seu, subset = QC != 'High_MT,Low_nFeature')
   seu <- NormalizeData(seu, normalization.method = normalmethod,
-                       scale.factor = scalefactor)
+                       scale.factor = scalefactor, verbose = FALSE)
   seu <- FindVariableFeatures(seu, nfeatures = hvgs)
   seu <- ScaleData(seu, features = rownames(seu))
   # dimreds_to_do: PCA/UMAP/tSNE
   seu <- do_dimred(seu = seu, ndims = ndims, dimreds = dimreds_to_do)   
-  if (integrate){ # Harmony integration and remaining dimreds 
+  if(integrate) { # Harmony integration and remaining dimreds 
     seu <- do_harmony(seu = seu, exp_cond = "code")
     seu <- do_dimred(seu = seu, ndims = ndims, dimreds = c("tsne", "umap"),
                      reduction = embeddings_to_use)
   }
   seu <- do_clustering(seu = seu, ndims = ndims, resolution = resolution,
-                       reduction = embeddings_to_use)                       
-  markers <- do_marker_gene_selection(seu = seu, out_path = out_path)  
+                       reduction = embeddings_to_use)
+  markers <- do_marker_gene_selection(seu = seu, out_path = out_path)
+  if(!is.null(clusters_annotation)) {
+    seu <- annotate_clusters(seu = seu, anno_table = clusters_annotation)
+  }
   if(!is.null(out_path)) saveRDS(seu, paste0(out_path, ".seu.RDS"))
-  return(list(seu, raw_seu, markers))
+  return(list(seu = seu, raw_seu = raw_seu, markers = markers))
 }
 
 
@@ -322,7 +366,10 @@ main_preprocessing_analysis <- function(raw_seu, out_path = NULL, minqcfeats,
 write_preprocessing_report <- function(all_seu = NULL, template, out_path,
                                        intermediate_files, minqcfeats,
                                        percentmt, hvgs, resolution,
-                                       condition = NULL){
+                                       condition = NULL, markers_general = NULL,
+                                       markers_specific = NULL){
+  markers_general <- read.table(markers_general, header = FALSE, sep = "\t", stringsAsFactors = FALSE)
+  markers_specific <- read.table(markers_specific, header = FALSE, sep = "\t", stringsAsFactors = FALSE)
   int_files <- file.path(out_path, intermediate_files)
   if (!file.exists(int_files)) dir.create(int_files)
   if (is.null(all_seu)){
