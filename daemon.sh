@@ -92,7 +92,7 @@ elif [ "$module" == "1c" ] ; then
     done < $SAMPLES_FILE
 
 elif [ "$module" == "2" ] ; then
-    # STAGE 2 SAMPLES COMPARISON
+    # STAGE 2 SEURAT ANALYSIS
     echo "Launching stage 2: Samples comparison"
     if [ $launch_login == TRUE ]; then  
         compare_samples.sh
