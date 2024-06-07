@@ -201,8 +201,9 @@ add_exp_design <- function(seu, name, exp_design){
 
 ##########################################################################
 
-#' merge_condition
-#' Merge samples sharing an experimental condition
+#' merge_seurat
+#' `merge_seurat` loads single-cell count matrices and creates a merged
+#' seurat object.
 #'
 #' @param exp_cond Experimental condition
 #' @param samples Vector of samples with that experimental condition
@@ -212,7 +213,8 @@ add_exp_design <- function(seu, name, exp_design){
 #' @keywords preprocessing, merging, integration
 #' 
 #' @return Merged Seurat object
-merge_condition <- function(exp_cond, samples, exp_design, count_path, suffix=''){
+merge_seurat <- function(project_name, samples, exp_design,
+                                 count_path, suffix=''){
   full_paths <- Sys.glob(paste(count_path, suffix, sep = "/"))
   seu.list <- sapply(samples, function(sample){
     sample_path <- grep(sample, full_paths, value = TRUE)
@@ -228,7 +230,8 @@ merge_condition <- function(exp_cond, samples, exp_design, count_path, suffix=''
                                 & percent.mt < 20)
     return(seu)
     })
-  merged_seu <- scCustomize::Merge_Seurat_List(list_seurat = seu.list, project = exp_cond)
+  merged_seu <- scCustomize::Merge_Seurat_List(list_seurat = seu.list,
+                                               project = project_name)
   return(merged_seu)
 }
 
@@ -308,38 +311,41 @@ do_harmony <- function(seu, exp_cond){
 ##########################################################################
 
 
-#' main_preprocessing_analysis
-#' Main preprocessing function that performs all the analyses (individually or combining all samples with and without integration)
+#' analyze_seurat
+#' `analyze_seurat` performs all the analyses (individually or combining all
+#' samples with and without integration)
 #'
 #' @param name sample name, or condition if integrate is TRUE
 #' @param expermient experiment name
 #' @param input directory with the single-cell data
 #' @param output output directory (used when integrate is TRUE)
-#' @param filter TRUE for using only detected cell-associated barcodes, FALSE for using all detected barcodes
+#' @param filter TRUE for using only detected cell-associated barcodes, FALSE
+#' for using all detected barcodes
 #' @param mincells min number of cells for which a feature is recorded
 #' @param minfeats min number of features for which a cell is recorded
 #' @param minqcfeats min number of features for which a cell is selected
-#' @param percentmt max percentage of reads mapped to mitochondrial genes for which a cell is selected
+#' @param percentmt max percentage of reads mapped to mitochondrial genes for 
+#' which a cell is selected
 #' @param normalmethod Normalization method
 #' @param scalefactor Scale factor for cell-level normalization
 #' @param hvgs Number of HVGs to be selected
 #' @param ndims Number of PC to be used for clustering / UMAP / tSNE
-#' @param resolution Granularity of the downstream clustering (higher values -> greater number of clusters)
+#' @param resolution Granularity of the downstream clustering (higher values 
+#' -> greater number of clusters)
 #' @param integrate FALSE if we don't run integrative analysis, TRUE otherwise
 #' @param clusters_annotation Path to clusters annotation file.
 #'
 #' @keywords preprocessing, main
 #' 
 #' @return Seurat object
-main_preprocessing_analysis <- function(raw_seu, out_path = NULL, minqcfeats,
-                                        percentmt, normalmethod, scalefactor,
-                                        hvgs, ndims, resolution, dimreds_to_do,
-                                        embeddings_to_use, integrate = FALSE,
-                                        clusters_annotation = NULL){
-
+analyze_seurat <- function(raw_seu, out_path = NULL, minqcfeats, percentmt,
+                           normalmethod, scalefactor, hvgs, ndims, resolution,
+                           dimreds_to_do, embeddings_to_use, integrate = FALSE,
+                           clusters_annotation = NULL){
   raw_seu <- do_qc(seu = raw_seu, minqcfeats = minqcfeats, 
                    percentmt = percentmt)
-  if (!is.null(out_path)) saveRDS(raw_seu, paste0(out_path, ".before.seu.RDS")) # Save before version
+  # Save before version
+  if (!is.null(out_path)) saveRDS(raw_seu, paste0(out_path, ".before.seu.RDS")) 
   seu <- subset(raw_seu, subset = QC != 'High_MT,Low_nFeature')
   seu <- NormalizeData(seu, normalization.method = normalmethod,
                        scale.factor = scalefactor, verbose = FALSE)
@@ -356,11 +362,23 @@ main_preprocessing_analysis <- function(raw_seu, out_path = NULL, minqcfeats,
                        reduction = embeddings_to_use)
   seu <- JoinLayers(seu)
   markers <- do_marker_gene_selection(seu = seu, out_path = out_path)
-  if(!is.null(clusters_annotation)) {
-    seu <- annotate_clusters(seu = seu, anno_table = clusters_annotation)
-  }
   if(!is.null(out_path)) saveRDS(seu, paste0(out_path, ".seu.RDS"))
   return(list(seu = seu, raw_seu = raw_seu, markers = markers))
+}
+
+#' integrate_seurat
+#' `integrate_seurat` subsets a seurat object and separately analyzes each
+#' condition.
+#'
+#' @param seu seurat object to analyze
+#' @param columns experimental design columns by which to integrate
+#' returns a list containing the result of each comparison
+
+integrate_seurat <- function(seu, column) {
+  values <- unique(column)
+  subset <- subset_seurat(seu, column)
+  all_subset <- analyze_seurat(subset)
+  return(all_subset)
 }
 
 
@@ -384,16 +402,9 @@ main_preprocessing_analysis <- function(raw_seu, out_path = NULL, minqcfeats,
 #' @keywords preprocessing, write, report
 #' 
 #' @return nothing
-write_preprocessing_report <- function(all_seu = NULL, template, out_path,
+write_seurat_report <- function(all_seu = NULL, template, out_path,
                                        intermediate_files, minqcfeats,
-                                       percentmt, hvgs, resolution,
-                                       condition = NULL, markers_general = NULL,
-                                       markers_specific = NULL,
-                                       sec_cond = NULL){
-  markers_general <- read.table(markers_general, header = FALSE, sep = "\t",
-                                stringsAsFactors = FALSE)
-  markers_specific <- read.table(markers_specific, header = FALSE, sep = "\t",
-                                stringsAsFactors = FALSE)
+                                       percentmt, hvgs, resolution){
   int_files <- file.path(out_path, intermediate_files)
   if (!file.exists(int_files)) dir.create(int_files)
   if (is.null(all_seu)){
@@ -408,6 +419,11 @@ write_preprocessing_report <- function(all_seu = NULL, template, out_path,
   rmarkdown::render(template, clean = TRUE, intermediates_dir = int_files,
                     output_file = paste0(out_path,
                                       "_preprocessing_report.html"))
+}
+
+write_integration_report <- function(seu, template, intermediate_files,
+                                     markers_general, markers_specific) {
+  return('placeholder')
 }
 
 
