@@ -64,23 +64,27 @@ Report of single-cell pre-processing using Seurat
 library(ggplot2)
 library(patchwork)
 library(kableExtra)
+library(Seurat)
+library(dplyr)
+library(gridExtra)
+library(RColorBrewer)
+library(scCustomize)
 ```
 
-```{r child="qc.Rmd", eval = TRUE}
+```{r qc child = "qc.Rmd", eval = TRUE}
 ```
 
-```{r child="feature_selection.Rmd", eval = TRUE}
+```{r feature_selection child = "feature_selection.Rmd", eval = TRUE}
 ```
 
-```{r child="clustering.Rmd", eval = TRUE}
+```{r clustering child = "clustering.Rmd", eval = TRUE}
 ```
 
-```{r child="dimensionality_reduction.Rmd", eval = TRUE}
+```{r dimensionality_reduction child = "dimensionality_reduction.Rmd", eval = TRUE}
 ```
 
-```{r child="marker_gene_selection.Rmd", eval = TRUE}
+```{r markers child = "marker_gene_selection.Rmd", eval = TRUE}
 ```
-
 ---
 
 <details>
