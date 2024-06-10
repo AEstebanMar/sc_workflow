@@ -245,7 +245,6 @@ merge_seurat <- function(project_name, samples, exp_design,
 
 annotate_clusters <- function(seu, anno_table) {
   new_clusters <- read.table(file = anno_table, sep = '\t', header = FALSE)[, 1]
-  names(new_clusters) <- levels(seu)
   seu[['seurat_annotations']] <- new_clusters
   Idents(seu) <- "seurat_annotations"
   return(seu)
@@ -282,6 +281,35 @@ get_sc_DEGs <- function(seu, cond) {
 #' @param col Metadata column by which to subset
 #' @param value Condition to subset
 #' @returns A subsetted seurat object
+
+subset_seurat <- function(seu, column, value) {
+  expr <- Seurat::FetchData(seu, vars = column)
+  subset <- seu[, which(expr == value)]
+  return(subset)
+}
+
+#' compare_subsets
+#' `compare_subsets` allows subsetting a seurat object without requiring
+#' literal strings.
+#'
+#' @param seu Merged eurat object
+#' @param annotation_dir Directory with cluster annotation files
+#' @param subset_column Column with categories to subset
+#' @param exp_design Loaded experimental design table
+#' @returns A subsetted seurat object
+
+compare_subsets <- function(seu, annotation_dir, subset_column, exp_design) {
+  values <- unique(exp_design[[subset_column]])
+  anno_tables <- Sys.glob(paste0(annotation_dir, "/*"))
+  res <- list()
+  for(value in unique(exp_design[[subset_column]])) {
+    annot <- grep(values[1], anno_tables, value = TRUE)
+    seu_subset <- subset_seurat(seu = merged_seu, column = subset_column, value = values[1])
+    seu_subset <- annotate_clusters(seu = subset, anno_table = annot)
+    res[[as.character(value)]] <- seu_subset
+  }
+  return(res)
+}
 
 subset_seurat <- function(seu, column, value) {
   expr <- Seurat::FetchData(seu, vars = column)
@@ -356,8 +384,8 @@ analyze_seurat <- function(raw_seu, out_path = NULL, minqcfeats, percentmt,
   }
   seu <- do_clustering(seu = seu, ndims = ndims, resolution = resolution,
                        reduction = embeddings_to_use)
-  seu <- SeuratObject::JoinLayers(seu)
-  markers <- do_marker_gene_selection(seu = seu, out_path = out_path)
+  markers <- SeuratObject::JoinLayers(seu)
+  markers <- do_marker_gene_selection(seu = markers, out_path = out_path)
   if(!is.null(out_path)) saveRDS(seu, paste0(out_path, ".seu.RDS"))
   return(list(seu = seu, raw_seu = raw_seu, markers = markers))
 }
@@ -376,7 +404,6 @@ integrate_seurat <- function(seu, column) {
   subsets <- analyze_seurat(subset)
   return(subsets)
 }
-
 
 ##########################################################################
 
@@ -417,9 +444,42 @@ write_seurat_report <- function(all_seu = NULL, template, out_path,
                                       "_preprocessing_report.html"))
 }
 
-write_integration_report <- function(seu, template, intermediate_files,
+#' write_integration_report
+#' Write integration HTML report
+#' 
+#' @param final_results list containing objects to be plotted
+#' @param output_dir directory where report will be saved
+#' @param name experiment name, will be used to build output file name
+#' @param template_folder directory where template is located
+#' @param source_folder htmlreportR source folder
+#''
+#' @keywords preprocessing, write, report
+#' 
+#' @return nothing
+write_integration_report <- function(merging_data, output_dir = getwd(), name = NULL,
+                                     template_folder, source_folder = "none",
                                      markers_general, markers_specific) {
-  return('placeholder')
+  if(is.null(template_folder)) {
+    stop("No template folder was provided.")
+  }
+  if(!file.exists(source_folder)) {
+    stop(paste0("Source folder not found. Was ", source_folder))
+  }
+  if(any(is.null(final_results))) {
+    stop("ERROR: final_results object contains NULL fields. Analysis
+       is not complete.")
+  }
+  template <- file.path(template_folder, "integration_template.txt")
+  tmp_folder <- "tmp_lib"
+  out_file <- file.path(output_dir, paste0(name, " integration_report.txt"))
+  container <- list(seu1 = final_results$seu1, seu2 = final_results$seu2,
+                    markers_general = final_results$markers_general,
+                    markers_specific = final_results$markers_specific)
+  plotter <- htmlReport$new(title_doc = paste0("Single-Cell ", name, " report"), 
+                            container = container, tmp_folder = tmp_folder,
+                            src = source_folder)
+  plotter$build(template)
+  plotter$write_report(out_file)
 }
 
 
