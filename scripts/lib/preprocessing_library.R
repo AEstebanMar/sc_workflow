@@ -218,7 +218,7 @@ merge_seurat <- function(project_name, samples, exp_design,
   full_paths <- Sys.glob(paste(count_path, suffix, sep = "/"))
   seu.list <- sapply(samples, function(sample){
     sample_path <- grep(sample, full_paths, value = TRUE)
-    d10x <- Read10X(sample_path)
+    d10x <- Seurat::Read10X(sample_path)
     # Add sample name at the end of cell names
     colnames(d10x) <- paste(sapply(strsplit(colnames(d10x), split="-"),
                                    '[[', 1L), sample, sep="-") 
@@ -231,6 +231,7 @@ merge_seurat <- function(project_name, samples, exp_design,
     return(seu)
     })
   merged_seu <- scCustomize::Merge_Seurat_List(list_seurat = seu.list,
+                                               add.cell.ids = samples,
                                                project = project_name)
   return(merged_seu)
 }
@@ -282,15 +283,10 @@ get_sc_DEGs <- function(seu, cond) {
 #' @param value Condition to subset
 #' @returns A subsetted seurat object
 
-subset_seurat <- function(seu, col) {
-  subset_names <- unique(seu@meta.data[[col]])
-  expr <- FetchData(seu, vars = col)
-  subs_seu <- list()
-  subs_seu <- lapply(subset_names, function (name) {
-                                  subs_seu[[name]] <- seu[, which(expr == name)]
-    })
-  names(subs_seu) <- subset_names
-  return(subs_seu)
+subset_seurat <- function(seu, column, value) {
+  expr <- Seurat::FetchData(seu, vars = column)
+  subset <- seu[, which(expr == value)]
+  return(subset)
 }
 
 #' do_harmony
@@ -347,10 +343,10 @@ analyze_seurat <- function(raw_seu, out_path = NULL, minqcfeats, percentmt,
   # Save before version
   if (!is.null(out_path)) saveRDS(raw_seu, paste0(out_path, ".before.seu.RDS")) 
   seu <- subset(raw_seu, subset = QC != 'High_MT,Low_nFeature')
-  seu <- NormalizeData(seu, normalization.method = normalmethod,
+  seu <- Seurat::NormalizeData(seu, normalization.method = normalmethod,
                        scale.factor = scalefactor, verbose = FALSE)
-  seu <- FindVariableFeatures(seu, nfeatures = hvgs)
-  seu <- ScaleData(seu, features = rownames(seu))
+  seu <- Seurat::FindVariableFeatures(seu, nfeatures = hvgs, verbose = FALSE)
+  seu <- Seurat::ScaleData(seu, features = rownames(seu))
   # dimreds_to_do: PCA/UMAP/tSNE
   seu <- do_dimred(seu = seu, ndims = ndims, dimreds = dimreds_to_do)   
   if(integrate) { # Harmony integration and remaining dimreds 
@@ -360,7 +356,7 @@ analyze_seurat <- function(raw_seu, out_path = NULL, minqcfeats, percentmt,
   }
   seu <- do_clustering(seu = seu, ndims = ndims, resolution = resolution,
                        reduction = embeddings_to_use)
-  seu <- JoinLayers(seu)
+  seu <- SeuratObject::JoinLayers(seu)
   markers <- do_marker_gene_selection(seu = seu, out_path = out_path)
   if(!is.null(out_path)) saveRDS(seu, paste0(out_path, ".seu.RDS"))
   return(list(seu = seu, raw_seu = raw_seu, markers = markers))
@@ -377,8 +373,8 @@ analyze_seurat <- function(raw_seu, out_path = NULL, minqcfeats, percentmt,
 integrate_seurat <- function(seu, column) {
   values <- unique(column)
   subset <- subset_seurat(seu, column)
-  all_subset <- analyze_seurat(subset)
-  return(all_subset)
+  subsets <- analyze_seurat(subset)
+  return(subsets)
 }
 
 
