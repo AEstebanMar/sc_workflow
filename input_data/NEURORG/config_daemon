@@ -61,4 +61,4 @@ export preproc_pca_n_dims=20                          #-------#    Number of PC 
 export preproc_resolution=0.5                         #-------#    Granularity of the clustering (higher values -> greater number of clusters)
 export preproc_pca_n_cells=500                        #-------#    Heatmap plots the 'extreme' cells on both ends of the spectrum -> dramatically speeds plotting for large datasets
 export int_columns=genotype,time                             #-------#    Integration condition
-export samples_to_integrate="SAMPLE_A,SAMPLE_H" # Comma-separated list of samples to integrate, will override subset_column. Leave as empty string ("") if not used.
+export samples_to_integrate="" # Comma-separated list of samples to integrate, will override subset_column. Leave as empty string ("") if not used.
