@@ -1,25 +1,3 @@
-# Sergio Alías, 20230606
-# Last modified 20231228
-
-##########################################################################
-########################## PRE-PROCESSING LIBRARY ########################
-##########################################################################
-
-
-#' append_message
-#' Append experiments names with a Hello World message. Useful for testing :D
-#'
-#' @param name expermient name
-#' @param message message to append. Default: "Hello World"
-#' 
-#' @keywords test
-#' 
-#' @return character vector
-append_message <- function(name, message = "Hello World") {paste(name, message)}
-
-
-##########################################################################
-
 
 #' read_input
 #' Read Cellranger input into Seurat
@@ -51,12 +29,9 @@ read_input <- function(name, input, mincells, minfeats){
 #' do_qc
 #' Perform Quality Control
 #'
-#' @param name sample name
-#' @param expermient experiment name
 #' @param seu Seurat object
 #' @param minqcfeats Min number of features for which a cell is selected
 #' @param percentmt Max percentage of reads mapped to mitochondrial genes for which a cell is selected
-#' @param save_before_seu Whether to save Seurat object before QC
 #'
 #' @keywords preprocessing, qc
 #' 
@@ -144,8 +119,8 @@ do_clustering <- function(seu, ndims, resolution, reduction){
 #' TODO this function is harcoded - make proper variables
 #'
 #' @param seu Seurat object
-#' @param name sample name
-#' @param expermient experiment name
+#' @param out_path path where output will be saved. If not specified, it will
+#' not be written to disk.
 #' 
 #' @keywords preprocessing, marker, gene
 #' 
@@ -155,26 +130,6 @@ do_marker_gene_selection <- function(seu, out_path=NULL){
   if(!is.null(out_path)){ saveRDS(markers, paste0(out_path, ".markers.RDS"))}
   return(markers)
 }
-
-
-##########################################################################
-
-
-#' do_subsetting
-#' Subset samples according to experimental condition
-#'
-#' @param exp_design Experiment design table in TSV format
-#' @param column Column with the condition used for subsetting
-#' 
-#' @keywords preprocessing, subsetting, integration
-#' 
-#' @return List of vectors with sample names
-do_subsetting <- function(exp_design, column){
-  exp_design <- read.csv(exp_design, sep = "\t")
-  subsets <- split(exp_design$code, exp_design[[column]])
-  return(subsets)
-}
-
 
 ##########################################################################
 
@@ -213,8 +168,8 @@ add_exp_design <- function(seu, name, exp_design){
 #' @keywords preprocessing, merging, integration
 #' 
 #' @return Merged Seurat object
-merge_seurat <- function(project_name, samples, exp_design,
-                                 count_path, suffix=''){
+merge_seurat <- function(project_name, samples, exp_design, count_path,
+                         suffix=''){
   full_paths <- Sys.glob(paste(count_path, suffix, sep = "/"))
   seu.list <- sapply(samples, function(sample){
     sample_path <- grep(sample, full_paths, value = TRUE)
@@ -296,41 +251,35 @@ subset_seurat <- function(seu, column, value) {
 #' @param annotation_dir Directory with cluster annotation files
 #' @param subset_column Column with categories to subset
 #' @param exp_design Loaded experimental design table
+#' @inheritParams analyze_seurat
+#'
 #' @returns A subsetted seurat object
 
-compare_subsets <- function(seu, annotation_dir, subset_column, exp_design) {
+compare_subsets <- function(seu, annotation_dir, subset_column, exp_design,
+                            ndims, resolution, embeddings_to_use, minqcfeats,
+                            percentmt, hvgs, scalefactor, normalmethod,
+                            integrate, dimreds_to_do) {
   values <- unique(exp_design[[subset_column]])
   anno_tables <- Sys.glob(paste0(annotation_dir, "/*"))
   res <- list()
   for(value in unique(exp_design[[subset_column]])) {
-    annot <- grep(values[1], anno_tables, value = TRUE)
-    seu_subset <- subset_seurat(seu = merged_seu, column = subset_column, value = values[1])
-    seu_subset <- annotate_clusters(seu = subset, anno_table = annot)
-    res[[as.character(value)]] <- seu_subset
+    annot <- grep(value, anno_tables, value = TRUE)
+    seu_subset <- subset_seurat(seu = seu, column = subset_column,
+                                value = value)
+    seu_subset <- analyze_seurat(raw_seu = seu_subset, minqcfeats = minqcfeats,
+                                 percentmt = percentmt, hvgs = hvgs,
+                                 scalefactor = scalefactor, ndims = ndims,
+                                 normalmethod = normalmethod, integrate = TRUE,
+                                 resolution = resolution,
+                                 dimreds_to_do = dimreds_to_do,
+                                 embeddings_to_use = embeddings_to_use)
+    seu_clusters <- annotate_clusters(seu = seu_subset$seu, anno_table = annot)
+    res[[as.character(value)]] <- list(seu = seu_clusters,
+                                       markers = seu_subset$markers)
   }
+  res$values <- names(res)
   return(res)
 }
-
-subset_seurat <- function(seu, column, value) {
-  expr <- Seurat::FetchData(seu, vars = column)
-  subset <- seu[, which(expr == value)]
-  return(subset)
-}
-
-#' do_harmony
-#' Perform integration of a merged Seurat object with Harmony
-#'
-#' @param seu Merged Seurat object
-#' @param exp_cond Seurat metadata column with the sample names
-#' 
-#' @keywords preprocessing, integration
-#' 
-#' @return Multi-sample integrated Seurat object with Harmony embeddings available
-do_harmony <- function(seu, exp_cond){
-  seu <- harmony::RunHarmony(seu, exp_cond)
-  return(seu)
-}
-
 
 ##########################################################################
 
@@ -357,20 +306,20 @@ do_harmony <- function(seu, exp_cond){
 #' @param resolution Granularity of the downstream clustering (higher values 
 #' -> greater number of clusters)
 #' @param integrate FALSE if we don't run integrative analysis, TRUE otherwise
-#' @param clusters_annotation Path to clusters annotation file.
 #'
 #' @keywords preprocessing, main
 #' 
 #' @return Seurat object
 analyze_seurat <- function(raw_seu, out_path = NULL, minqcfeats, percentmt,
                            normalmethod, scalefactor, hvgs, ndims, resolution,
-                           dimreds_to_do, embeddings_to_use, integrate = FALSE,
-                           clusters_annotation = NULL){
+                           dimreds_to_do, embeddings_to_use, integrate = FALSE){
   raw_seu <- do_qc(seu = raw_seu, minqcfeats = minqcfeats, 
                    percentmt = percentmt)
   # Save before version
-  if (!is.null(out_path)) saveRDS(raw_seu, paste0(out_path, ".before.seu.RDS")) 
-  seu <- subset(raw_seu, subset = QC != 'High_MT,Low_nFeature')
+  if (!is.null(out_path)) saveRDS(raw_seu, paste0(out_path, ".before.seu.RDS"))
+  # TEMPORARILY COMMENTED DUE TO MINIMAL EXAMPLE
+  # seu <- subset(raw_seu, subset = QC != 'High_MT,Low_nFeature')
+  seu <- raw_seu
   seu <- Seurat::NormalizeData(seu, normalization.method = normalmethod,
                        scale.factor = scalefactor, verbose = FALSE)
   seu <- Seurat::FindVariableFeatures(seu, nfeatures = hvgs, verbose = FALSE)
@@ -378,7 +327,7 @@ analyze_seurat <- function(raw_seu, out_path = NULL, minqcfeats, percentmt,
   # dimreds_to_do: PCA/UMAP/tSNE
   seu <- do_dimred(seu = seu, ndims = ndims, dimreds = dimreds_to_do)   
   if(integrate) { # Harmony integration and remaining dimreds 
-    seu <- do_harmony(seu = seu, exp_cond = "code")
+    seu <- harmony::RunHarmony(seu = seu, exp_cond = "code")
     seu <- do_dimred(seu = seu, ndims = ndims, dimreds = c("tsne", "umap"),
                      reduction = embeddings_to_use)
   }
@@ -390,26 +339,11 @@ analyze_seurat <- function(raw_seu, out_path = NULL, minqcfeats, percentmt,
   return(list(seu = seu, raw_seu = raw_seu, markers = markers))
 }
 
-#' integrate_seurat
-#' `integrate_seurat` subsets a seurat object and separately analyzes each
-#' condition.
-#'
-#' @param seu seurat object to analyze
-#' @param columns experimental design columns by which to integrate
-#' returns a list containing the result of each comparison
-
-integrate_seurat <- function(seu, column) {
-  values <- unique(column)
-  subset <- subset_seurat(seu, column)
-  subsets <- analyze_seurat(subset)
-  return(subsets)
-}
-
 ##########################################################################
 
 
-#' write_preprocessing_report
-#' Write preprocessing HTML report
+#' write_seurat_report
+#' Write seurat HTML report
 #' 
 #' @param name sample name
 #' @param expermient experiment name
@@ -426,8 +360,8 @@ integrate_seurat <- function(seu, column) {
 #' 
 #' @return nothing
 write_seurat_report <- function(all_seu = NULL, template, out_path,
-                                       intermediate_files, minqcfeats,
-                                       percentmt, hvgs, resolution){
+                                intermediate_files, minqcfeats,
+                                percentmt, hvgs, resolution){
   int_files <- file.path(out_path, intermediate_files)
   if (!file.exists(int_files)) dir.create(int_files)
   if (is.null(all_seu)){
@@ -447,7 +381,7 @@ write_seurat_report <- function(all_seu = NULL, template, out_path,
 #' write_integration_report
 #' Write integration HTML report
 #' 
-#' @param final_results list containing objects to be plotted
+#' @param comparison list containing objects to be plotted
 #' @param output_dir directory where report will be saved
 #' @param name experiment name, will be used to build output file name
 #' @param template_folder directory where template is located
@@ -456,30 +390,49 @@ write_seurat_report <- function(all_seu = NULL, template, out_path,
 #' @keywords preprocessing, write, report
 #' 
 #' @return nothing
-write_integration_report <- function(merging_data, output_dir = getwd(), name = NULL,
+write_integration_report <- function(comparison, output_dir = getwd(),
                                      template_folder, source_folder = "none",
-                                     markers_general, markers_specific) {
+                                     markers_general, markers_specific,
+                                     markers_canonical, sec_column,
+                                     name = NULL){
   if(is.null(template_folder)) {
     stop("No template folder was provided.")
   }
   if(!file.exists(source_folder)) {
     stop(paste0("Source folder not found. Was ", source_folder))
   }
-  if(any(is.null(final_results))) {
-    stop("ERROR: final_results object contains NULL fields. Analysis
+  if(any(is.null(comparison))) {
+    stop("ERROR: comparison object contains NULL fields. Analysis
        is not complete.")
   }
   template <- file.path(template_folder, "integration_template.txt")
   tmp_folder <- "tmp_lib"
-  out_file <- file.path(output_dir, paste0(name, " integration_report.txt"))
-  container <- list(seu1 = final_results$seu1, seu2 = final_results$seu2,
-                    markers_general = final_results$markers_general,
-                    markers_specific = final_results$markers_specific)
+  out_file <- file.path(output_dir, paste0(name, "_integration_report.html"))
+  container <- list(seu1 = comparison[[1]], seu2 = comparison[[2]],
+                    values = comparison$values, sec_column = sec_column,
+                    markers_general = markers_general,
+                    markers_specific = markers_specific,
+                    markers_canonical = markers_canonical)
   plotter <- htmlReport$new(title_doc = paste0("Single-Cell ", name, " report"), 
                             container = container, tmp_folder = tmp_folder,
                             src = source_folder)
   plotter$build(template)
   plotter$write_report(out_file)
+}
+
+#' format_markers
+#' `format_markers` formats a marker-celltype table into a list
+#' 
+#' @param markers_list Table containing celltypes and their markers
+#' 
+#' @return A list with one element per cell type
+read_and_format_markers <- function(path_to_markers) {
+  markers_df <- read.table(path_to_markers, sep = "\t", header = FALSE,
+                           stringsAsFactors = FALSE)
+  cell_types <- markers_df[, 1]
+  markers <- strsplit(markers_df[, 2], ",")
+  names(markers) <- cell_types
+  return(markers)
 }
 
 
