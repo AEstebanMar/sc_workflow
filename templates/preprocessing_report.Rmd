@@ -71,19 +71,19 @@ library(RColorBrewer)
 library(scCustomize)
 ```
 
-```{r qc child = "qc.Rmd", eval = TRUE}
+```{r qc, child = "qc.Rmd", eval = TRUE}
 ```
 
-```{r feature_selection child = "feature_selection.Rmd", eval = TRUE}
+```{r feature_selection, child = "feature_selection.Rmd", eval = TRUE}
 ```
 
-```{r clustering child = "clustering.Rmd", eval = TRUE}
+```{r clustering, child = "clustering.Rmd", eval = TRUE}
 ```
 
-```{r dimensionality_reduction child = "dimensionality_reduction.Rmd", eval = TRUE}
+```{r dimensionality_reduction, child = "dimensionality_reduction.Rmd", eval = TRUE}
 ```
 
-```{r markers child = "marker_gene_selection.Rmd", eval = TRUE}
+```{r markers, child = "marker_gene_selection.Rmd", eval = TRUE}
 ```
 ---
 
