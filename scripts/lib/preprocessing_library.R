@@ -1,31 +1,3 @@
-
-#' read_input
-#' Read Cellranger input into Seurat
-#'
-#' @param name sample name
-#' @param input directory with the single-cell data
-#' @param mincells min number of cells for which a feature is recorded
-#' @param minfeats min number of features for which a cell is recorded
-#' 
-#' @keywords preprocessing, input
-#' 
-#' @return Seurat object
-read_input <- function(name, input, mincells, minfeats){
-  mtx <- Read10X(input)
-  seu <- CreateSeuratObject(counts = mtx,
-                            project = name, 
-                            assay = "scRNAseq", 
-                            min.cells = mincells, 
-                            min.features = minfeats
-                            )
-  mtx <- NULL
-  return(seu)
-}
-
-
-##########################################################################
-
-
 #' do_qc
 #' Perform Quality Control
 #'
@@ -125,7 +97,7 @@ do_clustering <- function(seu, ndims, resolution, reduction){
 #' @keywords preprocessing, marker, gene
 #' 
 #' @return Nothing
-do_marker_gene_selection <- function(seu, out_path=NULL){
+do_marker_gene_selection <- function(seu, out_path = NULL){
   markers <- FindAllMarkers(seu, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
   if(!is.null(out_path)){ saveRDS(markers, paste0(out_path, ".markers.RDS"))}
   return(markers)
@@ -145,7 +117,6 @@ do_marker_gene_selection <- function(seu, out_path=NULL){
 #' 
 #' @return Seurat object with the experimental conditions added as metadata
 add_exp_design <- function(seu, name, exp_design){
-  exp_design <- read.csv(exp_design, sep = "\t")
   exp_design <- as.list(exp_design[exp_design$code == name,])
   for (i in names(exp_design)){
     seu@meta.data[[i]] <- c(rep(exp_design[[i]], nrow(seu@meta.data)))
@@ -174,9 +145,6 @@ merge_seurat <- function(project_name, samples, exp_design, count_path,
   seu.list <- sapply(samples, function(sample){
     sample_path <- grep(sample, full_paths, value = TRUE)
     d10x <- Seurat::Read10X(sample_path)
-    # Add sample name at the end of cell names
-    colnames(d10x) <- paste(sapply(strsplit(colnames(d10x), split="-"),
-                                   '[[', 1L), sample, sep="-") 
     seu <- CreateSeuratObject(counts = d10x, project = sample, min.cells = 1,
                               min.features = 1, assay = "scRNAseq")
     seu <- add_exp_design(seu = seu, name = sample, exp_design = exp_design)
@@ -185,9 +153,8 @@ merge_seurat <- function(project_name, samples, exp_design, count_path,
                                 & percent.mt < 20)
     return(seu)
     })
-  merged_seu <- scCustomize::Merge_Seurat_List(list_seurat = seu.list,
-                                               add.cell.ids = samples,
-                                               project = project_name)
+  merged_seu <- merge(seu.list[[1]], y = seu.list[-1], add.cell.ids = samples,
+                      project = project_name)
   return(merged_seu)
 }
 
@@ -317,22 +284,24 @@ analyze_seurat <- function(raw_seu, out_path = NULL, minqcfeats, percentmt,
                    percentmt = percentmt)
   # Save before version
   if (!is.null(out_path)) saveRDS(raw_seu, paste0(out_path, ".before.seu.RDS"))
-  # TEMPORARILY COMMENTED DUE TO MINIMAL EXAMPLE
-  # seu <- subset(raw_seu, subset = QC != 'High_MT,Low_nFeature')
+  seu <- subset(raw_seu, subset = QC != 'High_MT,Low_nFeature')
   seu <- raw_seu
-  seu <- Seurat::NormalizeData(seu, normalization.method = normalmethod,
-                       scale.factor = scalefactor, verbose = FALSE)
+  message('Finding variable features')
   seu <- Seurat::FindVariableFeatures(seu, nfeatures = hvgs, verbose = FALSE)
-  seu <- Seurat::ScaleData(seu, features = rownames(seu))
   # dimreds_to_do: PCA/UMAP/tSNE
+  message('Reducing dimensionality')
   seu <- do_dimred(seu = seu, ndims = ndims, dimreds = dimreds_to_do)   
   if(integrate) { # Harmony integration and remaining dimreds 
-    seu <- harmony::RunHarmony(seu = seu, exp_cond = "code")
+    message('Integration harmony and dimensionality reduction')
+    seu <- harmony::RunHarmony(object = seu, group.by.vars = "code",
+                                verbose = FALSE)
     seu <- do_dimred(seu = seu, ndims = ndims, dimreds = c("tsne", "umap"),
                      reduction = embeddings_to_use)
   }
+  message('Clustering')
   seu <- do_clustering(seu = seu, ndims = ndims, resolution = resolution,
                        reduction = embeddings_to_use)
+  message('Selecting markers')
   markers <- SeuratObject::JoinLayers(seu)
   markers <- do_marker_gene_selection(seu = markers, out_path = out_path)
   if(!is.null(out_path)) saveRDS(seu, paste0(out_path, ".seu.RDS"))
