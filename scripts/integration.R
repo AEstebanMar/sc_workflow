@@ -14,6 +14,9 @@ template_path <- file.path(root_path, "..", "templates")
 # Load custom libraries
 # devtools::load_all(file.path(root_path))
 
+library(future)
+options(future.globals.maxSize = 6000 * 1024^2)
+
 sc_source_folder <- file.path(root_path, 'lib')
 library(Seurat)
 library(scCustomize)
@@ -85,8 +88,6 @@ option_list <- list(
 
 opt <- optparse::parse_args(optparse::OptionParser(option_list = option_list))
 
-library(future)
-options(future.globals.maxSize = 6000 * 1024^2, future.seed = TRUE)
 plan("multicore", workers = opt$cpu)
 
 ##########################################
@@ -109,46 +110,55 @@ dimreds_to_do <- c("pca") # For dimensionality reduction
 embeddings_to_use <- "harmony"
 
 out_path = file.path(opt$report_folder, opt$experiment_name)
-# merged_seu <- merge_seurat(project = opt$project_name, samples = samples, exp_design = opt$exp_design,
-#                             suffix = opt$suffix, count_path = opt$count_path)
-# merged_seu <- NormalizeData(merged_seu, normalization.method = opt$normalmethod,
-#                        scale.factor = opt$scalefactor, verbose = FALSE)
-# merged_seu <- ScaleData(merged_seu, features = rownames(merged_seu), verbose = FALSE)
 
-# if(opt$save_raw) {
-#     saveRDS(seu, file = file.path(out_path, paste0(opt$experiment_name, ".before.seu.RDS")))
-#   }
+merged_seu <- merge_seurat(project = opt$project_name, samples = samples, exp_design = exp_design,
+                            suffix = opt$suffix, count_path = opt$count_path)
+message('Normalizing data')
+merged_seu <- NormalizeData(merged_seu, normalization.method = opt$normalmethod,
+                       scale.factor = opt$scalefactor, verbose = FALSE)
+message('Scaling data')
+merged_seu <- ScaleData(merged_seu, features = rownames(merged_seu), verbose = FALSE)
 
-# global_seu <- analyze_seurat(raw_seu = merged_seu, out_path = out_path, minqcfeats = opt$minqcfeats,
-#                              percentmt = opt$percentmt, normalmethod = opt$normalmethod,
-#                              scalefactor = opt$scalefactor, hvgs = opt$hvgs, ndims = opt$ndims,
-#                              resolution = opt$resolution, dimreds_to_do = dimreds_to_do,
-#                              embeddings_to_use = embeddings_to_use, integrate = TRUE)
+if(opt$save_raw) {
+    saveRDS(seu, file = file.path(out_path, paste0(opt$experiment_name, ".before.seu.RDS")))
+  }
 
-# write_seurat_report(all_seu = global_seu, percentmt = opt$percentmt, template = file.path(template_path,
-#                     "preprocessing_report.Rmd"), out_path = out_path, minqcfeats = opt$minqcfeats,
-#                     intermediate_files = "int_files", hvgs = opt$hvgs, resolution = opt$resolution)
+message('Analyzing full experiment')
 
-# integrated_seu <- global_seu$seu
+global_seu <- analyze_seurat(raw_seu = merged_seu, out_path = out_path, minqcfeats = opt$minqcfeats,
+                             percentmt = opt$percentmt, normalmethod = opt$normalmethod,
+                             scalefactor = opt$scalefactor, hvgs = opt$hvgs, ndims = opt$ndims,
+                             resolution = opt$resolution, dimreds_to_do = dimreds_to_do,
+                             embeddings_to_use = embeddings_to_use, integrate = TRUE)
 
-# saveRDS(integrated_seu, 'integrated_complete_seu.rds')
-integrated_seu <- readRDS('integrated_complete_seu.rds')
-# integrated_seu <- readRDS('integrated_seu.rds')
+message("--------------------------------------------")
+message("---------Writing global report---------")
+message("--------------------------------------------")
+
+write_seurat_report(all_seu = global_seu, percentmt = opt$percentmt, template = file.path(template_path,
+                    "preprocessing_report.Rmd"), out_path = out_path, minqcfeats = opt$minqcfeats,
+                    intermediate_files = "int_files", hvgs = opt$hvgs, resolution = opt$resolution)
 
 subset_columns <- strsplit(opt$int_columns, ",")[[1]]
 
+message('Starting integration analysis')
+
 for(column in subset_columns) {
+  message(paste0("Integrating variable \"", column, "\""))
   values <- unique(exp_design[[column]])
   sec_column <- subset_columns[subset_columns != column]
-  comparison <- compare_subsets(seu = integrated_seu, annotation_dir = opt$annotation_dir, subset_column = column,
+  comparison <- compare_subsets(seu = merged_seu, annotation_dir = opt$annotation_dir, subset_column = column,
                                 exp_design = exp_design, ndims = opt$ndims, resolution = opt$resolution,
                                 embeddings_to_use = embeddings_to_use, minqcfeats = opt$minqcfeats,
                                 percentmt = opt$percentmt, hvgs = opt$hvgs, scalefactor = opt$scalefactor,
                                 normalmethod = opt$normalmethod, integrate = TRUE, dimreds_to_do = dimreds_to_do)
-  # saveRDS(comparison, 'comparison.rds')
-  # comparison <- readRDS('comparison.rds')
+  saveRDS(comparison, "comparison.rds")
+  message("--------------------------------------------")
+  message("---------Writing integration report---------")
+  message("--------------------------------------------")
   write_integration_report(comparison = comparison, template_folder = template_path,
                            output_dir = opt$report_folder, source_folder = source_folder,
                            markers_general = markers_general, markers_specific = markers_specific,
                            markers_canonical = markers_canonical, name = column, sec_column = sec_column)
+  message(paste0("Report written in ", opt$report_folder))
 }
