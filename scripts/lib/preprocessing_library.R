@@ -23,7 +23,7 @@ do_qc <- function(seu, minqcfeats, percentmt){
   
   ##### Filtering out cells #####
 
-  # seu[['QC']] <- ifelse(seu@meta.data$Is_doublet == 'True','Doublet','Pass')
+  seu[['QC']] <- ifelse(seu@meta.data$Is_doublet == 'True','Doublet','Pass')
   seu[['QC']] <- ifelse(TRUE,'Pass','This should not happen') # provisional until I code the dublet detection stuff (see previous line)
   seu[['QC']] <- ifelse(seu@meta.data$nFeature_scRNAseq < minqcfeats & seu@meta.data$QC == 'Pass','Low_nFeature',seu@meta.data$QC)
   seu[['QC']] <- ifelse(seu@meta.data$nFeature_scRNAseq < minqcfeats & seu@meta.data$QC != 'Pass' & seu@meta.data$QC != 'Low_nFeature',paste('Low_nFeature',seu@meta.data$QC,sep = ','),seu@meta.data$QC)
@@ -146,10 +146,10 @@ merge_seurat <- function(project_name, samples, exp_design, count_path,
     sample_path <- grep(sample, full_paths, value = TRUE)
     d10x <- Seurat::Read10X(sample_path)
     seu <- CreateSeuratObject(counts = d10x, project = sample, min.cells = 1,
-                              min.features = 1, assay = "scRNAseq")
+                              min.features = 1)
     seu <- add_exp_design(seu = seu, name = sample, exp_design = exp_design)
     seu[["percent.mt"]] <- PercentageFeatureSet(seu, pattern = "^MT-")
-    seu <- subset(seu, subset = nFeature_scRNAseq > 500 & nCount_scRNAseq > 1000
+    seu <- subset(seu, subset = nFeature_RNA > 500 & nCount_RNA > 1000
                                 & percent.mt < 20)
     return(seu)
     })
@@ -167,8 +167,8 @@ merge_seurat <- function(project_name, samples, exp_design, count_path,
 
 annotate_clusters <- function(seu, anno_table) {
   new_clusters <- read.table(file = anno_table, sep = '\t', header = FALSE)[, 1]
-  seu[['seurat_annotations']] <- new_clusters
-  Idents(seu) <- "seurat_annotations"
+  names(new_clusters) <- levels(seu)
+  seu <- RenameIdents(seu, new_clusters)
   return(seu)
 }
 
@@ -224,8 +224,7 @@ subset_seurat <- function(seu, column, value) {
 
 compare_subsets <- function(seu, annotation_dir, subset_column, exp_design,
                             ndims, resolution, embeddings_to_use, minqcfeats,
-                            percentmt, hvgs, scalefactor, normalmethod,
-                            integrate, dimreds_to_do) {
+                            percentmt, hvgs, scalefactor, normalmethod) {
   values <- unique(exp_design[[subset_column]])
   anno_tables <- Sys.glob(paste0(annotation_dir, "/*"))
   res <- list()
@@ -233,16 +232,28 @@ compare_subsets <- function(seu, annotation_dir, subset_column, exp_design,
     annot <- grep(value, anno_tables, value = TRUE)
     seu_subset <- subset_seurat(seu = seu, column = subset_column,
                                 value = value)
-    seu_subset <- analyze_seurat(raw_seu = seu_subset, minqcfeats = minqcfeats,
-                                 percentmt = percentmt, hvgs = hvgs,
-                                 scalefactor = scalefactor, ndims = ndims,
-                                 normalmethod = normalmethod, integrate = TRUE,
-                                 resolution = resolution,
-                                 dimreds_to_do = dimreds_to_do,
-                                 embeddings_to_use = embeddings_to_use)
-    seu_clusters <- annotate_clusters(seu = seu_subset$seu, anno_table = annot)
+    do_qc(seu = seu_subset, minqcfeats = minqcfeats, 
+          percentmt = percentmt)
+    seu_subset <- subset(seu_subset, subset = QC != 'High_MT,Low_nFeature')
+    seu_subset <- Seurat::NormalizeData(seu_subset)
+    seu_subset <- Seurat::FindVariableFeatures(seu_subset, nfeatures = hvgs,
+                                               selection.method = "vst",)
+    seu_subset <- Seurat::ScaleData(seu_subset)
+    seu_subset <- Seurat::RunPCA(seu_subset)
+    seu_subset <- harmony::RunHarmony(seu_subset, "code",
+                                      plot_convergence = FALSE)
+    seu_subset <- Seurat::RunUMAP(seu_subset, dims = seq(1, ndims),
+                          reduction = "harmony")
+    seu_subset <- Seurat::FindNeighbors(seu_subset, dims = seq(1, ndims),
+                          reduction = "harmony")
+    seu_subset <- Seurat::FindClusters(seu_subset, resolution = 0.6)
+    seu_clusters <- annotate_clusters(seu = seu_subset, anno_table = annot)
+    seu_markers <- SeuratObject::JoinLayers(seu_clusters)
+    subset_markers <- Seurat::FindAllMarkers(seu_markers, only.pos = TRUE,
+                                             min.pct = 0.25, logfc.threshold = 0.25)
+    
     res[[as.character(value)]] <- list(seu = seu_clusters,
-                                       markers = seu_subset$markers)
+                                       markers = subset_markers)
   }
   res$values <- names(res)
   return(res)
@@ -282,8 +293,6 @@ analyze_seurat <- function(raw_seu, out_path = NULL, minqcfeats, percentmt,
                            dimreds_to_do, embeddings_to_use, integrate = FALSE){
   raw_seu <- do_qc(seu = raw_seu, minqcfeats = minqcfeats, 
                    percentmt = percentmt)
-  # Save before version
-  if (!is.null(out_path)) saveRDS(raw_seu, paste0(out_path, ".before.seu.RDS"))
   seu <- subset(raw_seu, subset = QC != 'High_MT,Low_nFeature')
   seu <- raw_seu
   message('Finding variable features')
