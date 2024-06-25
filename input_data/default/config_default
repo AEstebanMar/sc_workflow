@@ -1,0 +1,53 @@
+
+# config_daemon
+
+################################### 
+## GLOBAL VARS ##
+################################### 
+
+
+######  EXPERIMENT VARIABLES #######
+
+export experiment_name=DEFAULT    #    Experiment name
+export exp_data_folder=$CODE_PATH"/input_data/"$experiment_name  #    Project data folder
+export SAMPLES_FILE=$exp_data_folder"/samples_to_process.lst"    #    List of sample names. Must match files in input_data (e.g, for sample_A_1.fastq.gz, sample_A_2.fastq.gz and sample_B.fastq.gz, samples are sample_A and sample_B)
+export read_path=$exp_data_folder"/raw_data"                     #    Input file location
+export exp_design=$exp_data_folder"/experiment_design.tbl"       #    Experiment design
+export annotation_dir=$exp_data_folder/clusters_annotation 		 #	  Cluster annotation files location
+export markers_dir=$exp_data_folder/markers # Marker files location
+
+
+######  EXECUTION VARIABLES #######
+
+export RESOURCES="-c 10 -t '2-00:00:00' -m '30gb'"                          # Global AutoFlow resources 
+export launch_login=FALSE                                                   # TRUE: use batch execution. FALSE: send to slurm.
+export experiment_folder=$FSCRATCH"/NGS_projects/"$experiment_name                 # Execution directory
+export FULL_RESULTS=$experiment_folder"/full_results"                       # Count execution path
+export INTEGRATE_RESULTS_FOLDER=$experiment_folder"/integrate_results"      #-------#    Integration execution path
+export LAB_SCRIPTS="/mnt/home/soft/soft_bio_267/programs/x86_64/scripts"    #-------#    Folder with the lab scripts in Picasso (bio_267)
+export transcriptome=$CODE_PATH"/references/refdata-gex-GRCh38-2020-A"    #-------#    Transcriptome for reference (MOUSE -> mm10, HUMAN -> GRCh38)
+
+
+######  REPORT VARIABLES #######
+
+export REPORT_TEMPLATES_FOLDER=$CODE_PATH'/templates'    #-------#    Report templates path
+export report_folder=$experiment_folder'/reports'        #-------#    Report output path
+
+
+##################################
+###### EXECUTION VARIABLES #######
+##################################
+
+export preproc_filter=TRUE                            #-------#    TRUE for using only detected cell-associated barcodes, FALSE for using all detected barcodes
+export preproc_init_min_cells=1                       #-------#    Min number of cells for which a feature is recorded. Used when creating the Seurat object (recommended 3 for raw data)
+export preproc_init_min_feats=1                       #-------#    Min number of features for which a cell is recorded. Used when creating the Seurat object (recommended 200 for raw data)
+export preproc_qc_min_feats=500                       #-------#    Min number of features for which a cell is selected. Used when applying QC filters
+export preproc_max_percent_mt=5                       #-------#    Max percentage of reads mapped to mitochondrial genes for which a cell is selected
+export preproc_norm_method=LogNormalize               #-------#    Seurat normalization method: LogNormalize, CLR, RC
+export preproc_scale_factor=10000                     #-------#    Seurat scale factor for cell-level normalization
+export preproc_select_hvgs=2000                       #-------#    Number of HVG to be selected (feature selection)
+export preproc_pca_n_dims=10                          #-------#    Number of PC to use for clustering / UMAP / tSNE
+export preproc_resolution=0.5                         #-------#    Granularity of the clustering (higher values -> greater number of clusters)
+export preproc_pca_n_cells=500                        #-------#    Heatmap plots the 'extreme' cells on both ends of the spectrum -> dramatically speeds plotting for large datasets
+export samples_to_integrate="" # Comma-separated list of samples to integrate. If empty ("") whole experiment will
+be analysed.
