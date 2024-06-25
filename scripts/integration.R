@@ -12,7 +12,7 @@ main_path_script <- dirname(full.fpath)
 root_path <- file.path(main_path_script)
 template_path <- file.path(root_path, "..", "templates")
 # Load custom libraries
-# devtools::load_all(file.path(root_path))
+devtools::load_all(file.path(root_path))
 
 library(future)
 options(future.globals.maxSize = 6000 * 1024^2)
@@ -145,13 +145,12 @@ message('Starting integration analysis')
 
 for(column in subset_columns) {
   message(paste0("Integrating variable \"", column, "\""))
-  values <- unique(exp_design[[column]])
   sec_column <- subset_columns[subset_columns != column]
   comparison <- compare_subsets(seu = merged_seu, annotation_dir = opt$annotation_dir, subset_column = column,
                                 exp_design = exp_design, ndims = opt$ndims, resolution = opt$resolution,
                                 embeddings_to_use = embeddings_to_use, minqcfeats = opt$minqcfeats,
                                 percentmt = opt$percentmt, hvgs = opt$hvgs, scalefactor = opt$scalefactor,
-                                normalmethod = opt$normalmethod, integrate = TRUE, dimreds_to_do = dimreds_to_do)
+                                normalmethod = opt$normalmethod)
   saveRDS(comparison, "comparison.rds")
   message("--------------------------------------------")
   message("---------Writing integration report---------")
