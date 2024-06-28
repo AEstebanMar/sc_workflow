@@ -1,0 +1,167 @@
+
+<!--begin.rcode setup
+    library(Seurat)
+    library(dplyr)
+    library(gridExtra)
+    library(RColorBrewer)
+    library(ggplot2)
+    library(scCustomize)
+
+    colGEX <- c("grey85", "#FEE5D9", "#FCBBA1", "#FC9272", "#FB6A4A", "#EF3B2C", "#CB181D", "#99000D")
+    versus <- paste0(plotter$hash_vars$values[[1]], " vs ", plotter$hash_vars$values[[2]])
+    sec_column <- plotter$hash_vars$sec_column
+    plotter$hash_vars$markers_1 <- plotter$hash_vars$seu1$markers
+    plotter$hash_vars$markers_2 <- plotter$hash_vars$seu2$markers
+    target_genes <- unlist(plotter$hash_vars$target_genes)
+    
+    Custom_DotPlot <- function(seu) {
+        scCustomize::DotPlot_scCustom(seu$seu, features, flip_axes = TRUE,
+                                      colors_use = colGEX)
+    }
+
+    Custom_DimPlot <- function(seu) {
+        Seurat::DimPlot(seu$seu, reduction = reduction, label = TRUE, repel = TRUE, split.by = split.by,
+                        group.by = group.by) +
+        ggplot2::theme(legend.position="none")
+    }
+
+    top_table <- function(df) {
+        res <- df[order(df$avg_log2FC, decreasing = TRUE), ][1:10, ]
+        return(res)
+    }
+
+    subset_table <- function(df) {
+        res <- df[target_genes, ][complete.cases(df[target_genes, ]), ]
+        return(res)
+    }
+
+    Top_vlnplot <- function(seu) {
+        scCustomize::Stacked_VlnPlot(seu$seu,
+                        ncol = 1, pt.size = 0, x_lab_rotate = 90,
+                        features = seu$markers[target_genes, ][complete.cases(seu$markers[target_genes, ]), ]$gene)
+    }
+
+    Canon_vlnplot <- function(seu) {
+        scCustomize::Stacked_VlnPlot(seu$seu,
+                        ncol = 1, pt.size = 0, x_lab_rotate = 90,
+                        features = slice_max(seu$markers, n = 10,
+                                    order_by = avg_log2FC)$gene)
+    }
+
+    Custom_ftplot <- function(seu) {
+        FeaturePlot_scCustom(seu$seu, reduction = "umap", pt.size = 0.1, num_columns = 3,
+                  features = seu$markers[target_genes, ][complete.cases(seu$markers[target_genes, ]), ]$gene, order = TRUE) +
+        theme_classic(base_size = 18) + scale_color_gradientn(colors = colGEX) + coord_fixed()
+    }
+    
+end.rcode-->
+
+<!--begin.rcode title
+cat(paste0("<h1><strong>Single-Cell RNASeq Integration analysis: ", versus))
+end.rcode-->
+</strong></h1>
+
+<h1>Quick note: left is mutant, right is WT</h2>
+
+<h1><strong>Markers distribution</strong></h1>
+
+<!--begin.rcode annotation
+    for (element_name in names(plotter$hash_vars$target_genes)) {
+      ## features debería modificarse si el gen es NA en alguno de los campos
+      ## de los metadatos del objeto seurat, si es que optamos por esa vía
+      features <- plotter$hash_vars$target_genes[[element_name]]
+      cat(paste("<p>Target genes:", element_name, versus, "</p>", sep = " "))
+      cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+      print(features)
+      cat(plotter$static_plot_main("seu1", custom_format = TRUE, plotting_function = Custom_DotPlot, height = 6, width = 6))
+      cat(plotter$static_plot_main("seu2", custom_format = TRUE, plotting_function = Custom_DotPlot, height = 6, width = 6))
+      cat("</div>")
+    }
+end.rcode-->
+
+<h1><strong>Dimensionality reduction</strong></h1>
+<h1><strong>UMAP</strong></h1>
+
+<!--begin.rcode umap_integration, fig.height = 12, fig.width = 12
+    reduction <- "umap"
+    cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+    group.by <- split.by <- NULL
+    cat(plotter$static_plot_main("seu1", custom_format = TRUE, plotting_function = Custom_DimPlot))
+    cat(plotter$static_plot_main("seu2", custom_format = TRUE, plotting_function = Custom_DimPlot))
+    cat("</div>")
+end.rcode-->
+<!--begin.rcode umap_splits, fig.height = 12, fig.width = 12, eval = !is.null(sec_column)
+    cat(paste0("<h1>Split by ", sec_column, "</h1>"))
+    split.by <- sec_column
+    cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+    cat(plotter$static_plot_main("seu1", custom_format = TRUE, plotting_function = Custom_DimPlot))
+    cat(plotter$static_plot_main("seu2", custom_format = TRUE, plotting_function = Custom_DimPlot))
+    cat("</div>")
+end.rcode-->
+<!--begin.rcode umap_groups, eval = !is.null(sec_column)
+    cat(paste0("<h1>Grouped by ", sec_column, "</h1>"))
+    split.by <- NULL
+    group.by <- sec_column
+    cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+    cat(plotter$static_plot_main("seu1", custom_format = TRUE, plotting_function = Custom_DimPlot))
+    cat(plotter$static_plot_main("seu2", custom_format = TRUE, plotting_function = Custom_DimPlot))
+    cat("</div>")
+end.rcode-->
+<h1><strong>PCA</strong></h1>
+<!--begin.rcode pca_integration, fig.height = 12, fig.width = 12
+    reduction <- "pca"
+    cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+    group.by <- split.by <- NULL
+    cat(plotter$static_plot_main("seu1", custom_format = TRUE, plotting_function = Custom_DimPlot))
+    cat(plotter$static_plot_main("seu2", custom_format = TRUE, plotting_function = Custom_DimPlot))
+    cat("</div>")
+end.rcode-->
+<!--begin.rcode pca_splits, fig.height = 12, fig.width = 12, eval = !is.null(sec_column)
+    cat(paste0("<h1>Split by ", sec_column, "</h1>"))
+    split.by <- sec_column
+    cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+    cat(plotter$static_plot_main("seu1", custom_format = TRUE, plotting_function = Custom_DimPlot))
+    cat(plotter$static_plot_main("seu2", custom_format = TRUE, plotting_function = Custom_DimPlot))
+    cat("</div>")
+end.rcode-->
+<!--begin.rcode pca_groups, eval = !is.null(sec_column)
+    cat(paste0("<h1>Grouped by ", sec_column, "</h1>"))
+    split.by <- NULL
+    group.by <- sec_column
+    cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+    cat(plotter$static_plot_main("seu1", custom_format = TRUE, plotting_function = Custom_DimPlot))
+    cat(plotter$static_plot_main("seu2", custom_format = TRUE, plotting_function = Custom_DimPlot))
+    cat("</div>")
+end.rcode-->
+
+<h1><strong>Top 10 markers</strong></h1>
+
+<!--begin.rcode top_markers
+    cat(plotter$table("markers_1", header = NULL, row_names = NULL, table_rownames = FALSE,
+        styled = "dt", func = top_table))
+    cat(plotter$table("markers_2", header = NULL, row_names = NULL, table_rownames = FALSE,
+        styled = "dt", func = top_table))
+end.rcode-->
+</h1>
+
+<h1><strong>Target gene presence</strong></h1>
+<!--begin.rcode Target_gene_presence
+    cat(paste0("<h1>Canonical marker presence: ", versus, "</h1>"))
+    cat(plotter$table("markers_1", header = NULL, row_names = NULL, table_rownames = FALSE,
+        styled = "dt", func = subset_table))
+    cat(plotter$table("markers_2", header = NULL, row_names = NULL, table_rownames = FALSE,
+        styled = "dt", func = subset_table))
+end.rcode-->
+</h1>
+
+<h1><strong>Target gene expression</strong></h1>
+<!--begin.rcode Target_gene_expression
+cat(plotter$static_plot_main("seu1", custom_format = TRUE, plotting_function = Top_vlnplot))
+cat(plotter$static_plot_main("seu2", custom_format = TRUE, plotting_function = Top_vlnplot))
+end.rcode-->
+
+<h1><strong>Target gene expression patterns</strong></h1>
+<!--begin.rcode Target_patterns
+cat(plotter$static_plot_main("seu1", custom_format = TRUE, plotting_function = Custom_ftplot))
+cat(plotter$static_plot_main("seu2", custom_format = TRUE, plotting_function = Custom_ftplot))
+end.rcode-->
