@@ -4,7 +4,7 @@
 # STAGE 2 SAMPLES COMPARISON
 
 #SBATCH -J compare_samples.sh
-#SBATCH --cpus-per-task=48
+#SBATCH --cpus-per-task=12
 #SBATCH --mem='1000gb'
 #SBATCH --constraint=cal
 #SBATCH --time=0-23:00:00
@@ -31,24 +31,6 @@ create_metric_table.rb $experiment_folder'/cellranger_metrics' sample $experimen
                                                    --cellranger_metrics $experiment_folder'/cellranger_metric_table' \
                                                    --cellranger_long_metrics $experiment_folder'/cellranger_metrics'
 
-/usr/bin/time general_report.R --input $SAMPLES_FILE \
-                               --output $report_folder \
-                               --filter $preproc_filter \
-                               --mincells $preproc_init_min_cells \
-                               --minfeats $preproc_init_min_feats \
-                               --minqcfeats $preproc_qc_min_feats \
-                               --percentmt $preproc_max_percent_mt \
-                               --normalmethod $preproc_norm_method \
-                               --scalefactor $preproc_scale_factor \
-                               --hvgs $preproc_select_hvgs \
-                               --ndims $preproc_pca_n_dims \
-                               --dimheatmapcells $preproc_pca_n_cells \
-                               --experiment_name $experiment_name \
-                               --results_folder $FULL_RESULTS"/*/preprocessing.R_0000/*" \
-                               --resolution $preproc_resolution \
-                               --int_sec_cond $int_sec_cond
-
-
 mkdir -p $FULL_RESULTS/$experiment_name
 integration.R --output $FULL_RESULTS/$experiment_name \
               --project_name $experiment_name \
@@ -71,7 +53,5 @@ integration.R --output $FULL_RESULTS/$experiment_name \
               --suffix "outs/filtered_feature_bc_matrix" \
               --samples_to_integrate "$samples_to_integrate" \
               --annotation_dir $annotation_dir \
-              --markers_general $markers_dir/markers-general \
-              --markers_specific $markers_dir/markers-specific \
-              --markers_canonical $markers_dir/markers-canonical \
+              --target_genes $exp_data_folder/markers \
               --cpu $SLURM_CPUS_PER_TASK
