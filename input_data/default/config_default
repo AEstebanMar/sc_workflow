@@ -15,6 +15,7 @@ export read_path=$exp_data_folder"/raw_data"                     #    Input file
 export exp_design=$exp_data_folder"/experiment_design.tbl"       #    Experiment design
 export annotation_dir=$exp_data_folder/clusters_annotation 		 #	  Cluster annotation files location
 export markers_dir=$exp_data_folder/markers # Marker files location
+export imported_counts=""	# Imported counts directory containing cellranger output files. If not empty, daemon 2 will load these files instead of output of daemon 1.
 
 
 ######  EXECUTION VARIABLES #######
