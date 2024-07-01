@@ -24,12 +24,17 @@ cat $FULL_RESULTS/*/cellranger_metrics > $experiment_folder'/cellranger_metrics'
 create_metric_table.rb $experiment_folder'/metrics' sample $experiment_folder'/metric_table'
 create_metric_table.rb $experiment_folder'/cellranger_metrics' sample $experiment_folder'/cellranger_metric_table'
 
-/usr/bin/time $CODE_PATH/scripts/compare_samples.R -o $report_folder \
-                                                   -m $experiment_folder'/metric_table' \
-                                                   -l $experiment_folder'/metrics' \
-                                                   -e $experiment_name \
-                                                   --cellranger_metrics $experiment_folder'/cellranger_metric_table' \
-                                                   --cellranger_long_metrics $experiment_folder'/cellranger_metrics'
+if [ $imported_counts != "" ]; then
+
+    /usr/bin/time $CODE_PATH/scripts/compare_samples.R -o $report_folder \
+                                                       -m $experiment_folder'/metric_table' \
+                                                       -l $experiment_folder'/metrics' \
+                                                       -e $experiment_name \
+                                                       --cellranger_metrics $experiment_folder'/cellranger_metric_table' \
+                                                       --cellranger_long_metrics $experiment_folder'/cellranger_metrics'
+
+fi
+
 
 mkdir -p $FULL_RESULTS/$experiment_name
 integration.R --output $FULL_RESULTS/$experiment_name \
@@ -54,4 +59,5 @@ integration.R --output $FULL_RESULTS/$experiment_name \
               --samples_to_integrate "$samples_to_integrate" \
               --annotation_dir $annotation_dir \
               --target_genes $exp_data_folder/markers \
-              --cpu $SLURM_CPUS_PER_TASK
+              --cpu $SLURM_CPUS_PER_TASK \
+              --imported_counts $imported_counts
