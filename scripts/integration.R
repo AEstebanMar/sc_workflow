@@ -85,7 +85,7 @@ option_list <- list(
             help = "Provided CPUs"),
   optparse::make_option("--cpus", type = "double", default = 1,
             help = "Provided CPUs"),
-  optparse::make_option("--imported_counts", type = "double", default = 1,
+  optparse::make_option("--int_columns", type = "double", default = 1,
             help = "Imported counts directory")
 )  
 
