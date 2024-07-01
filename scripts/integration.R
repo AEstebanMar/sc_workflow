@@ -11,8 +11,8 @@ full.fpath <- normalizePath(unlist(strsplit(commandArgs()[grep('^--file=',
 main_path_script <- dirname(full.fpath)
 root_path <- file.path(main_path_script)
 template_path <- file.path(root_path, "..", "templates")
+
 # Load custom libraries
-devtools::load_all(file.path(root_path))
 
 library(future)
 options(future.globals.maxSize = 6000 * 1024^2)
@@ -76,12 +76,8 @@ option_list <- list(
             help = "Save seurat object before analysis."),
   optparse::make_option("--annotation_dir", type = "character", default = NULL,
             help = "Path to directory containing cluster annotation files."),
-  optparse::make_option("--markers_general", type = "character", default = NULL,
-            help = "Path to generic cell type-marker table."),
-  optparse::make_option("--markers_specific", type = "character", default = NULL,
-            help = "Path to more specific cell type-marker table."),
-    optparse::make_option("--markers_canonical", type = "character", default = NULL,
-            help = "Path to canonical cell type-marker list."),
+  optparse::make_option("--target_genes", type = "character", default = NULL,
+            help = "Path to target genes table."),
   optparse::make_option("--cpus", type = "double", default = 1,
             help = "Provided CPUs")
 )  
@@ -94,10 +90,9 @@ plan("multicore", workers = opt$cpu)
 ## MAIN
 ##########################################
 
-markers_general <- read_and_format_markers(opt$markers_general)
-markers_specific <- read_and_format_markers(opt$markers_specific)
-markers_canonical <- read.table(opt$markers_canonical)[[1]]
+target_genes <- read_and_format_markers(opt$target_genes)
 exp_design <- read.table(opt$exp_design, sep = "\t", header = TRUE)
+subset_columns <- strsplit(opt$int_columns, ",")[[1]]
 
 # Input reading and integration variables setup
 if(opt$samples_to_integrate == "") {
@@ -126,8 +121,7 @@ if(opt$save_raw) {
 message('Analyzing full experiment')
 
 global_seu <- analyze_seurat(raw_seu = merged_seu, out_path = out_path, minqcfeats = opt$minqcfeats,
-                             percentmt = opt$percentmt, normalmethod = opt$normalmethod,
-                             scalefactor = opt$scalefactor, hvgs = opt$hvgs, ndims = opt$ndims,
+                             percentmt = opt$percentmt, hvgs = opt$hvgs, ndims = opt$ndims,
                              resolution = opt$resolution, dimreds_to_do = dimreds_to_do,
                              embeddings_to_use = embeddings_to_use, integrate = TRUE)
 
@@ -139,25 +133,26 @@ write_seurat_report(all_seu = global_seu, percentmt = opt$percentmt, template = 
                     "preprocessing_report.Rmd"), out_path = out_path, minqcfeats = opt$minqcfeats,
                     intermediate_files = "int_files", hvgs = opt$hvgs, resolution = opt$resolution)
 
-subset_columns <- strsplit(opt$int_columns, ",")[[1]]
-
 message('Starting integration analysis')
 
 for(column in subset_columns) {
   message(paste0("Integrating variable \"", column, "\""))
   sec_column <- subset_columns[subset_columns != column]
+  if(length(sec_column) == 0) {
+    sec_column <- NULL
+  }
+  # comparison <- readRDS('comparison.rds')
   comparison <- compare_subsets(seu = merged_seu, annotation_dir = opt$annotation_dir, subset_column = column,
                                 exp_design = exp_design, ndims = opt$ndims, resolution = opt$resolution,
                                 embeddings_to_use = embeddings_to_use, minqcfeats = opt$minqcfeats,
                                 percentmt = opt$percentmt, hvgs = opt$hvgs, scalefactor = opt$scalefactor,
                                 normalmethod = opt$normalmethod)
-  saveRDS(comparison, "comparison.rds")
   message("--------------------------------------------")
   message("---------Writing integration report---------")
   message("--------------------------------------------")
   write_integration_report(comparison = comparison, template_folder = template_path,
                            output_dir = opt$report_folder, source_folder = source_folder,
-                           markers_general = markers_general, markers_specific = markers_specific,
-                           markers_canonical = markers_canonical, name = column, sec_column = sec_column)
+                           target_genes = target_genes, name = column, int_column = column,
+                           sec_column = sec_column)
   message(paste0("Report written in ", opt$report_folder))
 }
