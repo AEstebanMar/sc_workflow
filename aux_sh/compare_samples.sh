@@ -60,4 +60,4 @@ integration.R --output $FULL_RESULTS/$experiment_name \
               --annotation_dir $annotation_dir \
               --target_genes $exp_data_folder/markers \
               --cpu $SLURM_CPUS_PER_TASK \
-              --imported_counts $imported_counts
+              --int_columns $int_columns
