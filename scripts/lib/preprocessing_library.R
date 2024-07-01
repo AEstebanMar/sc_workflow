@@ -1,3 +1,21 @@
+
+
+#' read_sc_counts
+#' Create seurat object from cellranger counts
+#'
+#' @param name sample name
+#' @param input path to cellranger counts
+#' @param mincells min number of cells for which a feature is recorded
+#' @param minfeats min number of features for which a cell is recorded
+#' 
+#' @return Seurat object
+read_input <- function(name, input, mincells, minfeats){
+  mtx <- Read10X(input)
+  seu <- CreateSeuratObject(counts = mtx, project = name, min.cells = mincells, 
+                            min.features = minfeats)
+  return(seu)
+}
+
 #' do_qc
 #' Perform Quality Control
 #'
@@ -25,10 +43,10 @@ do_qc <- function(seu, minqcfeats, percentmt){
 
   seu[['QC']] <- ifelse(seu@meta.data$Is_doublet == 'True','Doublet','Pass')
   seu[['QC']] <- ifelse(TRUE,'Pass','This should not happen') # provisional until I code the dublet detection stuff (see previous line)
-  seu[['QC']] <- ifelse(seu@meta.data$nFeature_scRNAseq < minqcfeats & seu@meta.data$QC == 'Pass','Low_nFeature',seu@meta.data$QC)
-  seu[['QC']] <- ifelse(seu@meta.data$nFeature_scRNAseq < minqcfeats & seu@meta.data$QC != 'Pass' & seu@meta.data$QC != 'Low_nFeature',paste('Low_nFeature',seu@meta.data$QC,sep = ','),seu@meta.data$QC)
+  seu[['QC']] <- ifelse(seu@meta.data$nFeature_RNA < minqcfeats & seu@meta.data$QC == 'Pass','Low_nFeature',seu@meta.data$QC)
+  seu[['QC']] <- ifelse(seu@meta.data$nFeature_RNA < minqcfeats & seu@meta.data$QC != 'Pass' & seu@meta.data$QC != 'Low_nFeature',paste('Low_nFeature',seu@meta.data$QC,sep = ','),seu@meta.data$QC)
   seu[['QC']] <- ifelse(seu@meta.data$percent.mt > percentmt & seu@meta.data$QC == 'Pass','High_MT',seu@meta.data$QC)
-  seu[['QC']] <- ifelse(seu@meta.data$nFeature_scRNAseq < minqcfeats & seu@meta.data$QC != 'Pass' & seu@meta.data$QC != 'High_MT',paste('High_MT',seu@meta.data$QC,sep = ','),seu@meta.data$QC)
+  seu[['QC']] <- ifelse(seu@meta.data$nFeature_RNA < minqcfeats & seu@meta.data$QC != 'Pass' & seu@meta.data$QC != 'High_MT',paste('High_MT',seu@meta.data$QC,sep = ','),seu@meta.data$QC)
 
   return(seu)
 }
@@ -187,7 +205,7 @@ get_sc_DEGs <- function(seu, cond) {
   }
   Idents(seu) <- cond
   conds <- unique(seu[[cond]][[1]])
-  if(length(cond) != 2) {
+  if(length(conds) != 2) {
     stop(paste0("Error: Two groups must be supplied for DEG analysis. Provided ",
                 length(cond)))
   }
@@ -232,7 +250,7 @@ compare_subsets <- function(seu, annotation_dir, subset_column, exp_design,
     annot <- grep(value, anno_tables, value = TRUE)
     seu_subset <- subset_seurat(seu = seu, column = subset_column,
                                 value = value)
-    do_qc(seu = seu_subset, minqcfeats = minqcfeats, 
+    seu_subset <- do_qc(seu = seu_subset, minqcfeats = minqcfeats, 
           percentmt = percentmt)
     seu_subset <- subset(seu_subset, subset = QC != 'High_MT,Low_nFeature')
     seu_subset <- Seurat::NormalizeData(seu_subset)
@@ -247,20 +265,19 @@ compare_subsets <- function(seu, annotation_dir, subset_column, exp_design,
     seu_subset <- Seurat::FindNeighbors(seu_subset, dims = seq(1, ndims),
                           reduction = "harmony")
     seu_subset <- Seurat::FindClusters(seu_subset, resolution = 0.6)
+
     seu_clusters <- annotate_clusters(seu = seu_subset, anno_table = annot)
-    seu_markers <- SeuratObject::JoinLayers(seu_clusters)
+    subset_DEGs <- get_sc_DEGs(seu = seu_clusters, cond = subset_column)
+    subset_markers <- SeuratObject::JoinLayers(seu_clusters)
     subset_markers <- Seurat::FindAllMarkers(seu_markers, only.pos = TRUE,
                                              min.pct = 0.25, logfc.threshold = 0.25)
-    
     res[[as.character(value)]] <- list(seu = seu_clusters,
-                                       markers = subset_markers)
+                                       markers = subset_markers,
+                                       DEGs = subset_markers)
   }
   res$values <- names(res)
   return(res)
 }
-
-##########################################################################
-
 
 #' analyze_seurat
 #' `analyze_seurat` performs all the analyses (individually or combining all
@@ -289,8 +306,8 @@ compare_subsets <- function(seu, annotation_dir, subset_column, exp_design,
 #' 
 #' @return Seurat object
 analyze_seurat <- function(raw_seu, out_path = NULL, minqcfeats, percentmt,
-                           normalmethod, scalefactor, hvgs, ndims, resolution,
-                           dimreds_to_do, embeddings_to_use, integrate = FALSE){
+                           hvgs, ndims, resolution, dimreds_to_do,
+                           embeddings_to_use, integrate = FALSE){
   raw_seu <- do_qc(seu = raw_seu, minqcfeats = minqcfeats, 
                    percentmt = percentmt)
   seu <- subset(raw_seu, subset = QC != 'High_MT,Low_nFeature')
@@ -370,8 +387,7 @@ write_seurat_report <- function(all_seu = NULL, template, out_path,
 #' @return nothing
 write_integration_report <- function(comparison, output_dir = getwd(),
                                      template_folder, source_folder = "none",
-                                     markers_general, markers_specific,
-                                     markers_canonical, sec_column,
+                                     target_genes, sec_column, int_column,
                                      name = NULL){
   if(is.null(template_folder)) {
     stop("No template folder was provided.")
@@ -388,9 +404,7 @@ write_integration_report <- function(comparison, output_dir = getwd(),
   out_file <- file.path(output_dir, paste0(name, "_integration_report.html"))
   container <- list(seu1 = comparison[[1]], seu2 = comparison[[2]],
                     values = comparison$values, sec_column = sec_column,
-                    markers_general = markers_general,
-                    markers_specific = markers_specific,
-                    markers_canonical = markers_canonical)
+                    int_column, target_genes = target_genes)
   plotter <- htmlReport$new(title_doc = paste0("Single-Cell ", name, " report"), 
                             container = container, tmp_folder = tmp_folder,
                             src = source_folder)
