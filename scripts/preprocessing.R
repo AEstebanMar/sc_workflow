@@ -73,34 +73,28 @@ out_path = file.path(opt$report_folder, paste0(opt$experiment_name, '.', opt$nam
 
 # Input reading and integration variables setup
 
-input <- file.path(opt$input, ifelse(opt$filter, 
-    "filtered_feature_bc_matrix", "raw_feature_bc_matrix"))
-seu <- read_input(name = opt$name, 
-                  input = input,
-                  mincells = opt$mincells,
+input <- file.path(opt$input, ifelse(opt$filter, "filtered_feature_bc_matrix",
+                                                 "raw_feature_bc_matrix"))
+
+seu <- read_input(name = opt$name,  input = input, mincells = opt$mincells,
                   minfeats = opt$minfeats)
+seu <- NormalizeData(seu, normalization.method = opt$normalmethod,
+                       scale.factor = opt$scalefactor, verbose = FALSE)
+seu <- ScaleData(seu, features = rownames(seu), verbose = FALSE)
 dimreds_to_do <- c("pca", "tsne", "umap") # For dimensionality reduction
 embeddings_to_use <- "pca"
 
-all_seu <- main_preprocessing_analysis(raw_seu = seu,
-                            out_path = out_path,
-                            minqcfeats = opt$minqcfeats,
-                            percentmt = opt$percentmt,
-                            normalmethod = opt$normalmethod,
-                            scalefactor = opt$scalefactor,
-                            hvgs = opt$hvgs,
-                            ndims = opt$ndims,
-                            resolution = opt$resolution,
-                            dimreds_to_do = dimreds_to_do,
-                            embeddings_to_use = embeddings_to_use,
-                            integrate = as.logical(opt$integrate))
+all_seu <- analyze_seurat(raw_seu = seu, out_path = out_path, hvgs = opt$hvgs,
+                          minqcfeats = opt$minqcfeats, ndims = opt$ndims,
+                          percentmt = opt$percentmt,
+                          resolution = opt$resolution,
+                          dimreds_to_do = dimreds_to_do,
+                          embeddings_to_use = embeddings_to_use,
+                          integrate = opt$integrate)
 
-write_preprocessing_report(all_seu = all_seu,
-                           template = file.path(template_path,
-                                                "preprocessing_report.Rmd"),
-                           out_path = out_path,
-                           intermediate_files = "int_files",
-                           minqcfeats = opt$minqcfeats,
-                           percentmt = opt$percentmt,
-                           hvgs = opt$hvgs,
-                           resolution = opt$resolution)
+write_seurat_report(all_seu = all_seu, minqcfeats = opt$minqcfeats,
+                    template = file.path(template_path,
+                                         "preprocessing_report.Rmd"),
+                    out_path = out_path, resolution = opt$resolution,
+                    intermediate_files = "int_files",
+                    percentmt = opt$percentmt, hvgs = opt$hvgs)
