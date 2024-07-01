@@ -9,21 +9,16 @@
 
     colGEX <- c("grey85", "#FEE5D9", "#FCBBA1", "#FC9272", "#FB6A4A", "#EF3B2C", "#CB181D", "#99000D")
     versus <- paste0(plotter$hash_vars$values[[1]], " vs ", plotter$hash_vars$values[[2]])
-    int_column <- plotter$hash_vars$int_column
-    sec_column <- plotter$hash_vars$sec_column
-    plotter$hash_vars$markers_1 <- plotter$hash_vars$seu1$markers
-    plotter$hash_vars$markers_2 <- plotter$hash_vars$seu2$markers
-    plotter$hash_vars$DEGs_1 <- plotter$hash_vars$seu1$DEGs
-    plotter$hash_vars$DEGs_2 <- plotter$hash_vars$seu2$DEGs
+    int_columns <- plotter$hash_vars$int_columns
     target_genes <- unlist(plotter$hash_vars$target_genes)
     
     Custom_DotPlot <- function(seu) {
-        scCustomize::DotPlot_scCustom(seu$seu, features, flip_axes = TRUE,
+        scCustomize::DotPlot_scCustom(seu, features, flip_axes = TRUE,
                                       colors_use = colGEX)
     }
 
     Custom_DimPlot <- function(seu) {
-        Seurat::DimPlot(seu$seu, reduction = reduction, label = TRUE, repel = TRUE, split.by = split.by,
+        Seurat::DimPlot(seu, reduction = reduction, label = TRUE, repel = TRUE, split.by = split.by,
                         group.by = group.by) +
         ggplot2::theme(legend.position="none")
     }
@@ -39,20 +34,20 @@
     }
 
     Top_vlnplot <- function(seu) {
-        scCustomize::Stacked_VlnPlot(seu$seu,
+        scCustomize::Stacked_VlnPlot(seu,
                         ncol = 1, pt.size = 0, x_lab_rotate = 90,
                         features = seu$markers[target_genes, ][complete.cases(seu$markers[target_genes, ]), ]$gene)
     }
 
     Canon_vlnplot <- function(seu) {
-        scCustomize::Stacked_VlnPlot(seu$seu,
+        scCustomize::Stacked_VlnPlot(seu,
                         ncol = 1, pt.size = 0, x_lab_rotate = 90,
                         features = slice_max(seu$markers, n = 10,
                                     order_by = avg_log2FC)$gene)
     }
 
     Custom_ftplot <- function(seu) {
-        FeaturePlot_scCustom(seu$seu, reduction = "umap", pt.size = 0.1, num_columns = 3,
+        FeaturePlot_scCustom(seu, reduction = "umap", pt.size = 0.1, num_columns = 3,
                   features = seu$markers[target_genes, ][complete.cases(seu$markers[target_genes, ]), ]$gene, order = TRUE) +
         theme_classic(base_size = 18) + scale_color_gradientn(colors = colGEX) + coord_fixed()
     }
@@ -80,8 +75,6 @@ end.rcode-->
 
 <!--begin.rcode annotation
     for (element_name in names(plotter$hash_vars$target_genes)) {
-      ## features debería modificarse si el gen es NA en alguno de los campos
-      ## de los metadatos del objeto seurat, si es que optamos por esa vía
       features <- plotter$hash_vars$target_genes[[element_name]]
       cat(paste("<p>Target genes:", element_name, versus, "</p>", sep = " "))
       cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
@@ -99,98 +92,95 @@ end.rcode-->
     reduction <- "umap"
     cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
     group.by <- split.by <- NULL
-    cat(plotter$static_plot_main("seu1", custom_format = TRUE, plotting_function = Custom_DimPlot))
-    cat(plotter$static_plot_main("seu2", custom_format = TRUE, plotting_function = Custom_DimPlot))
+    cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DimPlot))
     cat("</div>")
 end.rcode-->
 <!--begin.rcode umap_splits, fig.height = 12, fig.width = 12, eval = !is.null(sec_column)
-    # Need to update this once comparison has been overhauled, should be a loop that groups
-    # and another that splits by integration columns (read from exp_design optimally, for
-    # now specified in config)
-    cat(paste0("<h1>Split by ", sec_column, "</h1>"))
-    split.by <- sec_column
-    cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-    cat(plotter$static_plot_main("seu1", custom_format = TRUE, plotting_function = Custom_DimPlot))
-    cat(plotter$static_plot_main("seu2", custom_format = TRUE, plotting_function = Custom_DimPlot))
-    cat("</div>")
+    for(condition in int_columns) {
+        cat(paste0("<h1>Split by ", condition, "</h1>"))
+        split.by <- condition
+        cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+        cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DimPlot))
+        cat("</div>")
+    }
 end.rcode-->
+
 <!--begin.rcode umap_groups, eval = !is.null(sec_column)
-    cat(paste0("<h1>Grouped by ", sec_column, "</h1>"))
-    split.by <- NULL
-    group.by <- sec_column
-    cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-    cat(plotter$static_plot_main("seu1", custom_format = TRUE, plotting_function = Custom_DimPlot))
-    cat(plotter$static_plot_main("seu2", custom_format = TRUE, plotting_function = Custom_DimPlot))
-    cat("</div>")
+    for(condition in int_columns) {
+        cat(paste0("<h1>Grouped by ", condition, "</h1>"))
+        split.by <- NULL
+        group.by <- condition
+        cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+        cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DimPlot))
+        cat("</div>")
+    }
 end.rcode-->
+
 <h1><strong>PCA</strong></h1>
 <!--begin.rcode pca_integration, fig.height = 12, fig.width = 12
     reduction <- "pca"
     cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
     group.by <- split.by <- NULL
-    cat(plotter$static_plot_main("seu1", custom_format = TRUE, plotting_function = Custom_DimPlot))
-    cat(plotter$static_plot_main("seu2", custom_format = TRUE, plotting_function = Custom_DimPlot))
+    cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DimPlot))
     cat("</div>")
 end.rcode-->
+
 <!--begin.rcode pca_splits, fig.height = 12, fig.width = 12, eval = !is.null(sec_column)
-    cat(paste0("<h1>Split by ", sec_column, "</h1>"))
-    split.by <- sec_column
-    cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-    cat(plotter$static_plot_main("seu1", custom_format = TRUE, plotting_function = Custom_DimPlot))
-    cat(plotter$static_plot_main("seu2", custom_format = TRUE, plotting_function = Custom_DimPlot))
-    cat("</div>")
+    for(condition in int_columns) {
+        cat(paste0("<h1>Split by ", condition, "</h1>"))
+        split.by <- condition
+        cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+        cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DimPlot))
+        cat("</div>")
+    }
 end.rcode-->
+
 <!--begin.rcode pca_groups, eval = !is.null(sec_column)
-    cat(paste0("<h1>Grouped by ", sec_column, "</h1>"))
-    split.by <- NULL
-    group.by <- sec_column
-    cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-    cat(plotter$static_plot_main("seu1", custom_format = TRUE, plotting_function = Custom_DimPlot))
-    cat(plotter$static_plot_main("seu2", custom_format = TRUE, plotting_function = Custom_DimPlot))
-    cat("</div>")
+    for(condition in int_columns) {
+        cat(paste0("<h1>Grouped by ", condition, "</h1>"))
+        split.by <- NULL
+        group.by <- condition
+        cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+        cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DimPlot))
+        cat("</div>")
+    }
 end.rcode-->
 
 <h1><strong>Top 10 markers</strong></h1>
 
 <!--begin.rcode top_markers
-    cat(plotter$table("markers_1", header = NULL, row_names = NULL, table_rownames = FALSE,
-        styled = "dt", func = top_table))
-    cat(plotter$table("markers_2", header = NULL, row_names = NULL, table_rownames = FALSE,
+    cat(plotter$table("markers", header = NULL, row_names = NULL, table_rownames = FALSE,
         styled = "dt", func = top_table))
 end.rcode-->
 </h1>
 
 <h1><strong>Target gene presence</strong></h1>
+
 <!--begin.rcode Target_gene_presence
     cat(paste0("<h1>Canonical marker presence: ", versus, "</h1>"))
-    cat(plotter$table("markers_1", header = NULL, row_names = NULL, table_rownames = FALSE,
-        styled = "dt", func = subset_table))
-    cat(plotter$table("markers_2", header = NULL, row_names = NULL, table_rownames = FALSE,
+    cat(plotter$table("markers", header = NULL, row_names = NULL, table_rownames = FALSE,
         styled = "dt", func = subset_table))
 end.rcode-->
 </h1>
 
 <h1><strong>Target gene expression</strong></h1>
+
 <!--begin.rcode Target_gene_expression
-cat(plotter$static_plot_main("seu1", custom_format = TRUE, plotting_function = Top_vlnplot))
-cat(plotter$static_plot_main("seu2", custom_format = TRUE, plotting_function = Top_vlnplot))
+cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Top_vlnplot))
 end.rcode-->
 
 <h1><strong>Target gene expression patterns</strong></h1>
+
 <!--begin.rcode Target_patterns
-cat(plotter$static_plot_main("seu1", custom_format = TRUE, plotting_function = Custom_ftplot))
-cat(plotter$static_plot_main("seu2", custom_format = TRUE, plotting_function = Custom_ftplot))
+cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_ftplot))
 end.rcode-->
 
 <h1><strong<DEGenes analysis</strong><h1>
 
-<!--begin.rcode DEG_volcanoes
-for(i in seq(1, length(plotter$hash_vars$DEGs_1))) {
-    cat(plotter$static_plot_main("DEGs_1", custom_format = TRUE, plotting_function = DEGs_volcano))
-}
+<!--begin.rcode DEG_volcanoes, eval = !is.null(plotter$hash_vars$DEGs)
 
-for(i in seq(1, length(plotter$hash_vars$DEGs_2))) {
-    cat(plotter$static_plot_main("DEGs_2", custom_format = TRUE, plotting_function = DEGs_volcano))
+for(i in seq(1, length(plotter$hash_vars$DEGs_1))) {
+    cat(plotter$static_plot_main("DEGs", custom_format = TRUE, plotting_function = DEGs_volcano))
 }
 
 end.rcode-->
