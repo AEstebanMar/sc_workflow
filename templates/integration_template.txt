@@ -9,9 +9,12 @@
 
     colGEX <- c("grey85", "#FEE5D9", "#FCBBA1", "#FC9272", "#FB6A4A", "#EF3B2C", "#CB181D", "#99000D")
     versus <- paste0(plotter$hash_vars$values[[1]], " vs ", plotter$hash_vars$values[[2]])
+    int_column <- plotter$hash_vars$int_column
     sec_column <- plotter$hash_vars$sec_column
     plotter$hash_vars$markers_1 <- plotter$hash_vars$seu1$markers
     plotter$hash_vars$markers_2 <- plotter$hash_vars$seu2$markers
+    plotter$hash_vars$DEGs_1 <- plotter$hash_vars$seu1$DEGs
+    plotter$hash_vars$DEGs_2 <- plotter$hash_vars$seu2$DEGs
     target_genes <- unlist(plotter$hash_vars$target_genes)
     
     Custom_DotPlot <- function(seu) {
@@ -53,6 +56,16 @@
                   features = seu$markers[target_genes, ][complete.cases(seu$markers[target_genes, ]), ]$gene, order = TRUE) +
         theme_classic(base_size = 18) + scale_color_gradientn(colors = colGEX) + coord_fixed()
     }
+
+    DEGs_volcano <- function(DEGs) {
+        EnhancedVolcano::EnhancedVolcano(DEGs[[i]],
+                                         lab = rownames(DEGs[[i]]),
+                                         x = 'avg_log2FC',
+                                         y = 'p_val_adj',
+                                         title = names(DEGs)[[i]],
+                                         pCutoff = 0.05,
+                                         FCcutoff = 0.1))
+    }
     
 end.rcode-->
 
@@ -82,7 +95,7 @@ end.rcode-->
 <h1><strong>Dimensionality reduction</strong></h1>
 <h1><strong>UMAP</strong></h1>
 
-<!--begin.rcode umap_integration, fig.height = 12, fig.width = 12
+<!--begin.rcode Complete_UMAP, fig.height = 12, fig.width = 12
     reduction <- "umap"
     cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
     group.by <- split.by <- NULL
@@ -91,6 +104,9 @@ end.rcode-->
     cat("</div>")
 end.rcode-->
 <!--begin.rcode umap_splits, fig.height = 12, fig.width = 12, eval = !is.null(sec_column)
+    # Need to update this once comparison has been overhauled, should be a loop that groups
+    # and another that splits by integration columns (read from exp_design optimally, for
+    # now specified in config)
     cat(paste0("<h1>Split by ", sec_column, "</h1>"))
     split.by <- sec_column
     cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
@@ -164,4 +180,17 @@ end.rcode-->
 <!--begin.rcode Target_patterns
 cat(plotter$static_plot_main("seu1", custom_format = TRUE, plotting_function = Custom_ftplot))
 cat(plotter$static_plot_main("seu2", custom_format = TRUE, plotting_function = Custom_ftplot))
+end.rcode-->
+
+<h1><strong<DEGenes analysis</strong><h1>
+
+<!--begin.rcode DEG_volcanoes
+for(i in seq(1, length(plotter$hash_vars$DEGs_1))) {
+    cat(plotter$static_plot_main("DEGs_1", custom_format = TRUE, plotting_function = DEGs_volcano))
+}
+
+for(i in seq(1, length(plotter$hash_vars$DEGs_2))) {
+    cat(plotter$static_plot_main("DEGs_2", custom_format = TRUE, plotting_function = DEGs_volcano))
+}
+
 end.rcode-->
