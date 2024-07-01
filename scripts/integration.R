@@ -72,6 +72,9 @@ option_list <- list(
   optparse::make_option("--samples_to_integrate", type = "character", default = NULL,
             help = "Comma-separated list of samples to integrate, will integrate all
                     samples if not specified."),
+    optparse::make_option("--int_columns", type = "character", default = NULL,
+            help = "Comma-separated list of conditions by which to perform integration
+                    analysis. If empty, all conditions will be analysed.."),
   optparse::make_option("--save_raw", type = "logical", default = FALSE, action = "store_true",
             help = "Save seurat object before analysis."),
   optparse::make_option("--annotation_dir", type = "character", default = NULL,
@@ -79,7 +82,11 @@ option_list <- list(
   optparse::make_option("--target_genes", type = "character", default = NULL,
             help = "Path to target genes table."),
   optparse::make_option("--cpus", type = "double", default = 1,
-            help = "Provided CPUs")
+            help = "Provided CPUs"),
+  optparse::make_option("--cpus", type = "double", default = 1,
+            help = "Provided CPUs"),
+  optparse::make_option("--imported_counts", type = "double", default = 1,
+            help = "Imported counts directory")
 )  
 
 opt <- optparse::parse_args(optparse::OptionParser(option_list = option_list))
@@ -92,7 +99,14 @@ plan("multicore", workers = opt$cpu)
 
 target_genes <- read_and_format_markers(opt$target_genes)
 exp_design <- read.table(opt$exp_design, sep = "\t", header = TRUE)
-subset_columns <- strsplit(opt$int_columns, ",")[[1]]
+if(is.null(opt$int_columns)) {
+  warning(No conditions specified for integration. Analysing every condition)
+  int_columns <- colnames(exp_design)[!colnames(exp_design)=="code"]
+} else {
+  int_columns <- unlist(strsplit(opt$int_columns, ","))
+}
+
+message(paste0("Selected ", length(int_columns), " conditions for analysis"))
 
 # Input reading and integration variables setup
 if(opt$samples_to_integrate == "") {
@@ -106,13 +120,20 @@ embeddings_to_use <- "harmony"
 
 out_path = file.path(opt$report_folder, opt$experiment_name)
 
-merged_seu <- merge_seurat(project = opt$project_name, samples = samples, exp_design = exp_design,
-                            suffix = opt$suffix, count_path = opt$count_path)
+if(length(list.files(opt$imported_counts))) > 0 {
+  merged_seu <- Seurat::read10X(opt$imported_counts)
+} else {
+  merged_seu <- merge_seurat(project = opt$project_name, samples = samples, exp_design = exp_design,
+                            suffix = opt$suffix, count_path = opt$count_path)  
+}
+
 message('Normalizing data')
 merged_seu <- NormalizeData(merged_seu, normalization.method = opt$normalmethod,
                        scale.factor = opt$scalefactor, verbose = FALSE)
 message('Scaling data')
 merged_seu <- ScaleData(merged_seu, features = rownames(merged_seu), verbose = FALSE)
+
+saveRDS(merged_seu, "merged_seu")
 
 if(opt$save_raw) {
     saveRDS(seu, file = file.path(out_path, paste0(opt$experiment_name, ".before.seu.RDS")))
@@ -135,24 +156,25 @@ write_seurat_report(all_seu = global_seu, percentmt = opt$percentmt, template = 
 
 message('Starting integration analysis')
 
-for(column in subset_columns) {
-  message(paste0("Integrating variable \"", column, "\""))
-  sec_column <- subset_columns[subset_columns != column]
-  if(length(sec_column) == 0) {
-    sec_column <- NULL
-  }
-  # comparison <- readRDS('comparison.rds')
-  comparison <- compare_subsets(seu = merged_seu, annotation_dir = opt$annotation_dir, subset_column = column,
-                                exp_design = exp_design, ndims = opt$ndims, resolution = opt$resolution,
-                                embeddings_to_use = embeddings_to_use, minqcfeats = opt$minqcfeats,
-                                percentmt = opt$percentmt, hvgs = opt$hvgs, scalefactor = opt$scalefactor,
-                                normalmethod = opt$normalmethod)
-  message("--------------------------------------------")
-  message("---------Writing integration report---------")
-  message("--------------------------------------------")
-  write_integration_report(comparison = comparison, template_folder = template_path,
-                           output_dir = opt$report_folder, source_folder = source_folder,
-                           target_genes = target_genes, name = column, int_column = column,
-                           sec_column = sec_column)
-  message(paste0("Report written in ", opt$report_folder))
-}
+
+message("Integrating seurat object")
+
+int_seu <- integrate_seurat(seu = merged_seu, annotation_dir = opt$annotation_dir, subset_column = column,
+                              exp_design = exp_design, ndims = opt$ndims, resolution = opt$resolution,
+                              embeddings_to_use = embeddings_to_use, minqcfeats = opt$minqcfeats,
+                              percentmt = opt$percentmt, hvgs = opt$hvgs, scalefactor = opt$scalefactor,
+                              normalmethod = opt$normalmethod)
+
+save.image(int_seu, "int_seu.rds")
+# Pseudocode
+# for (condition) {
+#   subset_DEGs <- get_sc_DEGs(seu = seu_clusters, cond = condition)
+# }
+message("--------------------------------------------")
+message("---------Writing integration report---------")
+message("--------------------------------------------")
+write_integration_report(int_seu = int_seu, template_folder = template_path,
+                         output_dir = opt$report_folder, source_folder = source_folder,
+                         target_genes = target_genes, name = column, int_columns = column,
+                         sec_column = sec_column)
+message(paste0("Report written in ", opt$report_folder))
