@@ -228,8 +228,8 @@ subset_seurat <- function(seu, column, value) {
   return(subset)
 }
 
-#' compare_subsets
-#' `compare_subsets` allows subsetting a seurat object without requiring
+#' integrate_seurat
+#' `integrate_seurat` allows subsetting a seurat object without requiring
 #' literal strings.
 #'
 #' @param seu Merged eurat object
@@ -240,42 +240,31 @@ subset_seurat <- function(seu, column, value) {
 #'
 #' @returns A subsetted seurat object
 
-compare_subsets <- function(seu, annotation_dir, subset_column, exp_design,
+integrate_seurat <- function(seu, clusters_annotation, subset_column, exp_design,
                             ndims, resolution, embeddings_to_use, minqcfeats,
                             percentmt, hvgs, scalefactor, normalmethod) {
   values <- unique(exp_design[[subset_column]])
-  anno_tables <- Sys.glob(paste0(annotation_dir, "/*"))
-  res <- list()
-  for(value in unique(exp_design[[subset_column]])) {
-    annot <- grep(value, anno_tables, value = TRUE)
-    seu_subset <- subset_seurat(seu = seu, column = subset_column,
-                                value = value)
-    seu_subset <- do_qc(seu = seu_subset, minqcfeats = minqcfeats, 
-          percentmt = percentmt)
-    seu_subset <- subset(seu_subset, subset = QC != 'High_MT,Low_nFeature')
-    seu_subset <- Seurat::NormalizeData(seu_subset)
-    seu_subset <- Seurat::FindVariableFeatures(seu_subset, nfeatures = hvgs,
-                                               selection.method = "vst",)
-    seu_subset <- Seurat::ScaleData(seu_subset)
-    seu_subset <- Seurat::RunPCA(seu_subset)
-    seu_subset <- harmony::RunHarmony(seu_subset, "code",
-                                      plot_convergence = FALSE)
-    seu_subset <- Seurat::RunUMAP(seu_subset, dims = seq(1, ndims),
-                          reduction = "harmony")
-    seu_subset <- Seurat::FindNeighbors(seu_subset, dims = seq(1, ndims),
-                          reduction = "harmony")
-    seu_subset <- Seurat::FindClusters(seu_subset, resolution = 0.6)
+  int_seu <- do_qc(seu = seu, minqcfeats = minqcfeats, 
+        percentmt = percentmt)
+  int_seu <- subset(int_seu, subset = QC != 'High_MT,Low_nFeature')
+  int_seu <- Seurat::FindVariableFeatures(int_seu, nfeatures = hvgs,
+                                             selection.method = "vst")
+  int_seu <- Seurat::RunPCA(int_seu)
+  int_seu <- harmony::RunHarmony(int_seu, "code",
+                                    plot_convergence = FALSE)
+  int_seu <- Seurat::RunUMAP(int_seu, dims = seq(1, ndims),
+                        reduction = "harmony")
+  int_seu <- Seurat::FindNeighbors(int_seu, dims = seq(1, ndims),
+                        reduction = "harmony")
+  int_seu <- Seurat::FindClusters(int_seu, resolution = 0.6)
 
-    seu_clusters <- annotate_clusters(seu = seu_subset, anno_table = annot)
-    subset_DEGs <- get_sc_DEGs(seu = seu_clusters, cond = subset_column)
-    subset_markers <- SeuratObject::JoinLayers(seu_clusters)
-    subset_markers <- Seurat::FindAllMarkers(seu_markers, only.pos = TRUE,
-                                             min.pct = 0.25, logfc.threshold = 0.25)
-    res[[as.character(value)]] <- list(seu = seu_clusters,
-                                       markers = subset_markers,
-                                       DEGs = subset_markers)
-  }
-  res$values <- names(res)
+  seu_clusters <- annotate_clusters(seu = int_seu,
+                                    anno_table = clusters_annotation)
+  seu_markers <- SeuratObject::JoinLayers(seu_clusters)
+  seu_markers <- Seurat::FindAllMarkers(seu_markers, only.pos = TRUE,
+                                           min.pct = 0.25,
+                                           logfc.threshold = 0.25)
+  res <- list(seu = seu_clusters, markers = seu_markers)
   return(res)
 }
 
@@ -376,35 +365,36 @@ write_seurat_report <- function(all_seu = NULL, template, out_path,
 #' write_integration_report
 #' Write integration HTML report
 #' 
-#' @param comparison list containing objects to be plotted
+#' @param int_seu integrated seurat object
 #' @param output_dir directory where report will be saved
 #' @param name experiment name, will be used to build output file name
 #' @param template_folder directory where template is located
 #' @param source_folder htmlreportR source folder
-#''
+#' @param int_columns factors present in experiment design
+#'
 #' @keywords preprocessing, write, report
 #' 
 #' @return nothing
-write_integration_report <- function(comparison, output_dir = getwd(),
+write_integration_report <- function(int_seu, output_dir = getwd(),
                                      template_folder, source_folder = "none",
-                                     target_genes, sec_column, int_column,
-                                     name = NULL){
+                                     target_genes, int_columns, name = NULL,
+                                     DEGs = NULL){
   if(is.null(template_folder)) {
     stop("No template folder was provided.")
   }
   if(!file.exists(source_folder)) {
     stop(paste0("Source folder not found. Was ", source_folder))
   }
-  if(any(is.null(comparison))) {
+  if(any(is.null(int_seu))) {
     stop("ERROR: comparison object contains NULL fields. Analysis
        is not complete.")
   }
   template <- file.path(template_folder, "integration_template.txt")
   tmp_folder <- "tmp_lib"
   out_file <- file.path(output_dir, paste0(name, "_integration_report.html"))
-  container <- list(seu1 = comparison[[1]], seu2 = comparison[[2]],
+  container <- list(seu = int_seu$seu, markers = int_seu$markers, DEGs = DEGs,
                     values = comparison$values, sec_column = sec_column,
-                    int_column, target_genes = target_genes)
+                    int_columns, target_genes = target_genes)
   plotter <- htmlReport$new(title_doc = paste0("Single-Cell ", name, " report"), 
                             container = container, tmp_folder = tmp_folder,
                             src = source_folder)
