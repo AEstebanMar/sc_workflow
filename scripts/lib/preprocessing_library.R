@@ -186,7 +186,8 @@ merge_seurat <- function(project_name, samples, exp_design, count_path,
 annotate_clusters <- function(seu, anno_table) {
   new_clusters <- read.table(file = anno_table, sep = '\t', header = FALSE)[, 1]
   names(new_clusters) <- levels(seu)
-  seu <- RenameIdents(seu, new_clusters)
+  seu <- Seurat::RenameIdents(seu, new_clusters)
+  seu@meta.data$named_clusters <- Seurat::Idents(seu)
   return(seu)
 }
 
@@ -209,8 +210,28 @@ get_sc_DEGs <- function(seu, cond) {
     stop(paste0("Error: Two groups must be supplied for DEG analysis. Provided ",
                 length(cond)))
   }
-  markers <- FindMarkers(seu, ident.1 = conds[1], ident.2 = conds[2])
-  return(markers)
+  if(is.null(seu@meta.data$seurat_clusters)) {
+    stop("Error: Seurat object contains no clusters. DEG analysis impossible.")
+  }
+  clusters_DEGs <- list()
+  if(!is.null(seu@meta.data$named_clusters)) {
+    clusters <- sort(unique(seu@meta.data$named_clusters))
+  } else {
+    warning("Seurat object clusters are not annotated.")
+    clusters <- sort(unique(seu@meta.data$seurat_clusters))
+  }
+  for (i in seq(0, length(unique(seu@meta.data$seurat_clusters))) - 1) {
+    message(paste0("Calculating DEGs for cluster ", clusters[i]))
+    subset_seu <- subset_seurat(seu, "seurat_clusters", i)
+    subset_DEGs <- FindMarkers(seu, ident.1 = conds[1], ident.2 = conds[2])
+    clusters_DEGs[[clusters[i]]] <- subset_DEGs
+  }
+  if(!is.null(seu@meta.data$named_clusters)) {
+    names(clusters_DEGs) <- sort(unique(seu@meta.data$named_clusters))
+  } else {
+    warning("Seurat object clusters are not annotated.")
+  }
+  return(clusters_DEGs)
 }
 
 #' subset_seurat
@@ -240,31 +261,31 @@ subset_seurat <- function(seu, column, value) {
 #'
 #' @returns A subsetted seurat object
 
-integrate_seurat <- function(seu, clusters_annotation, subset_column, exp_design,
+integrate_seurat <- function(seu, clusters_annotation, exp_design,
                             ndims, resolution, embeddings_to_use, minqcfeats,
                             percentmt, hvgs, scalefactor, normalmethod) {
-  values <- unique(exp_design[[subset_column]])
-  int_seu <- do_qc(seu = seu, minqcfeats = minqcfeats, 
+  int <- do_qc(seu = seu, minqcfeats = minqcfeats, 
         percentmt = percentmt)
-  int_seu <- subset(int_seu, subset = QC != 'High_MT,Low_nFeature')
-  int_seu <- Seurat::FindVariableFeatures(int_seu, nfeatures = hvgs,
+  int <- subset(int, subset = QC != 'High_MT,Low_nFeature')
+  int <- Seurat::FindVariableFeatures(int, nfeatures = hvgs,
                                              selection.method = "vst")
-  int_seu <- Seurat::RunPCA(int_seu)
-  int_seu <- harmony::RunHarmony(int_seu, "code",
+  int <- Seurat::RunPCA(int)
+  int <- harmony::RunHarmony(int, "code",
                                     plot_convergence = FALSE)
-  int_seu <- Seurat::RunUMAP(int_seu, dims = seq(1, ndims),
+  int <- Seurat::RunUMAP(int, dims = seq(1, ndims),
                         reduction = "harmony")
-  int_seu <- Seurat::FindNeighbors(int_seu, dims = seq(1, ndims),
+  int <- Seurat::FindNeighbors(int, dims = seq(1, ndims),
                         reduction = "harmony")
-  int_seu <- Seurat::FindClusters(int_seu, resolution = 0.6)
-
-  seu_clusters <- annotate_clusters(seu = int_seu,
-                                    anno_table = clusters_annotation)
-  seu_markers <- SeuratObject::JoinLayers(seu_clusters)
-  seu_markers <- Seurat::FindAllMarkers(seu_markers, only.pos = TRUE,
+  int <- Seurat::FindClusters(int, resolution = 0.6)
+  if(clusters_annotation != "") {
+    message("Clusters annotation file provided. Annotating clusters")
+    int <- annotate_clusters(seu = int, anno_table = clusters_annotation)
+    }
+  int <- SeuratObject::JoinLayers(int)
+  int_markers <- Seurat::FindAllMarkers(int, only.pos = TRUE,
                                            min.pct = 0.25,
                                            logfc.threshold = 0.25)
-  res <- list(seu = seu_clusters, markers = seu_markers)
+  res <- list(seu = int, markers = int_markers)
   return(res)
 }
 
@@ -365,7 +386,7 @@ write_seurat_report <- function(all_seu = NULL, template, out_path,
 #' write_integration_report
 #' Write integration HTML report
 #' 
-#' @param int_seu integrated seurat object
+#' @param int integrated seurat object
 #' @param output_dir directory where report will be saved
 #' @param name experiment name, will be used to build output file name
 #' @param template_folder directory where template is located
@@ -378,7 +399,7 @@ write_seurat_report <- function(all_seu = NULL, template, out_path,
 write_integration_report <- function(int_seu, output_dir = getwd(),
                                      template_folder, source_folder = "none",
                                      target_genes, int_columns, name = NULL,
-                                     DEGs = NULL){
+                                     DEG_list = NULL){
   if(is.null(template_folder)) {
     stop("No template folder was provided.")
   }
@@ -391,10 +412,9 @@ write_integration_report <- function(int_seu, output_dir = getwd(),
   }
   template <- file.path(template_folder, "integration_template.txt")
   tmp_folder <- "tmp_lib"
-  out_file <- file.path(output_dir, paste0(name, "_integration_report.html"))
-  container <- list(seu = int_seu$seu, markers = int_seu$markers, DEGs = DEGs,
-                    values = comparison$values, sec_column = sec_column,
-                    int_columns, target_genes = target_genes)
+  out_file <- file.path(output_dir, "integration_report.html")
+  container <- list(seu = int_seu, DEG_list = DEG_list, int_columns = int_columns,
+                    target_genes = target_genes)
   plotter <- htmlReport$new(title_doc = paste0("Single-Cell ", name, " report"), 
                             container = container, tmp_folder = tmp_folder,
                             src = source_folder)
