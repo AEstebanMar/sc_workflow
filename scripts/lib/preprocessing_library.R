@@ -135,7 +135,7 @@ do_marker_gene_selection <- function(seu, out_path = NULL){
 #' 
 #' @return Seurat object with the experimental conditions added as metadata
 add_exp_design <- function(seu, name, exp_design){
-  exp_design <- as.list(exp_design[exp_design$code == name,])
+  exp_design <- as.list(exp_design[exp_design$sample == name,])
   for (i in names(exp_design)){
     seu@meta.data[[i]] <- c(rep(exp_design[[i]], nrow(seu@meta.data)))
   }
@@ -191,57 +191,90 @@ annotate_clusters <- function(seu, anno_table) {
   return(seu)
 }
 
-#' get_sc_DEGs
-#' `get_sc_DEGs` performs differential expression analysis on a seurat object.
+#' get_marker_idents
+#' `get_marker_idents` performs some checks in input seurat object metadata. It
+#' checks if it is clustered, if clusters are annotated, and, if DEG mode is
+#' active, it checks whether provided condition allows DEG analysis.
 #'
-#' @param seu Seurat object on which DEG analysis will be performed
+#' @param seu Seurat object on which DEG analysis will be performed.
+#' @param DEG A boolean.
+#'   * `TRUE`: Function will calculate differentally expressed genes.
+#'   * `FALSE` (the default): Function will calculate conserved markers.
 #' @param cond A string. Condition by which to perform DEG analysis.
-#' @returns A data frame. Rows contain markers, and columns are p_value,
-#' average log2FC, pct.1 ? and pct.2 ?. Also adjusted p-value.
+#' @returns A list containing items `idents`, with new seurat identifiers,
+#' and item `conds`, which, if DEG mode is active, contains unique values
+#' of specified column of seurat metadata. If not active, it is set to NULL.
+#' '
 
-get_sc_DEGs <- function(seu, cond) {
+get_marker_idents <- function(seu, cond, DEG) {
+  if(is.null(seu@meta.data$seurat_clusters)) {
+    stop("Error: Seurat object contains no clusters. Analysis impossible.")
+  }
   if(!cond %in% names(seu@meta.data)) {
     stop("Specified condition does not exist in seurat object metadata.
           DEG analysis impossible.")
-  }
-  Idents(seu) <- cond
-  conds <- unique(seu[[cond]][[1]])
-  if(length(conds) != 2) {
-    stop(paste0("Error: Two groups must be supplied for DEG analysis. Provided ",
-                length(cond)))
-  }
-  if(is.null(seu@meta.data$seurat_clusters)) {
-    stop("Error: Seurat object contains no clusters. DEG analysis impossible.")
-  }
-  clusters_DEGs <- list()
+    }
   if(!is.null(seu@meta.data$named_clusters)) {
-    clusters <- sort(unique(seu@meta.data$named_clusters))
+    cluster_idents <- "named_clusters"
   } else {
     warning("Seurat object clusters are not annotated.")
-    clusters <- sort(unique(seu@meta.data$seurat_clusters))
+    cluster_idents <- "seurat_clusters"
   }
-  for (i in seq(0, length(unique(seu@meta.data$seurat_clusters))) - 1) {
-    message(paste0("Calculating DEGs for cluster ", clusters[i]))
-    subset_seu <- subset_seurat(seu, "seurat_clusters", i)
-    subset_DEGs <- FindMarkers(seu, ident.1 = conds[1], ident.2 = conds[2])
-    clusters_DEGs[[clusters[i]]] <- subset_DEGs
-  }
-  if(!is.null(seu@meta.data$named_clusters)) {
-    names(clusters_DEGs) <- sort(unique(seu@meta.data$named_clusters))
+  if(DEG) {
+    conds <- unique(seu[[cond]][[1]])
+    if(length(conds) != 2) {
+      stop(paste0("Error: Two groups must be supplied for DEG analysis.
+                   Provided ", length(cond)))
+    }
+    return(list(idents = cond, conds = conds))
   } else {
-    warning("Seurat object clusters are not annotated.")
+    return(list(idents = cluster_idents, conds = NULL))
   }
-  return(clusters_DEGs)
 }
 
-#' subset_seurat
-#' `subset_seurat` allows subsetting a seurat object without requiring
-#' literal strings.
+#' collapse_markers
+#' `collapse_markers` takes list of marker gene data frames and collapses it
+#' into a cluster-markers data frame.
 #'
-#' @param seu Seurat object on which DEG analysis will be performed
-#' @param col Metadata column by which to subset
-#' @param value Condition to subset
-#' @returns A subsetted seurat object
+#' @param marker_list A list containing marker gene data frames.
+#' @returns A data frame. Column `cluster` contains element names of original
+#' list (seurat clusters) and column `genes` contains, for each row, the top
+#' markers of that element from the original list separated by commas.
+
+collapse_markers <- function(marker_list) {
+  marker_df <- do.call(marker_list, rbind)
+  return(unlist(genes))
+}
+
+#' get_sc_markers
+#' `get_sc_markers` performs differential expression analysis on a seurat object.
+#'
+#' @inheritParams get_marker_idents
+#' @param top An integer. Top conserved markers to select for each cluster.
+#' @returns A list containing one marker data frame per cluster.
+
+get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, top = 3) {
+  cluster_idents <- get_marker_idents(seu = seu, cond = cond, DEG = DEG)
+  Seurat::Idents(seu) <- cluster_idents$idents
+  conds <- cluster_idents$conds
+  clusters <- sort(unique(seu@meta.data[[cluster_idents$idents]]))
+  clusters_markers <- list()
+  for (i in seq(1, length(clusters))) {
+    if (DEG) {
+      message(paste0("Analysing factor ", i, "/", length(clusters)))
+      # off-by-one correction because Seurat counts clusters from 0
+      subset_seu <- subset_seurat(seu, "seurat_clusters", i - 1)
+      markers <- Seurat::FindMarkers(subset_seu, ident.1 = conds[1], ident.2 = conds[2])
+    } else {
+      message(paste0("Analysing cluster ", i, "/", length(clusters)))
+      markers <- Seurat::FindConservedMarkers(seu, ident.1 = clusters[i],
+                                              grouping.var = cond,
+                                              verbose = FALSE)[1:top, ]
+    }
+    clusters_markers[[clusters[i]]] <- markers
+  }
+  return(clusters_markers)
+}
 
 subset_seurat <- function(seu, column, value) {
   expr <- Seurat::FetchData(seu, vars = column)
@@ -256,21 +289,20 @@ subset_seurat <- function(seu, column, value) {
 #' @param seu Merged eurat object
 #' @param annotation_dir Directory with cluster annotation files
 #' @param subset_column Column with categories to subset
-#' @param exp_design Loaded experimental design table
 #' @inheritParams analyze_seurat
 #'
 #' @returns A subsetted seurat object
 
-integrate_seurat <- function(seu, clusters_annotation, exp_design,
-                            ndims, resolution, embeddings_to_use, minqcfeats,
-                            percentmt, hvgs, scalefactor, normalmethod) {
+integrate_seurat <- function(seu, percentmt, ndims, resolution, hvgs, embeds,
+                             minqcfeats, scalefactor, normalmethod,
+                             clusters_annotation) {
   int <- do_qc(seu = seu, minqcfeats = minqcfeats, 
         percentmt = percentmt)
   int <- subset(int, subset = QC != 'High_MT,Low_nFeature')
   int <- Seurat::FindVariableFeatures(int, nfeatures = hvgs,
                                              selection.method = "vst")
   int <- Seurat::RunPCA(int)
-  int <- harmony::RunHarmony(int, "code",
+  int <- harmony::RunHarmony(int, "sample",
                                     plot_convergence = FALSE)
   int <- Seurat::RunUMAP(int, dims = seq(1, ndims),
                         reduction = "harmony")
@@ -317,7 +349,7 @@ integrate_seurat <- function(seu, clusters_annotation, exp_design,
 #' @return Seurat object
 analyze_seurat <- function(raw_seu, out_path = NULL, minqcfeats, percentmt,
                            hvgs, ndims, resolution, dimreds_to_do,
-                           embeddings_to_use, integrate = FALSE){
+                           embeds, integrate = FALSE){
   raw_seu <- do_qc(seu = raw_seu, minqcfeats = minqcfeats, 
                    percentmt = percentmt)
   seu <- subset(raw_seu, subset = QC != 'High_MT,Low_nFeature')
@@ -329,14 +361,14 @@ analyze_seurat <- function(raw_seu, out_path = NULL, minqcfeats, percentmt,
   seu <- do_dimred(seu = seu, ndims = ndims, dimreds = dimreds_to_do)   
   if(integrate) { # Harmony integration and remaining dimreds 
     message('Integration harmony and dimensionality reduction')
-    seu <- harmony::RunHarmony(object = seu, group.by.vars = "code",
+    seu <- harmony::RunHarmony(object = seu, group.by.vars = "sample",
                                 verbose = FALSE)
     seu <- do_dimred(seu = seu, ndims = ndims, dimreds = c("tsne", "umap"),
-                     reduction = embeddings_to_use)
+                     reduction = embeds)
   }
   message('Clustering')
   seu <- do_clustering(seu = seu, ndims = ndims, resolution = resolution,
-                       reduction = embeddings_to_use)
+                       reduction = embeds)
   message('Selecting markers')
   markers <- SeuratObject::JoinLayers(seu)
   markers <- do_marker_gene_selection(seu = markers, out_path = out_path)
