@@ -26,6 +26,7 @@ run_count){
 	              --localmem=50
 	input_file="$sample/outs/metrics_summary.csv"
 	get_cellranger_metrics.sh $input_file $sample >> ../cellranger_metrics
+	rm -rf ./*/SC_RNA_COUNTER_CS
 }
 
 
