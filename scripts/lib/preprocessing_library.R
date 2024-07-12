@@ -180,11 +180,12 @@ merge_seurat <- function(project_name, samples, exp_design, count_path,
 #' `annotate_clusters` renames seurat clusters according to dictionary
 #'
 #' @param seu Non-annotated seu with markers
-#' @param anno_table Path to file containing cluster annotation
-#' @returns Annotated seu object
+#' @param anno_table Path to file containing cluster annotation, or loa
+#'
+#' @return Annotated seu object
+#'
 
-annotate_clusters <- function(seu, anno_table) {
-  new_clusters <- read.table(file = anno_table, sep = '\t', header = FALSE)[, 1]
+annotate_clusters <- function(seu, new_clusters = NULL ) {
   names(new_clusters) <- levels(seu)
   seu <- Seurat::RenameIdents(seu, new_clusters)
   seu@meta.data$named_clusters <- Seurat::Idents(seu)
@@ -217,7 +218,7 @@ get_marker_idents <- function(seu, cond, DEG) {
   if(!is.null(seu@meta.data$named_clusters)) {
     cluster_idents <- "named_clusters"
   } else {
-    warning("Seurat object clusters are not annotated.")
+    warning("Seurat object clusters are not annotated.", .immediate = TRUE)
     cluster_idents <- "seurat_clusters"
   }
   if(DEG) {
@@ -241,19 +242,68 @@ get_marker_idents <- function(seu, cond, DEG) {
 #' list (seurat clusters) and column `genes` contains, for each row, the top
 #' markers of that element from the original list separated by commas.
 
-collapse_markers <- function(marker_list) {
-  marker_df <- do.call(marker_list, rbind)
-  return(unlist(genes))
+collapse_markers <- function(markers_list) {
+  df_list <- list()
+  for(i in seq(1, length(markers_list))) {
+    df_list[[i]] <- as.data.frame(markers_list[[i]])
+    df_list[[i]]$cluster <- i
+  }
+  merged_df <- do.call(rbind, df_list)
+  return(merged_df)
+}
+
+#' match_cell_types
+#' `match_cell_types` takes a cluster-marker gene data frame and a cell type
+#' marker file. It then looks for matches between the two and assigns a cell
+#' type to each cluster of the data frame.
+#'
+match_cell_types <- function(markers_df, anno_table) {
+  canon_types <- unique(anno_table$type)
+  subset_list <- list()
+  res <- list()
+  for(cluster in unique(markers_df$cluster)) {
+    subset <- markers_df[markers_df$cluster == cluster, ]
+    pcols <- grep("p_val_adj", colnames(markers_df))
+    if (length(pcols) > 1) {
+      ## Esto con Fisher mejor (metaseqR::fisher.method)
+      subset$p_val_adj <- (subset[[pcols[1]]] + subset[[pcols[2]]]) / 2
+    }
+    ### Bloque equivalente con cálculo de media de log2fc entre ambas conds
+    matches <- list()
+    for(type in canon_types) {
+      type_markers <- anno_table$marker[canon_types == type]
+      # En vez de dividir, que sea una suma de coincidencias ponderada por media
+      # de log2fc
+      matches[[type]] <- sum(rownames(subset) %in% type_markers) /
+                         length(type_markers)
+    }
+    if(max(unlist(matches)) == 0) {
+      subset$cell_type = "Unknown"
+    } else {
+      cluster_match <- names(matches[which.max(unlist(matches))])
+      subset$cell_type <- cluster_match
+    }
+    subset_list[[cluster]] <- subset
+  }
+  stats_table <- do.call(rbind, subset_list)
+  columns <- colnames(stats_table)
+  annotated_clusters <- stats_table[, columns %in% c("cluster", "cell_type")]
+  rownames(annotated_clusters) <- NULL
+  res <- list(stats_table = stats_table,
+              annotated_clusters = unique(annotated_clusters))
+  return(res)
 }
 
 #' get_sc_markers
-#' `get_sc_markers` performs differential expression analysis on a seurat object.
+#' `get_sc_markers` performs differential expression analysis on OR selects
+#' conserver markers from a seurat object.
 #'
 #' @inheritParams get_marker_idents
 #' @param top An integer. Top conserved markers to select for each cluster.
+#'            Default: 10
 #' @returns A list containing one marker data frame per cluster.
 
-get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, top = 3) {
+get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, top = 10) {
   cluster_idents <- get_marker_idents(seu = seu, cond = cond, DEG = DEG)
   Seurat::Idents(seu) <- cluster_idents$idents
   conds <- cluster_idents$conds
@@ -264,7 +314,8 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, top = 3) {
       message(paste0("Analysing factor ", i, "/", length(clusters)))
       # off-by-one correction because Seurat counts clusters from 0
       subset_seu <- subset_seurat(seu, "seurat_clusters", i - 1)
-      markers <- Seurat::FindMarkers(subset_seu, ident.1 = conds[1], ident.2 = conds[2])
+      markers <- Seurat::FindMarkers(subset_seu, ident.1 = conds[1],
+                                     ident.2 = conds[2])
     } else {
       message(paste0("Analysing cluster ", i, "/", length(clusters)))
       markers <- Seurat::FindConservedMarkers(seu, ident.1 = clusters[i],
@@ -295,7 +346,7 @@ subset_seurat <- function(seu, column, value) {
 
 integrate_seurat <- function(seu, percentmt, ndims, resolution, hvgs, embeds,
                              minqcfeats, scalefactor, normalmethod,
-                             clusters_annotation) {
+                             clusters_annotation = NULL) {
   int <- do_qc(seu = seu, minqcfeats = minqcfeats, 
         percentmt = percentmt)
   int <- subset(int, subset = QC != 'High_MT,Low_nFeature')
@@ -312,13 +363,14 @@ integrate_seurat <- function(seu, percentmt, ndims, resolution, hvgs, embeds,
   if(clusters_annotation != "") {
     message("Clusters annotation file provided. Annotating clusters")
     int <- annotate_clusters(seu = int, anno_table = clusters_annotation)
+    } else {
+    message("Clusters annotation file not provided. Seurat object will
+      be dynamically annotated")
+    ## DEG, markers and de novo annotation will be included in function once
+    ## they are stable
     }
   int <- SeuratObject::JoinLayers(int)
-  int_markers <- Seurat::FindAllMarkers(int, only.pos = TRUE,
-                                           min.pct = 0.25,
-                                           logfc.threshold = 0.25)
-  res <- list(seu = int, markers = int_markers)
-  return(res)
+  return(int)
 }
 
 #' analyze_seurat
@@ -431,7 +483,7 @@ write_seurat_report <- function(all_seu = NULL, template, out_path,
 write_integration_report <- function(int_seu, output_dir = getwd(),
                                      template_folder, source_folder = "none",
                                      target_genes, int_columns, name = NULL,
-                                     DEG_list = NULL){
+                                     DEG_list = NULL, markers_list = NULL){
   if(is.null(template_folder)) {
     stop("No template folder was provided.")
   }
@@ -445,7 +497,8 @@ write_integration_report <- function(int_seu, output_dir = getwd(),
   template <- file.path(template_folder, "integration_template.txt")
   tmp_folder <- "tmp_lib"
   out_file <- file.path(output_dir, "integration_report.html")
-  container <- list(seu = int_seu, DEG_list = DEG_list, int_columns = int_columns,
+  container <- list(seu = int_seu, int_columns = int_columns,
+                    DEG_list = DEG_list, markers_list = markers_list,
                     target_genes = target_genes)
   plotter <- htmlReport$new(title_doc = paste0("Single-Cell ", name, " report"), 
                             container = container, tmp_folder = tmp_folder,
