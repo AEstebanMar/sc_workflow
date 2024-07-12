@@ -14,8 +14,8 @@
     DEG_list <- plotter$hash_vars$DEG_list
     
     Custom_DotPlot <- function(seu) {
-        scCustomize::DotPlot_scCustom(seu$seu, features, flip_axes = TRUE,
-                                      colors_use = colGEX)
+        scCustomize::DotPlot_scCustom(seu$seu, features, flip_axes = TRUE, 
+                                      colors_use = colGEX, x_lab_rotate = TRUE)
     }
 
     Custom_DimPlot <- function(seu) {
@@ -36,13 +36,13 @@
 
     Top_vlnplot <- function(seu) {
         scCustomize::Stacked_VlnPlot(seu$seu,
-                        ncol = 1, pt.size = 0, x_lab_rotate = 90,
+                        ncol = 1, pt.size = 0, x_lab_rotate = TRUE,
                         features = seu$markers[target_genes, ][complete.cases(seu$markers[target_genes, ]), ]$gene)
     }
 
     Canon_vlnplot <- function(seu) {
         scCustomize::Stacked_VlnPlot(seu$seu,
-                        ncol = 1, pt.size = 0, x_lab_rotate = 90,
+                        ncol = 1, pt.size = 0, x_lab_rotate = TRUE,
                         features = slice_max(seu$markers, n = 10,
                                     order_by = avg_log2FC)$gene)
     }
@@ -77,13 +77,26 @@ end.rcode-->
 <h1><strong>Markers distribution</strong></h1>
 
 <!--begin.rcode annotation, eval = !is.null(plotter$hash_vars$target_genes)
-    for (element_name in names(plotter$hash_vars$target_genes)) {
+    for(element_name in names(plotter$hash_vars$target_genes)) {
       features <- plotter$hash_vars$target_genes[[element_name]]
-      cat(paste("<p>Target genes:", element_name, "</p>", sep = " "))
+      cat(paste0("<h2>Target gene group: ", element_name, "</h2>"))
       cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-      print(features)
       cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DotPlot, height = 6, width = 6))
       cat("</div>")
+    }
+end.rcode-->
+
+<!--begin.rcode conserved_markers, eval = !is.null(plotter$hash_vars$markers_list)
+    for(condition in names(plotter$hash_vars$markers_list)) {
+        plotter$hash_vars$condition_list <- plotter$hash_vars$markers_list[[condition]]
+        for(element in seq(1:length((plotter$hash_vars$condition_list)))) {
+            features <- plotter$hash_vars$condition_list[[element]]
+            title <- paste0("Cluster ", element)
+            cat(paste0("<h2>Conserved markers for cluster: ", element, "</h2>"))
+            cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+            cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DotPlot, height = 6, width = 6))
+            cat("</div>")
+        }
     }
 end.rcode-->
 
