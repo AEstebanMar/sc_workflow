@@ -82,9 +82,6 @@ library(scCustomize)
 
 ```{r dimensionality_reduction, child = "dimensionality_reduction.Rmd", eval = TRUE}
 ```
-
-```{r markers, child = "marker_gene_selection.Rmd", eval = TRUE}
-```
 ---
 
 <details>
