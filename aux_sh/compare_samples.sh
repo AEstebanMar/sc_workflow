@@ -4,10 +4,10 @@
 # STAGE 2 SAMPLES COMPARISON
 
 #SBATCH -J compare_samples.sh
-#SBATCH --cpus-per-task=12
+#SBATCH --cpus-per-task=48
 #SBATCH --mem='1000gb'
 #SBATCH --constraint=cal
-#SBATCH --time=0-23:00:00
+#SBATCH --time=6-23:59:59
 #SBATCH --error=job.comp.%J.err
 #SBATCH --output=job.comp.%J.out
 
@@ -19,22 +19,21 @@ hostname
 
 mkdir -p $report_folder
 
-cat $FULL_RESULTS/*/metrics > $experiment_folder'/metrics'
-cat $FULL_RESULTS/*/cellranger_metrics > $experiment_folder'/cellranger_metrics'
-create_metric_table.rb $experiment_folder'/metrics' sample $experiment_folder'/metric_table'
-create_metric_table.rb $experiment_folder'/cellranger_metrics' sample $experiment_folder'/cellranger_metric_table'
+if [ "$imported_counts" == "" ]; then
+    echo "Placeholder"
+    # cat $FULL_RESULTS/*/metrics > $experiment_folder'/metrics'
+    # cat $FULL_RESULTS/*/cellranger_metrics > $experiment_folder'/cellranger_metrics'
+    # create_metric_table.rb $experiment_folder'/metrics' sample $experiment_folder'/metric_table'
+    # create_metric_table.rb $experiment_folder'/cellranger_metrics' sample $experiment_folder'/cellranger_metric_table'
 
-if [ $imported_counts != "" ]; then
-
-    /usr/bin/time $CODE_PATH/scripts/compare_samples.R -o $report_folder \
-                                                       -m $experiment_folder'/metric_table' \
-                                                       -l $experiment_folder'/metrics' \
-                                                       -e $experiment_name \
-                                                       --cellranger_metrics $experiment_folder'/cellranger_metric_table' \
-                                                       --cellranger_long_metrics $experiment_folder'/cellranger_metrics'
+    # compare_samples.R -o $report_folder \
+    #                   -m $experiment_folder'/metric_table' \
+    #                   -l $experiment_folder'/metrics' \
+    #                   -e $experiment_name \
+    #                   --cellranger_metrics $experiment_folder'/cellranger_metric_table' \
+    #                   --cellranger_long_metrics $experiment_folder'/cellranger_metrics'
 
 fi
-
 
 mkdir -p $FULL_RESULTS/$experiment_name
 integration.R --output $FULL_RESULTS/$experiment_name \
@@ -53,11 +52,13 @@ integration.R --output $FULL_RESULTS/$experiment_name \
               --experiment_name $experiment_name \
               --resolution $preproc_resolution \
               --exp_design $exp_design \
-              --int_columns $int_columns \
+              --int_columns "$int_columns" \
               --count_path $FULL_RESULTS"/*/cellranger_0000/*" \
               --suffix "outs/filtered_feature_bc_matrix" \
               --samples_to_integrate "$samples_to_integrate" \
-              --annotation_dir $annotation_dir \
-              --target_genes $exp_data_folder/markers \
+              --clusters_annotation "$clusters_annotation" \
+              --target_genes $target_genes \
               --cpu $SLURM_CPUS_PER_TASK \
-              --int_columns $int_columns
+              --imported_counts "$imported_counts" \
+              --DEG_columns "$DEG_columns" \
+              --cell_types_annotation "$cell_types_annotation"
