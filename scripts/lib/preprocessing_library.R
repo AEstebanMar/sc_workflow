@@ -218,7 +218,7 @@ get_marker_idents <- function(seu, cond, DEG) {
   if(!is.null(seu@meta.data$named_clusters)) {
     cluster_idents <- "named_clusters"
   } else {
-    warning("Seurat object clusters are not annotated.", .immediate = TRUE)
+    warning("Seurat object clusters are not annotated.", immediate. = TRUE)
     cluster_idents <- "seurat_clusters"
   }
   if(DEG) {
@@ -261,13 +261,17 @@ match_cell_types <- function(markers_df, anno_table) {
   canon_types <- unique(anno_table$type)
   subset_list <- list()
   res <- list()
+  pcols <- grep("p_val_adj", colnames(markers_df))
+    if(length(pcols) > 1) {
+      ## Esto con Fisher mejor (metaseqR::fisher.method)
+      markers_df$p_val_adj <- (markers_df[[pcols[1]]] + markers_df[[pcols[2]]]) / 2
+    }
+  fcols <- grep("log2FC", colnames(markers_df))
+    if(length(fcols) > 1) {
+      markers_df$avg_log2FC <- (markers_df[[pcols[1]]] + markers_df[[pcols[2]]]) / 2
+    }
   for(cluster in unique(markers_df$cluster)) {
     subset <- markers_df[markers_df$cluster == cluster, ]
-    pcols <- grep("p_val_adj", colnames(markers_df))
-    if (length(pcols) > 1) {
-      ## Esto con Fisher mejor (metaseqR::fisher.method)
-      subset$p_val_adj <- (subset[[pcols[1]]] + subset[[pcols[2]]]) / 2
-    }
     ### Bloque equivalente con cálculo de media de log2fc entre ambas conds
     matches <- list()
     for(type in canon_types) {
@@ -286,11 +290,12 @@ match_cell_types <- function(markers_df, anno_table) {
     subset_list[[cluster]] <- subset
   }
   stats_table <- do.call(rbind, subset_list)
+  stats_table$gene <- rownames(stats_table)
   columns <- colnames(stats_table)
   annotated_clusters <- stats_table[, columns %in% c("cluster", "cell_type")]
   rownames(annotated_clusters) <- NULL
   res <- list(stats_table = stats_table,
-              annotated_clusters = unique(annotated_clusters))
+              cell_types = unique(annotated_clusters)$cell_type)
   return(res)
 }
 
@@ -362,7 +367,7 @@ integrate_seurat <- function(seu, percentmt, ndims, resolution, hvgs, embeds,
   int <- Seurat::FindClusters(int, resolution = 0.6)
   if(clusters_annotation != "") {
     message("Clusters annotation file provided. Annotating clusters")
-    int <- annotate_clusters(seu = int, anno_table = clusters_annotation)
+    int <- annotate_clusters(seu = int, new_clusters = clusters_annotation[[2]])
     } else {
     message("Clusters annotation file not provided. Seurat object will
       be dynamically annotated")
@@ -481,9 +486,9 @@ write_seurat_report <- function(all_seu = NULL, template, out_path,
 #' 
 #' @return nothing
 write_integration_report <- function(int_seu, output_dir = getwd(),
-                                     template_folder, source_folder = "none",
-                                     target_genes, int_columns, name = NULL,
-                                     DEG_list = NULL, markers_list = NULL){
+                                     markers, template_folder, name = NULL,
+                                     source_folder = "none", target_genes,
+                                     int_columns, DEG_list = NULL){
   if(is.null(template_folder)) {
     stop("No template folder was provided.")
   }
@@ -498,8 +503,8 @@ write_integration_report <- function(int_seu, output_dir = getwd(),
   tmp_folder <- "tmp_lib"
   out_file <- file.path(output_dir, "integration_report.html")
   container <- list(seu = int_seu, int_columns = int_columns,
-                    DEG_list = DEG_list, markers_list = markers_list,
-                    target_genes = target_genes)
+                    DEG_list = DEG_list, target_genes = target_genes,
+                    markers = markers)
   plotter <- htmlReport$new(title_doc = paste0("Single-Cell ", name, " report"), 
                             container = container, tmp_folder = tmp_folder,
                             src = source_folder)
