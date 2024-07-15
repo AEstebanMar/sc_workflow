@@ -9,17 +9,17 @@
 
     colGEX <- c("grey85", "#FEE5D9", "#FCBBA1", "#FC9272", "#FB6A4A", "#EF3B2C", "#CB181D", "#99000D")
     int_columns <- plotter$hash_vars$int_columns
-    target_genes <- unlist(plotter$hash_vars$target_genes)
-    plotter$hash_vars$markers <- plotter$hash_vars$seu$markers
+    target_genes <- plotter$hash_vars$target_genes
+    markers <- plotter$hash_vars$markers
     DEG_list <- plotter$hash_vars$DEG_list
     
     Custom_DotPlot <- function(seu) {
-        scCustomize::DotPlot_scCustom(seu$seu, features, flip_axes = TRUE, 
+        scCustomize::DotPlot_scCustom(seu, features, flip_axes = TRUE, 
                                       colors_use = colGEX, x_lab_rotate = TRUE)
     }
 
     Custom_DimPlot <- function(seu) {
-        Seurat::DimPlot(seu$seu, reduction = reduction, label = TRUE, repel = TRUE, split.by = split.by,
+        Seurat::DimPlot(seu, reduction = reduction, label = TRUE, repel = TRUE, split.by = split.by,
                         group.by = group.by) +
         ggplot2::theme(legend.position="none")
     }
@@ -30,26 +30,26 @@
     }
 
     subset_table <- function(df) {
-        res <- df[target_genes, ][complete.cases(df[target_genes, ]), ]
+        res <- df[features, ][complete.cases(df[features, ]), ]
         return(res)
     }
 
     Top_vlnplot <- function(seu) {
-        scCustomize::Stacked_VlnPlot(seu$seu,
+        scCustomize::Stacked_VlnPlot(seu,
                         ncol = 1, pt.size = 0, x_lab_rotate = TRUE,
-                        features = seu$markers[target_genes, ][complete.cases(seu$markers[target_genes, ]), ]$gene)
+                        features = markers[features, ][complete.cases(markers[features, ]), ]$gene)
     }
 
     Canon_vlnplot <- function(seu) {
-        scCustomize::Stacked_VlnPlot(seu$seu,
+        scCustomize::Stacked_VlnPlot(seu,
                         ncol = 1, pt.size = 0, x_lab_rotate = TRUE,
-                        features = slice_max(seu$markers, n = 10,
+                        features = slice_max(markers, n = 10,
                                     order_by = avg_log2FC)$gene)
     }
 
     Custom_ftplot <- function(seu) {
-        FeaturePlot_scCustom(seu$seu, reduction = "umap", pt.size = 0.1, num_columns = 3,
-                  features = seu$markers[target_genes, ][complete.cases(seu$markers[target_genes, ]), ]$gene, order = TRUE) +
+        FeaturePlot_scCustom(seu, reduction = "umap", pt.size = 0.1, num_columns = 3,
+                  features = markers[features, ][complete.cases(markers[features, ]), ]$gene, order = TRUE) +
         theme_classic(base_size = 18) + scale_color_gradientn(colors = colGEX) + coord_fixed()
     }
 
@@ -76,7 +76,7 @@ end.rcode-->
 
 <h1><strong>Markers distribution</strong></h1>
 
-<!--begin.rcode annotation, eval = !is.null(plotter$hash_vars$target_genes)
+<!--begin.rcode target_genes, eval = !is.null(plotter$hash_vars$target_genes)
     for(element_name in names(plotter$hash_vars$target_genes)) {
       features <- plotter$hash_vars$target_genes[[element_name]]
       cat(paste0("<h2>Target gene group: ", element_name, "</h2>"))
@@ -86,7 +86,7 @@ end.rcode-->
     }
 end.rcode-->
 
-<!--begin.rcode conserved_markers, eval = !is.null(plotter$hash_vars$markers_list)
+<!--begin.rcode cluster_markers, eval = !is.null(plotter$hash_vars$markers_list)
     for(condition in names(plotter$hash_vars$markers_list)) {
         plotter$hash_vars$condition_list <- plotter$hash_vars$markers_list[[condition]]
         for(element in seq(1:length((plotter$hash_vars$condition_list)))) {
@@ -167,27 +167,41 @@ end.rcode-->
     cat(plotter$table("markers", header = NULL, row_names = NULL, table_rownames = FALSE,
         styled = "dt", func = top_table))
 end.rcode-->
-</h1>
 
+<h1><strong>Target gene presence</strong></h1>
 <!--begin.rcode Target_gene_presence, eval = !is.null(plotter$hash_vars$target_genes)
-    cat("<h1><strong>Target gene presence</strong></h1>")
-    cat(paste0("<h1>Canonical marker presence</h1>"))
-    cat(plotter$table("markers", header = NULL, row_names = NULL, table_rownames = FALSE,
+    for(element_name in names(plotter$hash_vars$target_genes)) {
+      features <- plotter$hash_vars$target_genes[[element_name]]
+      cat(paste0("<h2>Target gene group: ", element_name, "</h2>"))
+      cat(plotter$table("markers", header = NULL, row_names = NULL, table_rownames = FALSE,
         styled = "dt", func = subset_table))
-end.rcode-->
-</h1>
+    }
 
+end.rcode-->
+
+<h1><strong>Target gene expression</strong></h1>
 <!--begin.rcode Target_gene_expression, eval = !is.null(plotter$hash_vars$target_genes)
-cat("<h1><strong>Target gene expression</strong></h1>")
-cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Top_vlnplot))
+    saveRDS(plotter, "plotter.rds")
+    for(element_name in names(plotter$hash_vars$target_genes)) {
+      features <- plotter$hash_vars$target_genes[[element_name]]
+      cat(paste0("<h2>Target gene group: ", element_name, "</h2>"))
+      cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+      cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Top_vlnplot))
+    }
 end.rcode-->
+</div>
 
 
-
+<h1><strong>Target gene expression patterns</strong></h1>
 <!--begin.rcode Target_patterns, eval = !is.null(plotter$hash_vars$target_genes)
-cat("<h1><strong>Target gene expression patterns</strong></h1>")
-cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_ftplot))
+    for(element_name in names(plotter$hash_vars$target_genes)) {
+      features <- plotter$hash_vars$target_genes[[element_name]]
+      cat(paste0("<h2>Target gene group: ", element_name, "</h2>"))
+      cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+      cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_ftplot))
+    }
 end.rcode-->
+</div>
 
 <!--begin.rcode DEG_volcanoes, eval = length(plotter$hash_vars$DEG_list) > 0
     cat("<h1><strong<DEGenes analysis</strong><h1>")
