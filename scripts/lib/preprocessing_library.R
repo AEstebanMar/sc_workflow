@@ -257,14 +257,22 @@ collapse_markers <- function(markers_list) {
 #' marker file. It then looks for matches between the two and assigns a cell
 #' type to each cluster of the data frame.
 #'
-match_cell_types <- function(markers_df, anno_table) {
+#' @param markers_df Data frame of markers, clusters and p-values
+#' @param anno_table Table of cell types and their associated markers
+#' @param top Top markers by p-value to use in cell type assignment
+match_cell_types <- function(markers_df, anno_table, top = 20) {
   canon_types <- unique(anno_table$type)
   subset_list <- list()
   res <- list()
   pcols <- grep("p_val_adj", colnames(markers_df))
     if(length(pcols) > 1) {
-      ## Esto con Fisher mejor (metaseqR::fisher.method)
-      markers_df$p_val_adj <- (markers_df[[pcols[1]]] + markers_df[[pcols[2]]]) / 2
+      pvals <- unlist(markers_df[, pcols])
+      pvals <- pvals[pvals != 0]
+      min_pval <- min(pvals)
+      markers_df$p_val_adj <- corto::fisherp(c(min(min_pval,
+                                                   markers_df[[pcols[1]]]),
+                                               min(min_pval,
+                                                   markers_df[[pcols[2]]])))
     }
   fcols <- grep("log2FC", colnames(markers_df))
     if(length(fcols) > 1) {
@@ -272,10 +280,13 @@ match_cell_types <- function(markers_df, anno_table) {
     }
   for(cluster in unique(markers_df$cluster)) {
     subset <- markers_df[markers_df$cluster == cluster, ]
-    ### Bloque equivalente con cálculo de media de log2fc entre ambas conds
+    subset <- subset[order(subset$p_val_adj), ]
+    if(nrow(subset) > top) {
+      subset <- subset[seq(1, top), ]
+    }
     matches <- list()
     for(type in canon_types) {
-      type_markers <- anno_table$marker[canon_types == type]
+      type_markers <- anno_table[anno_table$type == type, ]$marker
       # En vez de dividir, que sea una suma de coincidencias ponderada por media
       # de log2fc
       matches[[type]] <- sum(rownames(subset) %in% type_markers) /
@@ -490,7 +501,8 @@ write_seurat_report <- function(all_seu = NULL, template, out_path,
 write_integration_report <- function(int_seu, output_dir = getwd(),
                                      markers, template_folder, name = NULL,
                                      source_folder = "none", target_genes,
-                                     int_columns, DEG_list = NULL){
+                                     int_columns, DEG_list = NULL,
+                                     anno_table = NULL){
   if(is.null(template_folder)) {
     stop("No template folder was provided.")
   }
@@ -506,7 +518,7 @@ write_integration_report <- function(int_seu, output_dir = getwd(),
   out_file <- file.path(output_dir, "integration_report.html")
   container <- list(seu = int_seu, int_columns = int_columns,
                     DEG_list = DEG_list, target_genes = target_genes,
-                    markers = markers)
+                    markers = markers, anno_table = anno_table)
   plotter <- htmlReport$new(title_doc = paste0("Single-Cell ", name, " report"), 
                             container = container, tmp_folder = tmp_folder,
                             src = source_folder)
