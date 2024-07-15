@@ -290,9 +290,11 @@ match_cell_types <- function(markers_df, anno_table) {
     subset_list[[cluster]] <- subset
   }
   stats_table <- do.call(rbind, subset_list)
+  stats_table <- stats_table[order(stats_table$cluster), ]
   stats_table$gene <- rownames(stats_table)
   columns <- colnames(stats_table)
-  annotated_clusters <- stats_table[, columns %in% c("cluster", "cell_type")]
+  annotated_clusters <- stats_table[, columns %in% c("cluster", "cell_type"),
+                                      drop = FALSE]
   rownames(annotated_clusters) <- NULL
   res <- list(stats_table = stats_table,
               cell_types = unique(annotated_clusters)$cell_type)
