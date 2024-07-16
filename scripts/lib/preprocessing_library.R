@@ -260,6 +260,9 @@ collapse_markers <- function(markers_list) {
 #' @param markers_df Data frame of markers, clusters and p-values
 #' @param anno_table Table of cell types and their associated markers
 #' @param top Top markers by p-value to use in cell type assignment
+#' @returns A markers data frame with a new column for cell type assigned to
+#' cluster.
+
 match_cell_types <- function(markers_df, anno_table, top = 20) {
   canon_types <- unique(anno_table$type)
   subset_list <- list()
@@ -340,7 +343,7 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, top = 10) {
                                               grouping.var = cond,
                                               verbose = FALSE)[1:top, ]
     }
-    clusters_markers[[clusters[i]]] <- markers
+    clusters_markers[[as.character(clusters[i])]] <- markers
   }
   return(clusters_markers)
 }
