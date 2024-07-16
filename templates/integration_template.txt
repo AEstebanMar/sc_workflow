@@ -42,17 +42,17 @@
 
     Custom_ftplot <- function(seu) {
         scCustomize::FeaturePlot_scCustom(seu, reduction = "umap", pt.size = 0.1, num_columns = 3,
-                  features = features +
+                  features = features) +
         ggplot2::theme_classic(base_size = 18) +
         ggplot2::scale_color_gradientn(colors = colGEX) + ggplot2::coord_fixed()
     }
 
     DEGs_volcano <- function(input_DEGs) {
-        EnhancedVolcano::EnhancedVolcano(input_DEGs[[1]],
-                                         lab = rownames(input_DEGs[[1]]),
+        EnhancedVolcano::EnhancedVolcano(input_DEGs,
+                                         lab = rownames(input_DEGs),
                                          x = 'avg_log2FC', y = 'p_val_adj',
                                          ylim = -0.5,
-                                         title = names(condition_DEGs),
+                                         title = condition,
                                          pCutoff = 0.05, FCcutoff = 0.1)
     }
 
@@ -77,6 +77,16 @@ end.rcode-->
       cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
       cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DotPlot, height = 6, width = 6))
       cat("</div>")
+    }
+end.rcode-->
+
+<!--begin.rcode cell_markers, eval = !is.null(plotter$hash_vars$anno_table)
+    for(element_name in unique(plotter$hash_vars$anno_table$type)) {
+        features <- plotter$hash_vars$anno_table[plotter$hash_vars$anno_table$type == element_name, ]$marker
+        cat(paste0("<h2>", element_name, " markers</h2>"))
+        cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+        cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DotPlot, height = 6, width = 6))
+        cat("</div>")
     }
 end.rcode-->
 
@@ -180,9 +190,9 @@ end.rcode-->
       cat(paste0("<h2>Target gene group: ", element_name, "</h2>"))
       cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
       cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Top_vlnplot))
+      cat("</div>")
     }
 end.rcode-->
-</div>
 
 
 <h1><strong>Target gene expression patterns</strong></h1>
@@ -192,18 +202,19 @@ end.rcode-->
       cat(paste0("<h2>Target gene group: ", element_name, "</h2>"))
       cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
       cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_ftplot))
+      cat("</div>")
     }
 end.rcode-->
-</div>
 
 <!--begin.rcode DEG_volcanoes, eval = length(plotter$hash_vars$DEG_list) > 0
+    saveRDS(plotter, "down_plotter.rds")
     cat("<h1><strong<DEGenes analysis</strong><h1>")
     for(i in seq(1, length(DEG_list))) {
         condition <- names(DEG_list)[i]
         condition_DEGs <- DEG_list[[condition]]
         cat(paste0("<h1>Top 10 ", condition, " DEGs</h1>"))
         for (j in seq(1, length(condition_DEGs))) {
-            plotter$hash_vars$condition_DEGs <- condition_DEGs[j]
+            plotter$hash_vars$condition_DEGs <- condition_DEGs[[j]]
             cat(plotter$static_plot_main("condition_DEGs", custom_format = TRUE, plotting_function = DEGs_volcano))
         }
     }
