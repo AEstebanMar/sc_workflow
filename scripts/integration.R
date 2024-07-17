@@ -89,7 +89,6 @@ option_list <- list(
 )  
 
 opt <- optparse::parse_args(optparse::OptionParser(option_list = option_list))
-saveRDS(opt, 'mouse_opt.rds')
 
 plan("multicore", workers = opt$cpu)
 
@@ -138,83 +137,30 @@ if(opt$imported_counts == "") {
   merged_seu <- AddMetaData(merged_seu, merged_seu_meta, row.names("Cell_ID"))
 }
 
-message('Normalizing data')
-merged_seu <- Seurat::NormalizeData(merged_seu, normalization.method = opt$normalmethod,
-                       scale.factor = opt$scalefactor, verbose = FALSE)
-message('Scaling data')
-merged_seu <- Seurat::ScaleData(merged_seu, features = rownames(merged_seu), verbose = FALSE)
-
 if(opt$save_raw) {
     saveRDS(seu, file = file.path(out_path, paste0(opt$experiment_name, ".before.seu.RDS")))
   }
 
-message('Analyzing full experiment')
+message("Analyzing seurat object")
 
-global_seu <- analyze_seurat(raw_seu = merged_seu, out_path = out_path, minqcfeats = opt$minqcfeats,
-                             percentmt = opt$percentmt, hvgs = opt$hvgs, ndims = opt$ndims,
-                             resolution = opt$resolution, dimreds_to_do = dimreds_to_do,
-                             embeds = embeds, integrate = TRUE)
+final_results <- main_integrate_seurat(seu = merged_seu, clusters_annotation = opt$clusters_annotation,
+                                       ndims = opt$ndims, resolution = opt$resolution, embeds = embeds,
+                                       minqcfeats = opt$minqcfeats, percentmt = opt$percentmt, hvgs = opt$hvgs,
+                                       scalefactor = opt$scalefactor, normalmethod = opt$normalmethod)
 
-message("--------------------------------------------")
-message("---------Writing global report---------")
-message("--------------------------------------------")
+message("-----------------------------------")
+message("---------Writing QC report---------")
+message("-----------------------------------")
 
-write_seurat_report(all_seu = global_seu, percentmt = opt$percentmt, template = file.path(template_path,
+write_seurat_report(all_seu = final_results$qc, percentmt = opt$percentmt, template = file.path(template_path,
                     "preprocessing_report.Rmd"), out_path = out_path, minqcfeats = opt$minqcfeats,
                     intermediate_files = "int_files", hvgs = opt$hvgs, resolution = opt$resolution)
-
-message('Starting integration analysis')
-
-message("Integrating seurat object")
-
-int_seu <- integrate_seurat(seu = merged_seu, clusters_annotation = opt$clusters_annotation,
-                            ndims = opt$ndims, resolution = opt$resolution, embeds = embeds,
-                            minqcfeats = opt$minqcfeats, percentmt = opt$percentmt, hvgs = opt$hvgs,
-                            scalefactor = opt$scalefactor, normalmethod = opt$normalmethod)
-
-saveRDS(int_seu, "int_seu.rds")
-# int_seu <- readRDS('mouse_int_seu.rds')
-
-DEG_list <- list()
-
-if(opt$DEG_columns == "") {
-  DEG_conditions <- int_columns
-} else {
-  DEG_conditions <- unlist(strsplit(opt$DEG_columns, split = ","))
-}
-for(condition in DEG_conditions) {
-  message(paste0("Calculating DEGs for condition ", condition))
-  condition_DEGs <- get_sc_markers(seu = int_seu, cond = condition, DEG = TRUE)
-  DEG_list[[condition]] <- condition_DEGs
-}
-
-saveRDS(DEG_list, "mouse_DEG_list.rds")
-# DEG_list <- readRDS('mouse_DEG_list.rds')
-
-if(length(int_columns) == 1) {
-  markers <- get_sc_markers(seu = int_seu, cond = int_columns, DEG = FALSE, top = 200)
-  markers <- collapse_markers(markers)
-} else {
-  markers <- Seurat::FindAllMarkers(int_seu, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
-}
-
-saveRDS(markers, "mouse_markers.rds")
-# markers <- readRDS('mouse_markers.rds')
-
-if(opt$clusters_annotation == "" & opt$cell_types_annotation != "") {
-  message("Annotating cell types")
-  anno_table <- read.table(opt$cell_types_annotation, sep = "\t", header = TRUE)
-  annotated_clusters <- match_cell_types(markers, anno_table)
-  markers <- annotated_clusters$stats_table
-  int_seu <- annotate_clusters(int_seu, annotated_clusters$cell_type)
-} else {
-  message("No cell type data provided. Clusters cannot be annotated")
-}
 
 message("--------------------------------------------")
 message("---------Writing integration report---------")
 message("--------------------------------------------")
-write_integration_report(int_seu = int_seu, template_folder = template_path, DEG_list = DEG_list,
-                         markers = markers, output_dir = opt$report_folder, source_folder = source_folder,
-                         target_genes = target_genes, name = opt$project_name, int_columns = int_columns)
+write_integration_report(final_results = final_results, template_folder = template_path,
+                         output_dir = opt$report_folder, source_folder = source_folder,
+                         target_genes = target_genes, name = opt$project_name,
+                         int_columns = int_columns, anno_table = anno_table)
 message(paste0("Report written in ", opt$report_folder))
