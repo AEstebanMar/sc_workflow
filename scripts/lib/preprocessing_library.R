@@ -16,7 +16,7 @@ read_input <- function(name, input, mincells, minfeats){
   return(seu)
 }
 
-#' do_qc
+#' tag_gc
 #' Perform Quality Control
 #'
 #' @param seu Seurat object
@@ -26,28 +26,28 @@ read_input <- function(name, input, mincells, minfeats){
 #' @keywords preprocessing, qc
 #' 
 #' @return Seurat object
-do_qc <- function(seu, minqcfeats, percentmt){
-  #### QC ####
-  
-  ##### Reads mapped to mitochondrial genes #####
-  
-  # In human ENSEMBL gene symbol annotations, mitochondrial genes are annotated starting with a MT- string
+tag_qc <- function(seu, minqcfeats, percentmt){
   
   seu[["percent.mt"]] <- PercentageFeatureSet(seu, pattern = "^MT-")
-  
-  # We can define ribosomal proteins (their names start with RPS or RPL)
-  
   seu[["percent.rb"]] <- PercentageFeatureSet(seu, pattern = "^RP[SL]")
-  
-  ##### Filtering out cells #####
-
-  seu[['QC']] <- ifelse(seu@meta.data$Is_doublet == 'True','Doublet','Pass')
-  seu[['QC']] <- ifelse(TRUE,'Pass','This should not happen') # provisional until I code the dublet detection stuff (see previous line)
-  seu[['QC']] <- ifelse(seu@meta.data$nFeature_RNA < minqcfeats & seu@meta.data$QC == 'Pass','Low_nFeature',seu@meta.data$QC)
-  seu[['QC']] <- ifelse(seu@meta.data$nFeature_RNA < minqcfeats & seu@meta.data$QC != 'Pass' & seu@meta.data$QC != 'Low_nFeature',paste('Low_nFeature',seu@meta.data$QC,sep = ','),seu@meta.data$QC)
-  seu[['QC']] <- ifelse(seu@meta.data$percent.mt > percentmt & seu@meta.data$QC == 'Pass','High_MT',seu@meta.data$QC)
-  seu[['QC']] <- ifelse(seu@meta.data$nFeature_RNA < minqcfeats & seu@meta.data$QC != 'Pass' & seu@meta.data$QC != 'High_MT',paste('High_MT',seu@meta.data$QC,sep = ','),seu@meta.data$QC)
-
+  # TO DO: doublet detection
+  # seu[['QC']] <- ifelse(seu@meta.data$Is_doublet == 'True', 'Doublet', 'Pass')
+  # seu[['QC']] <- ifelse(TRUE, 'Pass', 'This should not happen')
+  seu[['QC']] <- ifelse(seu@meta.data$nFeature_RNA < minqcfeats &
+                        seu@meta.data$QC == 'Pass','Low_nFeature',
+                        seu@meta.data$QC)
+  seu[['QC']] <- ifelse(seu@meta.data$nFeature_RNA < minqcfeats &
+                        seu@meta.data$QC != 'Pass' &
+                        seu@meta.data$QC != 'Low_nFeature',
+                        paste('Low_nFeature', seu@meta.data$QC, sep = ','),
+                              seu@meta.data$QC)
+  seu[['QC']] <- ifelse(seu@meta.data$percent.mt > percentmt &
+                        seu@meta.data$QC == 'Pass','High_MT',seu@meta.data$QC)
+  seu[['QC']] <- ifelse(seu@meta.data$nFeature_RNA < minqcfeats &
+                        seu@meta.data$QC != 'Pass' &
+                        seu@meta.data$QC != 'High_MT',
+                        paste('High_MT', seu@meta.data$QC,sep = ','),
+                              seu@meta.data$QC)
   return(seu)
 }
 
@@ -368,8 +368,7 @@ subset_seurat <- function(seu, column, value) {
 integrate_seurat <- function(seu, percentmt, ndims, resolution, hvgs, embeds,
                              minqcfeats, scalefactor, normalmethod,
                              clusters_annotation = NULL) {
-  int <- do_qc(seu = seu, minqcfeats = minqcfeats, 
-        percentmt = percentmt)
+  int <- tag_qc(seu = seu, minqcfeats = minqcfeats, percentmt = percentmt)
   int <- subset(int, subset = QC != 'High_MT,Low_nFeature')
   int <- Seurat::FindVariableFeatures(int, nfeatures = hvgs,
                                              selection.method = "vst")
@@ -386,7 +385,7 @@ integrate_seurat <- function(seu, percentmt, ndims, resolution, hvgs, embeds,
     int <- annotate_clusters(seu = int, new_clusters = clusters_annotation[[2]])
     } else {
     message("Clusters annotation file not provided. Seurat object will
-      be dynamically annotated")
+             be dynamically annotated")
     ## DEG, markers and de novo annotation will be included in function once
     ## they are stable
     }
@@ -420,13 +419,12 @@ integrate_seurat <- function(seu, percentmt, ndims, resolution, hvgs, embeds,
 #' @keywords preprocessing, main
 #' 
 #' @return Seurat object
+
 analyze_seurat <- function(raw_seu, out_path = NULL, minqcfeats, percentmt,
                            hvgs, ndims, resolution, dimreds_to_do,
                            embeds, integrate = FALSE){
-  raw_seu <- do_qc(seu = raw_seu, minqcfeats = minqcfeats, 
-                   percentmt = percentmt)
+  raw_seu <- tag_qc(seu = raw_seu, minqcfeats = minqcfeats, percentmt = percentmt)
   seu <- subset(raw_seu, subset = QC != 'High_MT,Low_nFeature')
-  seu <- raw_seu
   message('Finding variable features')
   seu <- Seurat::FindVariableFeatures(seu, nfeatures = hvgs, verbose = FALSE)
   # dimreds_to_do: PCA/UMAP/tSNE
@@ -469,6 +467,7 @@ analyze_seurat <- function(raw_seu, out_path = NULL, minqcfeats, percentmt,
 #' @keywords preprocessing, write, report
 #' 
 #' @return nothing
+
 write_seurat_report <- function(all_seu = NULL, template, out_path,
                                 intermediate_files, minqcfeats,
                                 percentmt, hvgs, resolution){
@@ -501,6 +500,7 @@ write_seurat_report <- function(all_seu = NULL, template, out_path,
 #' @keywords preprocessing, write, report
 #' 
 #' @return nothing
+
 write_integration_report <- function(int_seu, output_dir = getwd(),
                                      markers, template_folder, name = NULL,
                                      source_folder = "none", target_genes,
@@ -535,6 +535,7 @@ write_integration_report <- function(int_seu, output_dir = getwd(),
 #' @param markers_list Table containing celltypes and their markers
 #' 
 #' @return A list with one element per cell type
+
 read_and_format_markers <- function(path_to_markers) {
   markers_df <- read.table(path_to_markers, sep = "\t", header = FALSE,
                            stringsAsFactors = FALSE)
