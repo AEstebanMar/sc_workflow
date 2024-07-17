@@ -52,7 +52,7 @@
                                          lab = rownames(input_DEGs),
                                          x = 'avg_log2FC', y = 'p_val_adj',
                                          ylim = -0.5,
-                                         title = condition,
+                                         title = level,
                                          pCutoff = 0.05, FCcutoff = 0.1)
     }
 
@@ -69,16 +69,6 @@ end.rcode-->
 </strong></h1>
 
 <h1><strong>Markers distribution</strong></h1>
-
-<!--begin.rcode target_genes, eval = !is.null(plotter$hash_vars$target_genes)
-    for(element_name in names(plotter$hash_vars$target_genes)) {
-      features <- plotter$hash_vars$target_genes[[element_name]]
-      cat(paste0("<h2>Target gene group: ", element_name, "</h2>"))
-      cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-      cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DotPlot, height = 6, width = 6))
-      cat("</div>")
-    }
-end.rcode-->
 
 <!--begin.rcode cell_markers, eval = !is.null(plotter$hash_vars$anno_table)
     for(element_name in unique(plotter$hash_vars$anno_table$type)) {
@@ -165,11 +155,36 @@ end.rcode-->
     }
 end.rcode-->
 
+<!--begin.rcode DEG_volcanoes, eval = length(plotter$hash_vars$DEG_list) > 0
+    saveRDS(plotter, "down_plotter.rds")
+    cat("<h1><strong<DEGenes analysis</strong><h1>")
+    for(i in seq(1, length(DEG_list))) {
+        condition <- names(DEG_list)[i]
+        condition_DEGs <- DEG_list[[condition]]
+        cat(paste0("<h1>Top 10 ", condition, " DEGs</h1>"))
+        for (j in seq(1, length(condition_DEGs))) {
+            level <- names(condition_DEGs)[j]
+            plotter$hash_vars$condition_DEGs <- condition_DEGs[[j]]
+            cat(plotter$static_plot_main("condition_DEGs", custom_format = TRUE, plotting_function = DEGs_volcano))
+        }
+    }
+end.rcode-->
+
 <h1><strong>Top 10 markers</strong></h1>
 
 <!--begin.rcode top_markers
     cat(plotter$table("markers", header = NULL, row_names = NULL, table_rownames = FALSE,
         styled = "dt", func = top_table))
+end.rcode-->
+
+<!--begin.rcode target_genes, eval = !is.null(plotter$hash_vars$target_genes)
+    for(element_name in names(plotter$hash_vars$target_genes)) {
+      features <- plotter$hash_vars$target_genes[[element_name]]
+      cat(paste0("<h2>Target gene group: ", element_name, "</h2>"))
+      cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+      cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DotPlot, height = 6, width = 6))
+      cat("</div>")
+    }
 end.rcode-->
 
 <h1><strong>Target gene presence</strong></h1>
@@ -203,19 +218,5 @@ end.rcode-->
       cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
       cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_ftplot))
       cat("</div>")
-    }
-end.rcode-->
-
-<!--begin.rcode DEG_volcanoes, eval = length(plotter$hash_vars$DEG_list) > 0
-    saveRDS(plotter, "down_plotter.rds")
-    cat("<h1><strong<DEGenes analysis</strong><h1>")
-    for(i in seq(1, length(DEG_list))) {
-        condition <- names(DEG_list)[i]
-        condition_DEGs <- DEG_list[[condition]]
-        cat(paste0("<h1>Top 10 ", condition, " DEGs</h1>"))
-        for (j in seq(1, length(condition_DEGs))) {
-            plotter$hash_vars$condition_DEGs <- condition_DEGs[[j]]
-            cat(plotter$static_plot_main("condition_DEGs", custom_format = TRUE, plotting_function = DEGs_volcano))
-        }
     }
 end.rcode-->
