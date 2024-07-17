@@ -125,36 +125,6 @@ end.rcode-->
     }
 end.rcode-->
 
-<h1><strong>PCA</strong></h1>
-<!--begin.rcode pca_integration, fig.height = 12, fig.width = 12
-    reduction <- "pca"
-    cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-    group.by <- split.by <- NULL
-    cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DimPlot))
-    cat("</div>")
-end.rcode-->
-
-<!--begin.rcode pca_splits, fig.height = 12, fig.width = 12,
-    for(condition in int_columns) {
-        cat(paste0("<h1>Split by ", condition, "</h1>"))
-        split.by <- condition
-        cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-        cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DimPlot))
-        cat("</div>")
-    }
-end.rcode-->
-
-<!--begin.rcode pca_groups,
-    for(condition in int_columns) {
-        cat(paste0("<h1>Grouped by ", condition, "</h1>"))
-        split.by <- NULL
-        group.by <- condition
-        cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-        cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DimPlot))
-        cat("</div>")
-    }
-end.rcode-->
-
 <!--begin.rcode DEG_volcanoes, eval = length(plotter$hash_vars$DEG_list) > 0
     saveRDS(plotter, "down_plotter.rds")
     cat("<h1><strong<DEGenes analysis</strong><h1>")
