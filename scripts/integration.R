@@ -7,7 +7,6 @@
 # Obtain this script directory
 full.fpath <- normalizePath(unlist(strsplit(commandArgs()[grep('^--file=', 
                 commandArgs())], '='))[2])
-
 main_path_script <- dirname(full.fpath)
 root_path <- file.path(main_path_script)
 template_path <- file.path(root_path, "..", "templates")
@@ -18,9 +17,8 @@ library(future)
 options(future.globals.maxSize = 18000 * 1024^2)
 
 sc_source_folder <- file.path(root_path, 'lib')
-library(Seurat)
-library(scCustomize)
 source(file.path(sc_source_folder, "preprocessing_library.R"))
+source(file.path(sc_source_folder, "main_analyze_seurat.R"))
 
 # Temporary path until we have htmlreportR installed
 devtools::load_all('~/dev_R/htmlreportR')
@@ -78,7 +76,7 @@ option_list <- list(
             help = "Clusters annotation file."),
   optparse::make_option("--target_genes", type = "character", default = "",
             help = "Path to target genes table, or comma-separated list of target genes"),
-  optparse::make_option("--cpus", type = "double", default = 1,
+  optparse::make_option("--cpu", type = "double", default = 1,
             help = "Provided CPUs"),
   optparse::make_option("--imported_counts", type = "character", default = "",
             help = "Imported counts directory"),
@@ -95,11 +93,23 @@ plan("multicore", workers = opt$cpu)
 ##########################################
 ## MAIN
 ##########################################
+
+if(opt$clusters_annotation != "") {
+    clusters_annotation <- read.table(opt$clusters_annotation, sep = "\t", header = TRUE)
+} else {
+  clusters_annotation <- NULL
+}
+if(opt$cell_types_annotation != "") {
+  cell_types_annotation <- read.table(opt$cell_types_annotation, sep = "\t", header = TRUE)
+} else {
+  cell_types_annotation <- NULL
+}
+
 if(opt$target_genes == ""){
   warning("No target genes provided")
   target_genes <- NULL
 } else if(file.exists(opt$target_genes)) {
-  target_genes <- read_and_format_markers(opt$target_genes)
+  target_genes <- read_and_format_targets(opt$target_genes)
 } else {
   target_genes <- list(Custom = strsplit(opt$target_genes, split = ",")[[1]])
 }
@@ -126,41 +136,38 @@ embeds <- "harmony"
 
 out_path = file.path(opt$report_folder, opt$experiment_name)
 
-if(opt$imported_counts == "") {
-  merged_seu <- merge_seurat(project = opt$project_name, samples = samples, exp_design = exp_design,
-                            suffix = opt$suffix, count_path = opt$count_path)  
-} else {
-  merged_seu <- Seurat::CreateSeuratObject(counts = Seurat::Read10X(opt$imported_counts, gene.column = 1),
-                                           project = opt$experiment_name, min.cells = 1, min.features = 1)
-  merged_seu_meta <- read.table(file.path(opt$imported_counts, "meta.tsv"), sep = "\t", header = TRUE)
-  rownames(merged_seu_meta) <- colnames(merged_seu)
-  merged_seu <- AddMetaData(merged_seu, merged_seu_meta, row.names("Cell_ID"))
-}
+# if(opt$imported_counts == "") {
+#   merged_seu <- merge_seurat(project = opt$project_name, samples = samples, exp_design = exp_design,
+#                             suffix = opt$suffix, count_path = opt$count_path)  
+# } else {
+#   merged_seu <- Seurat::CreateSeuratObject(counts = Seurat::Read10X(opt$imported_counts, gene.column = 1),
+#                                            project = opt$experiment_name, min.cells = 1, min.features = 1)
+#   merged_seu_meta <- read.table(file.path(opt$imported_counts, "meta.tsv"), sep = "\t", header = TRUE)
+#   rownames(merged_seu_meta) <- colnames(merged_seu)
+#   merged_seu <- AddMetaData(merged_seu, merged_seu_meta, row.names("Cell_ID"))
+# }
 
-if(opt$save_raw) {
-    saveRDS(seu, file = file.path(out_path, paste0(opt$experiment_name, ".before.seu.RDS")))
-  }
+# if(opt$save_raw) {
+#     saveRDS(seu, file = file.path(out_path, paste0(opt$experiment_name, ".before.seu.RDS")))
+#   }
 
-message("Analyzing seurat object")
+# message("Analyzing seurat object")
 
-final_results <- main_integrate_seurat(seu = merged_seu, clusters_annotation = opt$clusters_annotation,
-                                       ndims = opt$ndims, resolution = opt$resolution, embeds = embeds,
-                                       minqcfeats = opt$minqcfeats, percentmt = opt$percentmt, hvgs = opt$hvgs,
-                                       scalefactor = opt$scalefactor, normalmethod = opt$normalmethod)
+# down_seu <- merged_seu[, sample(colnames(merged_seu), size = 5000, replace=F)]
 
-message("-----------------------------------")
-message("---------Writing QC report---------")
-message("-----------------------------------")
+merged_seu <- readRDS('mouse_down_seu.rds')
 
-write_seurat_report(all_seu = final_results$qc, percentmt = opt$percentmt, template = file.path(template_path,
-                    "preprocessing_report.Rmd"), out_path = out_path, minqcfeats = opt$minqcfeats,
-                    intermediate_files = "int_files", hvgs = opt$hvgs, resolution = opt$resolution)
+final_results <- main_analyze_seurat(seu = merged_seu, clusters_annotation = clusters_annotation,
+                                     ndims = opt$ndims, resolution = opt$resolution, int_columns = int_columns,
+                                     cell_types_annotation = cell_types_annotation, DEG_columns = opt$DEG_columns,
+                                     minqcfeats = opt$minqcfeats, percentmt = opt$percentmt, hvgs = opt$hvgs,
+                                     scalefactor = opt$scalefactor, normalmethod = opt$normalmethod)
 
-message("--------------------------------------------")
-message("---------Writing integration report---------")
-message("--------------------------------------------")
-write_integration_report(final_results = final_results, template_folder = template_path,
-                         output_dir = opt$report_folder, source_folder = source_folder,
-                         target_genes = target_genes, name = opt$project_name,
-                         int_columns = int_columns, anno_table = anno_table)
+message("--------------------------------")
+message("---------Writing report---------")
+message("--------------------------------")
+write_seurat_report(final_results = final_results, template_folder = template_path,
+                    output_dir = opt$report_folder, source_folder = source_folder,
+                    target_genes = target_genes, name = opt$project_name,
+                    int_columns = int_columns, cell_types_annotation = cell_types_annotation)
 message(paste0("Report written in ", opt$report_folder))

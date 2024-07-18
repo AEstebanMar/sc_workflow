@@ -37,60 +37,63 @@
 #'
 #' @returns A subsetted seurat object
 
-
-main_analyze_seurat <- function(raw_seu, out_path = NULL, minqcfeats, percentmt,
+main_analyze_seurat <- function(seu, out_path = NULL, minqcfeats, percentmt,
                            		hvgs, ndims, resolution, dimreds_to_do,
-                           		integrate = FALSE, cell_types_annotation,
-                           		DEG_columns = NULL, int_columns = NULL){
+                           		integrate = FALSE, clusters_annotation = NULL,
+                           		cell_types_annotation, DEG_columns = NULL,
+                           		int_columns = NULL, scalefactor = 10000,
+                           		normalmethod = "LogNormalize"){
   message('Normalizing data')
-  merged_seu <- Seurat::NormalizeData(object = merged_seu, verbose = FALSE,
+  seu <- Seurat::NormalizeData(object = seu, verbose = FALSE,
   									  normalization.method = normalmethod,
                          			  scale.factor = scalefactor)
   message('Scaling data')
-  merged_seu <- Seurat::ScaleData(object = merged_seu, verbose = FALSE
+  seu <- Seurat::ScaleData(object = seu, verbose = FALSE,
   								  features = rownames(merged_seu))
-  qc <- tag_qc(seu = raw_seu, minqcfeats = minqcfeats,percentmt = percentmt)
-  seu <- subset(qc, subset = QC != 'High_MT,Low_nFeature')
+  qc <- tag_qc(seu = seu, minqcfeats = minqcfeats, percentmt = percentmt)
+  # seu <- subset(qc, subset = QC != 'High_MT,Low_nFeature')
   message('Finding variable features')
   seu <- Seurat::FindVariableFeatures(seu, nfeatures = hvgs, verbose = FALSE)
   # dimreds_to_do: PCA/UMAP/tSNE
   message('Reducing dimensionality')  
   seu <- Seurat::RunPCA(seu, verbose = FALSE)
+  reduction <- "pca"
   if (integrate) {
   	message('Integrating seurat object')
   	seu <- harmony::RunHarmony(object = seu, "sample", plot_convergence = FALSE,
   	 							verbose = FALSE)
-  	seu <- Seurat::RunUMAP(object = seu, dims = seq(1, ndims),
-  						   reduction = "harmony", verbose = FALSE)
-  	seu <- Seurat::FindNeighbors(object = seu, dims = seq(1, ndims),
-  								 reduction = "harmony", verbose = FALSE)
-  } else {
-  	seu <- Seurat::RunUMAP(object = seu, dims = seq(1, ndims),
-  						   reduction = "pca", verbose = FALSE)
-  	seu <- Seurat::FindNeighbors(object = seu, dims = seq(1, ndims),
-  								 reduction = "pca", verbose = FALSE)
+    reduction <- "harmony"
   }
+  seu <- Seurat::RunUMAP(object = seu, dims = seq(1, ndims),
+                 reduction = reduction, verbose = FALSE)
+  seu <- Seurat::FindNeighbors(object = seu, dims = seq(1, ndims),
+                   reduction = reduction, verbose = FALSE)
+  seu <- Seurat::FindClusters(seu, resolution = resolution, verbose = FALSE)
+  seu <- SeuratObject::JoinLayers(seu)
   if(length(int_columns) == 1) {
-    markers <- get_sc_markers(seu = seu, cond = int_columns, DEG = FALSE, top = 200)
+    markers <- get_sc_markers(seu = seu, cond = int_columns, DEG = FALSE,
+                              top = 200)
     markers <- collapse_markers(markers)
   }else{
-    markers <- Seurat::FindAllMarkers(seu, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+    markers <- Seurat::FindAllMarkers(seu, only.pos = TRUE, min.pct = 0.25,
+                                      logfc.threshold = 0.25, verbose = FALSE)
   }
-  if(clusters_annotation != "") {
+  if(!is.null(clusters_annotation)) {
   	message("Clusters annotation file provided. Annotating clusters")
   	seu <- annotate_clusters(seu = seu, new_clusters = clusters_annotation[[2]])
-  }else if(cell_types_annotation != ""){
-	message("Clusters annotation file not provided. Dynamically annotating
-			   clusters.")
-	anno_table <- read.table(opt$cell_types_annotation, sep = "\t", header = TRUE)
-	annotated_clusters <- match_cell_types(markers, anno_table, top = 200)
-	markers <- annotated_clusters$stats_table
-	seu <- annotate_clusters(seu, annotated_clusters$cell_type)
+  }else if(!is.null(cell_types_annotation)){
+	  message("Clusters annotation file not provided. Dynamically annotating
+			       clusters.")
+	  annotated_clusters <- match_cell_types(markers, cell_types_annotation,
+                                           top = 200)
+	  markers <- annotated_clusters$stats_table
+	  seu <- annotate_clusters(seu, annotated_clusters$cell_type)
   }else{
-  	message("No cell type data provided. Clusters cannot be annotated")
+  	warning("No data provided for cluster annotation")
   }
+  markers <- cbind(markers$gene, markers[, -grep("gene", colnames(markers))])
+  colnames(markers)[1] <- "gene"
   message('Performing DEG analysis')
-  seu <- SeuratObject::JoinLayers(seu)
   DEG_list <- list()
   if(DEG_columns == "") {
     DEG_conditions <- int_columns
@@ -104,10 +107,10 @@ main_analyze_seurat <- function(raw_seu, out_path = NULL, minqcfeats, percentmt,
   }
   if(!is.null(out_path)){
   	message('Writing results to disk')
-  	saveRDS(seu, paste0(out_path, ".qc_seu.RDS"))
+  	saveRDS(qc, paste0(out_path, ".qc.RDS"))
   	saveRDS(seu, paste0(out_path, ".seu.RDS"))
-  	saveRDS(markers, paste0(out_path, ".markers.RDS")
-  	saveRDS(DEG_list, paste0(out_path, ".DEGs.RDS")
+  	saveRDS(markers, paste0(out_path, ".markers.RDS"))
+  	saveRDS(DEG_list, paste0(out_path, ".DEGs.RDS"))
   }
   final_results <- list()
   final_results$qc <- qc
@@ -117,3 +120,46 @@ main_analyze_seurat <- function(raw_seu, out_path = NULL, minqcfeats, percentmt,
   return(final_results)
 }
 
+#' write_seurat_report
+#' Write integration HTML report
+#' 
+#' @param int integrated seurat object
+#' @param output_dir directory where report will be saved
+#' @param name experiment name, will be used to build output file name
+#' @param template_folder directory where template is located
+#' @param source_folder htmlreportR source folder
+#' @param int_columns factors present in experiment design
+#'
+#' @keywords preprocessing, write, report
+#' 
+#' @return nothing
+
+write_seurat_report <- function(final_results, output_dir = getwd(),
+                                markers, template_folder, name = NULL,
+                                source_folder = "none", target_genes,
+                                int_columns, DEG_list = NULL,
+                                cell_types_annotation = NULL){
+  if(is.null(template_folder)) {
+    stop("No template folder was provided.")
+  }
+  if(!file.exists(source_folder)) {
+    stop(paste0("Source folder not found. Was ", source_folder))
+  }
+  if(any(is.null(final_results$seu))) {
+    stop("ERROR: comparison object contains NULL fields. Analysis
+       is not complete.")
+  }
+  template <- file.path(template_folder, "integration_template.txt")
+  tmp_folder <- "tmp_lib"
+  out_file <- file.path(output_dir, "integration_report.html")
+  container <- list(seu = final_results$seu, int_columns = int_columns,
+                    DEG_list = final_results$DEG_list,
+                    target_genes = target_genes,
+                    markers = final_results$markers,
+                    cell_types_annotation = cell_types_annotation)
+  plotter <- htmlReport$new(title_doc = paste0("Single-Cell ", name, " report"), 
+                            container = container, tmp_folder = tmp_folder,
+                            src = source_folder)
+  plotter$build(template)
+  plotter$write_report(out_file)
+}

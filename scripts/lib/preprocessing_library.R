@@ -28,8 +28,8 @@ read_input <- function(name, input, mincells, minfeats){
 #' @return Seurat object
 tag_qc <- function(seu, minqcfeats, percentmt){
   
-  seu[["percent.mt"]] <- PercentageFeatureSet(seu, pattern = "^MT-")
-  seu[["percent.rb"]] <- PercentageFeatureSet(seu, pattern = "^RP[SL]")
+  seu[["percent.mt"]] <- Seurat::PercentageFeatureSet(seu, pattern = "^MT-")
+  seu[["percent.rb"]] <- Seurat::PercentageFeatureSet(seu, pattern = "^RP[SL]")
   # TO DO: doublet detection
   # seu[['QC']] <- ifelse(seu@meta.data$Is_doublet == 'True', 'Doublet', 'Pass')
   # seu[['QC']] <- ifelse(TRUE, 'Pass', 'This should not happen')
@@ -214,12 +214,6 @@ get_marker_idents <- function(seu, cond, DEG) {
   if(!cond %in% names(seu@meta.data)) {
     stop("Specified condition does not exist in seurat object metadata.
           DEG analysis impossible.")
-    }
-  if(!is.null(seu@meta.data$named_clusters)) {
-    cluster_idents <- "named_clusters"
-  } else {
-    warning("Seurat object clusters are not annotated.", immediate. = TRUE)
-    cluster_idents <- "seurat_clusters"
   }
   if(DEG) {
     conds <- unique(seu[[cond]][[1]])
@@ -229,7 +223,7 @@ get_marker_idents <- function(seu, cond, DEG) {
     }
     return(list(idents = cond, conds = conds))
   } else {
-    return(list(idents = cluster_idents, conds = NULL))
+    return(list(idents = "seurat_clusters", conds = NULL))
   }
 }
 
@@ -329,23 +323,23 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, top = 10) {
   Seurat::Idents(seu) <- cluster_idents$idents
   conds <- cluster_idents$conds
   clusters <- sort(unique(seu@meta.data[[cluster_idents$idents]]))
-  clusters_markers <- list()
+  cluster_markers <- list()
   for (i in seq(1, length(clusters))) {
     if (DEG) {
       message(paste0("Analysing factor ", i, "/", length(clusters)))
       # off-by-one correction because Seurat counts clusters from 0
       subset_seu <- subset_seurat(seu, "seurat_clusters", i - 1)
       markers <- Seurat::FindMarkers(subset_seu, ident.1 = conds[1],
-                                     ident.2 = conds[2])
+                                     ident.2 = conds[2], verbose = FALSE)
     } else {
       message(paste0("Analysing cluster ", i, "/", length(clusters)))
       markers <- Seurat::FindConservedMarkers(seu, ident.1 = clusters[i],
                                               grouping.var = cond,
                                               verbose = FALSE)[1:top, ]
     }
-    clusters_markers[[as.character(clusters[i])]] <- markers
+    cluster_markers[[as.character(clusters[i])]] <- markers
   }
-  return(clusters_markers)
+  return(cluster_markers)
 }
 
 subset_seurat <- function(seu, column, value) {
@@ -354,8 +348,8 @@ subset_seurat <- function(seu, column, value) {
   return(subset)
 }
 
-#' write_seurat_report
-#' Write seurat HTML report
+#' write_sergio_report
+#' Write sergio's seurat HTML report
 #' 
 #' @param name sample name
 #' @param expermient experiment name
@@ -372,7 +366,7 @@ subset_seurat <- function(seu, column, value) {
 #' 
 #' @return nothing
 
-write_seurat_report <- function(all_seu = NULL, template, out_path,
+write_sergio_report <- function(all_seu = NULL, template, out_path,
                                 intermediate_files, minqcfeats,
                                 percentmt, hvgs, resolution){
   int_files <- file.path(out_path, intermediate_files)
@@ -391,57 +385,15 @@ write_seurat_report <- function(all_seu = NULL, template, out_path,
                                       "_preprocessing_report.html"))
 }
 
-#' write_integration_report
-#' Write integration HTML report
+#' read_and_format_targets
+#' `read_and_format_targets` formats a marker-celltype table into a list
 #' 
-#' @param int integrated seurat object
-#' @param output_dir directory where report will be saved
-#' @param name experiment name, will be used to build output file name
-#' @param template_folder directory where template is located
-#' @param source_folder htmlreportR source folder
-#' @param int_columns factors present in experiment design
-#'
-#' @keywords preprocessing, write, report
-#' 
-#' @return nothing
-
-write_integration_report <- function(int_seu, output_dir = getwd(),
-                                     markers, template_folder, name = NULL,
-                                     source_folder = "none", target_genes,
-                                     int_columns, DEG_list = NULL,
-                                     anno_table = NULL){
-  if(is.null(template_folder)) {
-    stop("No template folder was provided.")
-  }
-  if(!file.exists(source_folder)) {
-    stop(paste0("Source folder not found. Was ", source_folder))
-  }
-  if(any(is.null(int_seu))) {
-    stop("ERROR: comparison object contains NULL fields. Analysis
-       is not complete.")
-  }
-  template <- file.path(template_folder, "integration_template.txt")
-  tmp_folder <- "tmp_lib"
-  out_file <- file.path(output_dir, "integration_report.html")
-  container <- list(seu = int_seu, int_columns = int_columns,
-                    DEG_list = DEG_list, target_genes = target_genes,
-                    markers = markers, anno_table = anno_table)
-  plotter <- htmlReport$new(title_doc = paste0("Single-Cell ", name, " report"), 
-                            container = container, tmp_folder = tmp_folder,
-                            src = source_folder)
-  plotter$build(template)
-  plotter$write_report(out_file)
-}
-
-#' format_markers
-#' `format_markers` formats a marker-celltype table into a list
-#' 
-#' @param markers_list Table containing celltypes and their markers
+#' @param file Path to target gene file
 #' 
 #' @return A list with one element per cell type
 
-read_and_format_markers <- function(path_to_markers) {
-  markers_df <- read.table(path_to_markers, sep = "\t", header = FALSE,
+read_and_format_targets <- function(file) {
+  markers_df <- read.table(file, sep = "\t", header = FALSE,
                            stringsAsFactors = FALSE)
   cell_types <- markers_df[, 1]
   markers <- strsplit(markers_df[, 2], ",")
