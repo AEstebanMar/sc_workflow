@@ -13,6 +13,10 @@
 
 # Setup
 
+if [ -z $SLURM_CPUS_PER_TASK ]; then
+    SLURM_CPUS_PER_TASK=1
+fi
+
 . ~soft_bio_267/initializes/init_ruby
 . ~soft_bio_267/initializes/init_R
 hostname
