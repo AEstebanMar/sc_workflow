@@ -266,7 +266,7 @@ match_cell_types <- function(markers_df, cell_annotation, p_adj_cutoff = 1e-5) {
       found_markers <- which(subset$gene %in% type_markers)
       scores[[type]] <- sum(subset$avg_log2FC[found_markers] / max_log2FC)
     }
-    if(max(unlist(scores)) == 0) {
+    if(max(unlist(scores)) == 0 || is.na(max(unlist(scores)))) {
       subset$cell_type = "Unknown"
     } else {
       cluster_match <- names(scores[which.max(unlist(scores))])
