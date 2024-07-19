@@ -100,30 +100,6 @@ do_clustering <- function(seu, ndims, resolution, reduction){
   return(seu)
 }
 
-
-##########################################################################
-
-
-#' do_marker_gene_selection
-#' Perform marker gene selection
-#' TODO this function is harcoded - make proper variables
-#'
-#' @param seu Seurat object
-#' @param out_path path where output will be saved. If not specified, it will
-#' not be written to disk.
-#' 
-#' @keywords preprocessing, marker, gene
-#' 
-#' @return Nothing
-do_marker_gene_selection <- function(seu, out_path = NULL){
-  markers <- FindAllMarkers(seu, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
-  if(!is.null(out_path)){ saveRDS(markers, paste0(out_path, ".markers.RDS"))}
-  return(markers)
-}
-
-##########################################################################
-
-
 #' add_exp_design
 #' Add experimental condition to Seurat metadata
 #'
@@ -163,10 +139,10 @@ merge_seurat <- function(project_name, samples, exp_design, count_path,
   seu.list <- sapply(samples, function(sample){
     sample_path <- grep(sample, full_paths, value = TRUE)
     d10x <- Seurat::Read10X(sample_path)
-    seu <- CreateSeuratObject(counts = d10x, project = sample, min.cells = 1,
+    seu <- Seurat::CreateSeuratObject(counts = d10x, project = sample, min.cells = 1,
                               min.features = 1)
     seu <- add_exp_design(seu = seu, name = sample, exp_design = exp_design)
-    seu[["percent.mt"]] <- PercentageFeatureSet(seu, pattern = "^MT-")
+    seu[["percent.mt"]] <- Seurat::PercentageFeatureSet(seu, pattern = "^MT-")
     seu <- subset(seu, subset = nFeature_RNA > 500 & nCount_RNA > 1000
                                 & percent.mt < 20)
     return(seu)
@@ -180,7 +156,7 @@ merge_seurat <- function(project_name, samples, exp_design, count_path,
 #' `annotate_clusters` renames seurat clusters according to dictionary
 #'
 #' @param seu Non-annotated seu with markers
-#' @param anno_table Path to file containing cluster annotation, or loa
+#' @param new_clusters Vector of names to assign to clusters.
 #'
 #' @return Annotated seu object
 #'
@@ -241,8 +217,11 @@ collapse_markers <- function(markers_list) {
   for(i in seq(1, length(markers_list))) {
     df_list[[i]] <- as.data.frame(markers_list[[i]])
     df_list[[i]]$cluster <- i
+    df_list[[i]]$gene <- rownames(df_list[[i]])
+    rownames(df_list[[i]]) <- NULL
   }
-  merged_df <- do.call(rbind, df_list)
+  merged_df <- do.call(plyr::rbind.fill, df_list)
+  merged_df
   return(merged_df)
 }
 
@@ -252,13 +231,13 @@ collapse_markers <- function(markers_list) {
 #' type to each cluster of the data frame.
 #'
 #' @param markers_df Data frame of markers, clusters and p-values
-#' @param anno_table Table of cell types and their associated markers
+#' @param cell_annotation Table of cell types and their associated markers
 #' @param top Top markers by p-value to use in cell type assignment
 #' @returns A markers data frame with a new column for cell type assigned to
 #' cluster.
 
-match_cell_types <- function(markers_df, anno_table, top = 20) {
-  canon_types <- unique(anno_table$type)
+match_cell_types <- function(markers_df, cell_annotation, p_adj_cutoff = 1e-5) {
+  canon_types <- unique(cell_annotation$type)
   subset_list <- list()
   res <- list()
   pcols <- grep("p_val_adj", colnames(markers_df))
@@ -271,28 +250,26 @@ match_cell_types <- function(markers_df, anno_table, top = 20) {
                                                min(min_pval,
                                                    markers_df[[pcols[2]]])))
     }
+  markers_df <- markers_df[markers_df$p_val_adj < p_adj_cutoff, ]
   fcols <- grep("log2FC", colnames(markers_df))
     if(length(fcols) > 1) {
-      markers_df$avg_log2FC <- (markers_df[[pcols[1]]] + markers_df[[pcols[2]]]) / 2
+      markers_df$avg_log2FC <- (markers_df[[fcols[1]]] +
+                                markers_df[[fcols[2]]]) / 2
     }
   for(cluster in unique(markers_df$cluster)) {
     subset <- markers_df[markers_df$cluster == cluster, ]
     subset <- subset[order(subset$p_val_adj), ]
-    if(nrow(subset) > top) {
-      subset <- subset[seq(1, top), ]
-    }
-    matches <- list()
+    max_log2FC <- max(subset$avg_log2FC)
+    scores <- list()
     for(type in canon_types) {
-      type_markers <- anno_table[anno_table$type == type, ]$marker
-      # En vez de dividir, que sea una suma de coincidencias ponderada por media
-      # de log2fc
-      matches[[type]] <- sum(rownames(subset) %in% type_markers) /
-                         length(type_markers)
+      type_markers <- cell_annotation[cell_annotation$type == type, ]$marker
+      found_markers <- which(subset$gene %in% type_markers)
+      scores[[type]] <- sum(subset$avg_log2FC[found_markers] / max_log2FC)
     }
-    if(max(unlist(matches)) == 0) {
+    if(max(unlist(scores)) == 0) {
       subset$cell_type = "Unknown"
     } else {
-      cluster_match <- names(matches[which.max(unlist(matches))])
+      cluster_match <- names(scores[which.max(unlist(scores))])
       subset$cell_type <- cluster_match
     }
     subset_list[[cluster]] <- subset
@@ -314,11 +291,9 @@ match_cell_types <- function(markers_df, anno_table, top = 20) {
 #' conserver markers from a seurat object.
 #'
 #' @inheritParams get_marker_idents
-#' @param top An integer. Top conserved markers to select for each cluster.
-#'            Default: 10
 #' @returns A list containing one marker data frame per cluster.
 
-get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, top = 10) {
+get_sc_markers <- function(seu, cond = NULL, DEG = FALSE) {
   cluster_idents <- get_marker_idents(seu = seu, cond = cond, DEG = DEG)
   Seurat::Idents(seu) <- cluster_idents$idents
   conds <- cluster_idents$conds
@@ -335,7 +310,11 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, top = 10) {
       message(paste0("Analysing cluster ", i, "/", length(clusters)))
       markers <- Seurat::FindConservedMarkers(seu, ident.1 = clusters[i],
                                               grouping.var = cond,
-                                              verbose = FALSE)[1:top, ]
+                                              verbose = FALSE)
+      markers$gene <- rownames(markers)
+      rownames(markers) <- NULL
+      markers <- cbind(markers$gene, markers[,
+                                              -grep("gene", colnames(markers))])
     }
     cluster_markers[[as.character(clusters[i])]] <- markers
   }
