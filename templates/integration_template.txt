@@ -24,7 +24,7 @@
     }
 
     subset_table <- function(df) {
-        res <- df[features, ][complete.cases(df[features, ]), ]
+        res <- df[features, ]
         return(res)
     }
 
@@ -63,16 +63,14 @@
     
 end.rcode-->
 
-<!--begin.rcode title
-cat(paste0("<h1><strong>Single-Cell RNASeq Integration analysis"))
-end.rcode-->
-</strong></h1>
+<h1><strong>Single-Cell RNASeq Integration analysis</strong></h1>
 
 <h1><strong>Markers distribution</strong></h1>
+<h2>Expression of cell type markers across experiment clusters</h2>
 
-<!--begin.rcode cell_markers, eval = !is.null(plotter$hash_vars$anno_table)
-    for(element_name in unique(plotter$hash_vars$anno_table$type)) {
-        features <- plotter$hash_vars$anno_table[plotter$hash_vars$anno_table$type == element_name, ]$marker
+<!--begin.rcode cell_markers, eval = !is.null(plotter$hash_vars$cell_annotation)
+    for(element_name in unique(plotter$hash_vars$cell_annotation$type)) {
+        features <- plotter$hash_vars$cell_annotation[plotter$hash_vars$cell_annotation$type == element_name, ]$marker
         cat(paste0("<h2>", element_name, " markers</h2>"))
         cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
         cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DotPlot, height = 6, width = 6))
@@ -80,17 +78,16 @@ end.rcode-->
     }
 end.rcode-->
 
-<!--begin.rcode cluster_markers, eval = !is.null(plotter$hash_vars$markers_list)
-    for(condition in names(plotter$hash_vars$markers_list)) {
-        plotter$hash_vars$condition_list <- plotter$hash_vars$markers_list[[condition]]
-        for(element in seq(1:length((plotter$hash_vars$condition_list)))) {
-            features <- plotter$hash_vars$condition_list[[element]]
-            title <- paste0("Cluster ", element)
-            cat(paste0("<h2>Conserved markers for cluster: ", element, "</h2>"))
-            cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-            cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DotPlot, height = 6, width = 6))
-            cat("</div>")
-        }
+<h1><strong>Top 10 markers</strong></h1>
+
+<!--begin.rcode top_markers
+    for(cluster in unique(plotter$hash_vars$markers$cluster)) {
+        clust_no <- cluster
+        clust_name <- unique(plotter$hash_vars$markers$cell_type)[cluster]
+        cat(paste0("<h2>Cluster ", cluster, ", ", clust_name))
+        plotter$hash_vars$cluster_markers <- plotter$hash_vars$markers[plotter$hash_vars$markers$cluster == cluster, ]
+        cat(plotter$table("cluster_markers", header = NULL, row_names = NULL, table_rownames = FALSE,
+            styled = "dt", func = top_table))  
     }
 end.rcode-->
 
@@ -140,12 +137,9 @@ end.rcode-->
     }
 end.rcode-->
 
-<h1><strong>Top 10 markers</strong></h1>
-
-<!--begin.rcode top_markers
-    cat(plotter$table("markers", header = NULL, row_names = NULL, table_rownames = FALSE,
-        styled = "dt", func = top_table))
-end.rcode-->
+<h1><strong>Target genes distribution</strong></h1>
+<h2>Expression of target genes across experiment clusters</h2>
+<p>These genes have <strong>NOT</strong> been used to annotate clusters</p>
 
 <!--begin.rcode target_genes, eval = !is.null(plotter$hash_vars$target_genes)
     for(element_name in names(plotter$hash_vars$target_genes)) {
