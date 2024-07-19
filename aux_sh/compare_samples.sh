@@ -4,7 +4,7 @@
 # STAGE 2 SAMPLES COMPARISON
 
 #SBATCH -J compare_samples.sh
-#SBATCH --cpus-per-task=48
+#SBATCH --cpus-per-task=12
 #SBATCH --mem='1000gb'
 #SBATCH --constraint=cal
 #SBATCH --time=6-23:59:59
@@ -60,9 +60,10 @@ integration.R --output $FULL_RESULTS/$experiment_name \
               --count_path $FULL_RESULTS"/*/cellranger_0000/*" \
               --suffix "outs/filtered_feature_bc_matrix" \
               --samples_to_integrate "$samples_to_integrate" \
-              --clusters_annotation "$clusters_annotation" \
+              --cluster_annotation "$cluster_annotation" \
               --target_genes $target_genes \
               --cpu $SLURM_CPUS_PER_TASK \
               --imported_counts "$imported_counts" \
               --DEG_columns "$DEG_columns" \
-              --cell_types_annotation "$cell_types_annotation"
+              --cell_annotation "$cell_annotation" \
+              --p_adj_cutoff $p_adj_cutoff
