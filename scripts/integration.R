@@ -72,7 +72,7 @@ option_list <- list(
                     analysis. If empty, all conditions will be analysed."),
   optparse::make_option("--save_raw", type = "logical", default = FALSE, action = "store_true",
             help = "Save seurat object before analysis."),
-  optparse::make_option("--clusters_annotation", type = "character", default = "",
+  optparse::make_option("--cluster_annotation", type = "character", default = "",
             help = "Clusters annotation file."),
   optparse::make_option("--target_genes", type = "character", default = "",
             help = "Path to target genes table, or comma-separated list of target genes"),
@@ -82,8 +82,12 @@ option_list <- list(
             help = "Imported counts directory"),
   optparse::make_option("--DEG_columns", type = "character", default = "",
             help = "Columns for DEG analysis"),
-  optparse::make_option("--cell_types_annotation", type = "character", default = "",
-            help = "Columns for DEG analysis")
+  optparse::make_option("--cell_annotation", type = "character", default = "",
+            help = "Columns for DEG analysis"),
+  optparse::make_option("--p_adj_cutoff", type = "numeric", default = "5e-3",
+            help = "Columns for DEG analysis"),
+  optparse::make_option("--verbose", type = "logical", default = FALSE, action = "store_true",
+            help = "Verbosity of base Seurat and harmony function calls.")
 )  
 
 opt <- optparse::parse_args(optparse::OptionParser(option_list = option_list))
@@ -94,15 +98,15 @@ plan("multicore", workers = opt$cpu)
 ## MAIN
 ##########################################
 
-if(opt$clusters_annotation != "") {
-    clusters_annotation <- read.table(opt$clusters_annotation, sep = "\t", header = TRUE)
+if(opt$cluster_annotation != "") {
+    cluster_annotation <- read.table(opt$cluster_annotation, sep = "\t", header = TRUE)
 } else {
-  clusters_annotation <- NULL
+  cluster_annotation <- NULL
 }
-if(opt$cell_types_annotation != "") {
-  cell_types_annotation <- read.table(opt$cell_types_annotation, sep = "\t", header = TRUE)
+if(opt$cell_annotation != "") {
+  cell_annotation <- read.table(opt$cell_annotation, sep = "\t", header = TRUE)
 } else {
-  cell_types_annotation <- NULL
+  cell_annotation <- NULL
 }
 
 if(opt$target_genes == ""){
@@ -136,32 +140,29 @@ embeds <- "harmony"
 
 out_path = file.path(opt$report_folder, opt$experiment_name)
 
-# if(opt$imported_counts == "") {
-#   merged_seu <- merge_seurat(project = opt$project_name, samples = samples, exp_design = exp_design,
-#                             suffix = opt$suffix, count_path = opt$count_path)  
-# } else {
-#   merged_seu <- Seurat::CreateSeuratObject(counts = Seurat::Read10X(opt$imported_counts, gene.column = 1),
-#                                            project = opt$experiment_name, min.cells = 1, min.features = 1)
-#   merged_seu_meta <- read.table(file.path(opt$imported_counts, "meta.tsv"), sep = "\t", header = TRUE)
-#   rownames(merged_seu_meta) <- colnames(merged_seu)
-#   merged_seu <- AddMetaData(merged_seu, merged_seu_meta, row.names("Cell_ID"))
-# }
+if(opt$imported_counts == "") {
+  merged_seu <- merge_seurat(project = opt$project_name, samples = samples, exp_design = exp_design,
+                            suffix = opt$suffix, count_path = opt$count_path)  
+} else {
+  merged_seu <- Seurat::CreateSeuratObject(counts = Seurat::Read10X(opt$imported_counts, gene.column = 1),
+                                           project = opt$experiment_name, min.cells = 1, min.features = 1)
+  merged_seu_meta <- read.table(file.path(opt$imported_counts, "meta.tsv"), sep = "\t", header = TRUE)
+  rownames(merged_seu_meta) <- colnames(merged_seu)
+  merged_seu <- Seurat::AddMetaData(merged_seu, merged_seu_meta, row.names("Cell_ID"))
+}
 
-# if(opt$save_raw) {
-#     saveRDS(seu, file = file.path(out_path, paste0(opt$experiment_name, ".before.seu.RDS")))
-#   }
+if(opt$save_raw) {
+    saveRDS(seu, file = file.path(out_path, paste0(opt$experiment_name, ".before.seu.RDS")))
+  }
 
-# message("Analyzing seurat object")
+message("Analyzing seurat object")
 
-# down_seu <- merged_seu[, sample(colnames(merged_seu), size = 5000, replace=F)]
-
-merged_seu <- readRDS('mouse_down_seu.rds')
-
-final_results <- main_analyze_seurat(seu = merged_seu, clusters_annotation = clusters_annotation,
+final_results <- main_analyze_seurat(seu = merged_seu, cluster_annotation = cluster_annotation,
                                      ndims = opt$ndims, resolution = opt$resolution, int_columns = int_columns,
-                                     cell_types_annotation = cell_types_annotation, DEG_columns = opt$DEG_columns,
+                                     cell_annotation = cell_annotation, DEG_columns = opt$DEG_columns,
                                      minqcfeats = opt$minqcfeats, percentmt = opt$percentmt, hvgs = opt$hvgs,
-                                     scalefactor = opt$scalefactor, normalmethod = opt$normalmethod)
+                                     scalefactor = opt$scalefactor, normalmethod = opt$normalmethod,
+                                     p_adj_cutoff = opt$p_adj_cutoff, verbose = opt$verbose)
 
 message("--------------------------------")
 message("---------Writing report---------")
@@ -169,5 +170,5 @@ message("--------------------------------")
 write_seurat_report(final_results = final_results, template_folder = template_path,
                     output_dir = opt$report_folder, source_folder = source_folder,
                     target_genes = target_genes, name = opt$project_name,
-                    int_columns = int_columns, cell_types_annotation = cell_types_annotation)
+                    int_columns = int_columns, cell_annotation = cell_annotation)
 message(paste0("Report written in ", opt$report_folder))
