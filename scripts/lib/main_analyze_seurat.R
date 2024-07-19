@@ -38,54 +38,55 @@
 #' @returns A subsetted seurat object
 
 main_analyze_seurat <- function(seu, out_path = NULL, minqcfeats, percentmt,
-                           		hvgs, ndims, resolution, dimreds_to_do,
-                           		integrate = FALSE, clusters_annotation = NULL,
-                           		cell_types_annotation, DEG_columns = NULL,
-                           		int_columns = NULL, scalefactor = 10000,
-                           		normalmethod = "LogNormalize"){
+                           		  resolution, dimreds_to_do, p_adj_cutoff = 5e-3,
+                           		  integrate = FALSE, cluster_annotation = NULL,
+                           		  cell_annotation, DEG_columns = NULL,
+                           		  scalefactor = 10000, hvgs, int_columns = NULL,
+                           		  normalmethod = "LogNormalize", ndims,
+                                verbose = FALSE){
   message('Normalizing data')
-  seu <- Seurat::NormalizeData(object = seu, verbose = FALSE,
+  seu <- Seurat::NormalizeData(object = seu, verbose = verbose,
   									  normalization.method = normalmethod,
                          			  scale.factor = scalefactor)
   message('Scaling data')
-  seu <- Seurat::ScaleData(object = seu, verbose = FALSE,
+  seu <- Seurat::ScaleData(object = seu, verbose = verbose,
   								  features = rownames(merged_seu))
   qc <- tag_qc(seu = seu, minqcfeats = minqcfeats, percentmt = percentmt)
   # seu <- subset(qc, subset = QC != 'High_MT,Low_nFeature')
   message('Finding variable features')
-  seu <- Seurat::FindVariableFeatures(seu, nfeatures = hvgs, verbose = FALSE)
+  seu <- Seurat::FindVariableFeatures(seu, nfeatures = hvgs, verbose = verbose)
   # dimreds_to_do: PCA/UMAP/tSNE
   message('Reducing dimensionality')  
-  seu <- Seurat::RunPCA(seu, verbose = FALSE)
+  seu <- Seurat::RunPCA(seu, verbose = verbose)
   reduction <- "pca"
   if (integrate) {
   	message('Integrating seurat object')
   	seu <- harmony::RunHarmony(object = seu, "sample", plot_convergence = FALSE,
-  	 							verbose = FALSE)
+  	 							verbose = verbose)
     reduction <- "harmony"
   }
   seu <- Seurat::RunUMAP(object = seu, dims = seq(1, ndims),
-                 reduction = reduction, verbose = FALSE)
+                 reduction = reduction, verbose = verbose)
   seu <- Seurat::FindNeighbors(object = seu, dims = seq(1, ndims),
-                   reduction = reduction, verbose = FALSE)
-  seu <- Seurat::FindClusters(seu, resolution = resolution, verbose = FALSE)
+                   reduction = reduction, verbose = verbose)
+  seu <- Seurat::FindClusters(seu, resolution = resolution, verbose = verbose)
   seu <- SeuratObject::JoinLayers(seu)
   if(length(int_columns) == 1) {
-    markers <- get_sc_markers(seu = seu, cond = int_columns, DEG = FALSE,
-                              top = 200)
+    markers <- get_sc_markers(seu = seu, cond = int_columns, DEG = FALSE)
     markers <- collapse_markers(markers)
   }else{
     markers <- Seurat::FindAllMarkers(seu, only.pos = TRUE, min.pct = 0.25,
-                                      logfc.threshold = 0.25, verbose = FALSE)
+                                      logfc.threshold = 0.25, verbose = verbose)
   }
-  if(!is.null(clusters_annotation)) {
+  if(!is.null(cluster_annotation)) {
   	message("Clusters annotation file provided. Annotating clusters")
-  	seu <- annotate_clusters(seu = seu, new_clusters = clusters_annotation[[2]])
-  }else if(!is.null(cell_types_annotation)){
+  	seu <- annotate_clusters(seu = seu, new_clusters = cluster_annotation$name)
+  }else if(!is.null(cell_annotation)){
 	  message("Clusters annotation file not provided. Dynamically annotating
 			       clusters.")
-	  annotated_clusters <- match_cell_types(markers, cell_types_annotation,
-                                           top = 200)
+	  annotated_clusters <- match_cell_types(markers_df = markers,
+                                           cell_annotation = cell_annotation,
+                                           p_adj_cutoff = p_adj_cutoff)
 	  markers <- annotated_clusters$stats_table
 	  seu <- annotate_clusters(seu, annotated_clusters$cell_type)
   }else{
@@ -138,7 +139,7 @@ write_seurat_report <- function(final_results, output_dir = getwd(),
                                 markers, template_folder, name = NULL,
                                 source_folder = "none", target_genes,
                                 int_columns, DEG_list = NULL,
-                                cell_types_annotation = NULL){
+                                cell_annotation = NULL){
   if(is.null(template_folder)) {
     stop("No template folder was provided.")
   }
@@ -156,7 +157,7 @@ write_seurat_report <- function(final_results, output_dir = getwd(),
                     DEG_list = final_results$DEG_list,
                     target_genes = target_genes,
                     markers = final_results$markers,
-                    cell_types_annotation = cell_types_annotation)
+                    cell_annotation = cell_annotation)
   plotter <- htmlReport$new(title_doc = paste0("Single-Cell ", name, " report"), 
                             container = container, tmp_folder = tmp_folder,
                             src = source_folder)
