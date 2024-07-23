@@ -163,6 +163,12 @@ merge_seurat <- function(project_name, samples, exp_design, count_path,
 
 annotate_clusters <- function(seu, new_clusters = NULL ) {
   names(new_clusters) <- levels(seu)
+  types <- unique(new_clusters)
+  for(type in types) {
+    matches <- new_clusters %in% type
+    marked_dupes <- paste0(new_clusters, " (", letters[cumsum(matches)], ")")
+    new_clusters[matches] <- marked_dupes[matches]
+  }
   seu <- Seurat::RenameIdents(seu, new_clusters)
   seu@meta.data$named_clusters <- Seurat::Idents(seu)
   return(seu)
@@ -241,21 +247,26 @@ match_cell_types <- function(markers_df, cell_annotation, p_adj_cutoff = 1e-5) {
   subset_list <- list()
   res <- list()
   pcols <- grep("p_val_adj", colnames(markers_df))
-    if(length(pcols) > 1) {
-      pvals <- unlist(markers_df[, pcols])
-      pvals <- pvals[pvals != 0]
-      min_pval <- min(pvals)
-      markers_df$p_val_adj <- corto::fisherp(c(min(min_pval,
-                                                   markers_df[[pcols[1]]]),
-                                               min(min_pval,
-                                                   markers_df[[pcols[2]]])))
-    }
+  if(any(is.na(markers_df[, pcols]))) {
+    warning("WARNING: NAs detected in marker p-values. Coercing to 1.",
+            immediate. = TRUE)
+    markers_df[, pcols][is.na(markers_df[, pcols])] <- 1
+  }
+  if(length(pcols) > 1) {
+    pvals <- unlist(markers_df[, pcols])
+    pvals <- pvals[pvals != 0 & !is.na(pvals)]
+    min_pval <- min(pvals)
+    markers_df$p_val_adj <- corto::fisherp(c(min(min_pval,
+                                                 markers_df[[pcols[1]]]),
+                                             min(min_pval,
+                                                 markers_df[[pcols[2]]])))
+  }
   markers_df <- markers_df[markers_df$p_val_adj < p_adj_cutoff, ]
   fcols <- grep("log2FC", colnames(markers_df))
-    if(length(fcols) > 1) {
-      markers_df$avg_log2FC <- (markers_df[[fcols[1]]] +
-                                markers_df[[fcols[2]]]) / 2
-    }
+  if(length(fcols) > 1) {
+    markers_df$avg_log2FC <- (markers_df[[fcols[1]]] +
+                              markers_df[[fcols[2]]]) / 2
+  }
   for(cluster in unique(markers_df$cluster)) {
     subset <- markers_df[markers_df$cluster == cluster, ]
     subset <- subset[order(subset$p_val_adj), ]
@@ -278,8 +289,7 @@ match_cell_types <- function(markers_df, cell_annotation, p_adj_cutoff = 1e-5) {
   stats_table <- stats_table[order(stats_table$cluster), ]
   stats_table$gene <- rownames(stats_table)
   columns <- colnames(stats_table)
-  annotated_clusters <- stats_table[, columns %in% c("cluster", "cell_type"),
-                                      drop = FALSE]
+  annotated_clusters <- stats_table[, c("cluster", "cell_type")]
   rownames(annotated_clusters) <- NULL
   res <- list(stats_table = stats_table,
               cell_types = unique(annotated_clusters)$cell_type)
