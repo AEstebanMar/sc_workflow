@@ -254,18 +254,27 @@ match_cell_types <- function(markers_df, cell_annotation, p_adj_cutoff = 1e-5) {
   }
   if(length(pcols) > 1) {
     pvals <- unlist(markers_df[, pcols])
-    pvals <- pvals[pvals != 0 & !is.na(pvals)]
-    min_pval <- min(pvals)
-    markers_df$p_val_adj <- corto::fisherp(c(min(min_pval,
+    pvals <- pvals[pvals != 0]
+    min_pval <- min(pvals) # Small correction for machine-zeroes
+    markers_df$p_val_adj <- corto::fisherp(c(max(min_pval,
                                                  markers_df[[pcols[1]]]),
-                                             min(min_pval,
+                                             max(min_pval,
                                                  markers_df[[pcols[2]]])))
+  } else {
+    colnames(markers_df)[pcols] <- "p_val_adj"
   }
-  markers_df <- markers_df[markers_df$p_val_adj < p_adj_cutoff, ]
+  markers_df <- markers_df[markers_df$p_val_adj <= p_adj_cutoff, ]
   fcols <- grep("log2FC", colnames(markers_df))
+  if(any(is.na(markers_df[, fcols]))) {
+    warning("WARNING: NAs detected in marker log2FC. Coercing to 0.",
+            immediate. = TRUE)
+    markers_df[, fcols][is.na(markers_df[, fcols])] <- 0
+  }
   if(length(fcols) > 1) {
     markers_df$avg_log2FC <- (markers_df[[fcols[1]]] +
                               markers_df[[fcols[2]]]) / 2
+  } else {
+    colnames(markers_df)[fcols] <- "avg_log2FC"
   }
   for(cluster in unique(markers_df$cluster)) {
     subset <- markers_df[markers_df$cluster == cluster, ]
