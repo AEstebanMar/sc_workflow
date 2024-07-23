@@ -37,13 +37,14 @@
 #'
 #' @returns A subsetted seurat object
 
-main_analyze_seurat <- function(seu, out_path = NULL, minqcfeats, percentmt,
+main_analyze_seurat <- function(seu, minqcfeats, percentmt,
                            		  resolution, dimreds_to_do, p_adj_cutoff = 5e-3,
                            		  integrate = FALSE, cluster_annotation = NULL,
                            		  cell_annotation, DEG_columns = NULL,
                            		  scalefactor = 10000, hvgs, int_columns = NULL,
                            		  normalmethod = "LogNormalize", ndims,
-                                verbose = FALSE){
+                                verbose = FALSE, output = getwd(),
+                                save_RDS = FALSE){
   message('Normalizing data')
   seu <- Seurat::NormalizeData(object = seu, verbose = verbose,
   									  normalization.method = normalmethod,
@@ -52,14 +53,13 @@ main_analyze_seurat <- function(seu, out_path = NULL, minqcfeats, percentmt,
   seu <- Seurat::ScaleData(object = seu, verbose = verbose,
   								  features = rownames(merged_seu))
   qc <- tag_qc(seu = seu, minqcfeats = minqcfeats, percentmt = percentmt)
-  # seu <- subset(qc, subset = QC != 'High_MT,Low_nFeature')
+  seu <- subset(qc, subset = QC != 'High_MT,Low_nFeature')
   message('Finding variable features')
   seu <- Seurat::FindVariableFeatures(seu, nfeatures = hvgs, verbose = verbose)
-  # dimreds_to_do: PCA/UMAP/tSNE
   message('Reducing dimensionality')  
   seu <- Seurat::RunPCA(seu, verbose = verbose)
   reduction <- "pca"
-  if (integrate) {
+  if(integrate) {
   	message('Integrating seurat object')
   	seu <- harmony::RunHarmony(object = seu, "sample", plot_convergence = FALSE,
   	 							verbose = verbose)
@@ -88,7 +88,7 @@ main_analyze_seurat <- function(seu, out_path = NULL, minqcfeats, percentmt,
                                            cell_annotation = cell_annotation,
                                            p_adj_cutoff = p_adj_cutoff)
 	  markers <- annotated_clusters$stats_table
-	  seu <- annotate_clusters(seu, annotated_clusters$cell_type)
+	  seu <- annotate_clusters(seu, annotated_clusters$cell_types)
   }else{
   	warning("No data provided for cluster annotation")
   }
@@ -106,12 +106,12 @@ main_analyze_seurat <- function(seu, out_path = NULL, minqcfeats, percentmt,
     condition_DEGs <- get_sc_markers(seu = seu, cond = condition, DEG = TRUE)
     DEG_list[[condition]] <- condition_DEGs
   }
-  if(!is.null(out_path)){
+  if(save_RDS){
   	message('Writing results to disk')
-  	saveRDS(qc, paste0(out_path, ".qc.RDS"))
-  	saveRDS(seu, paste0(out_path, ".seu.RDS"))
-  	saveRDS(markers, paste0(out_path, ".markers.RDS"))
-  	saveRDS(DEG_list, paste0(out_path, ".DEGs.RDS"))
+  	saveRDS(qc, file.path(output, paste0(project_name, ".qc.RDS")))
+  	saveRDS(seu, file.path(output, paste0(project_name, ".seu.RDS")))
+  	saveRDS(markers, file.path(output, paste0(project_name, ".markers.RDS")))
+  	saveRDS(DEG_list, file.path(output, paste0(project_name, ".DEGs.RDS")))
   }
   final_results <- list()
   final_results$qc <- qc
@@ -125,7 +125,7 @@ main_analyze_seurat <- function(seu, out_path = NULL, minqcfeats, percentmt,
 #' Write integration HTML report
 #' 
 #' @param int integrated seurat object
-#' @param output_dir directory where report will be saved
+#' @param output directory where report will be saved
 #' @param name experiment name, will be used to build output file name
 #' @param template_folder directory where template is located
 #' @param source_folder htmlreportR source folder
@@ -135,7 +135,7 @@ main_analyze_seurat <- function(seu, out_path = NULL, minqcfeats, percentmt,
 #' 
 #' @return nothing
 
-write_seurat_report <- function(final_results, output_dir = getwd(),
+write_seurat_report <- function(final_results, output = getwd(),
                                 markers, template_folder, name = NULL,
                                 source_folder = "none", target_genes,
                                 int_columns, DEG_list = NULL,
@@ -152,7 +152,7 @@ write_seurat_report <- function(final_results, output_dir = getwd(),
   }
   template <- file.path(template_folder, "integration_template.txt")
   tmp_folder <- "tmp_lib"
-  out_file <- file.path(output_dir, "integration_report.html")
+  out_file <- file.path(output, "integration_report.html")
   container <- list(seu = final_results$seu, int_columns = int_columns,
                     DEG_list = final_results$DEG_list,
                     target_genes = target_genes,
