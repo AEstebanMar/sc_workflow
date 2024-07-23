@@ -51,7 +51,7 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt,
                          			  scale.factor = scalefactor)
   message('Scaling data')
   seu <- Seurat::ScaleData(object = seu, verbose = verbose,
-  								  features = rownames(merged_seu))
+  								  features = rownames(seu))
   qc <- tag_qc(seu = seu, minqcfeats = minqcfeats, percentmt = percentmt)
   seu <- subset(qc, subset = QC != 'High_MT,Low_nFeature')
   message('Finding variable features')
