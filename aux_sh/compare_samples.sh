@@ -21,7 +21,7 @@ fi
 . ~soft_bio_267/initializes/init_R
 hostname
 
-mkdir -p $report_folder
+mkdir -p $output"/report"
 
 if [ "$imported_counts" == "" ]; then
     echo "Placeholder"
@@ -30,7 +30,7 @@ if [ "$imported_counts" == "" ]; then
     # create_metric_table.rb $experiment_folder'/metrics' sample $experiment_folder'/metric_table'
     # create_metric_table.rb $experiment_folder'/cellranger_metrics' sample $experiment_folder'/cellranger_metric_table'
 
-    # compare_samples.R -o $report_folder \
+    # compare_samples.R -o $output"/report" \
     #                   -m $experiment_folder'/metric_table' \
     #                   -l $experiment_folder'/metrics' \
     #                   -e $experiment_name \
@@ -39,8 +39,7 @@ if [ "$imported_counts" == "" ]; then
 
 fi
 
-mkdir -p $FULL_RESULTS/$experiment_name
-integration.R --output $FULL_RESULTS/$experiment_name \
+integration.R --output $output \
               --project_name $experiment_name \
               --filter $preproc_filter \
               --mincells $preproc_init_min_cells \
@@ -52,8 +51,6 @@ integration.R --output $FULL_RESULTS/$experiment_name \
               --hvgs $preproc_select_hvgs \
               --ndims $preproc_pca_n_dims \
               --dimheatmapcells $preproc_pca_n_cells \
-              --report_folder $report_folder \
-              --experiment_name $experiment_name \
               --resolution $preproc_resolution \
               --exp_design $exp_design \
               --int_columns "$int_columns" \
@@ -66,4 +63,5 @@ integration.R --output $FULL_RESULTS/$experiment_name \
               --imported_counts "$imported_counts" \
               --DEG_columns "$DEG_columns" \
               --cell_annotation "$cell_annotation" \
-              --p_adj_cutoff $p_adj_cutoff
+              --p_adj_cutoff $p_adj_cutoff \
+              --verbose $verbose

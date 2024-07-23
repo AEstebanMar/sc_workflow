@@ -53,10 +53,6 @@ option_list <- list(
               help = "Number of PC to be used for clustering / UMAP / tSNE"),
   optparse::make_option("--dimheatmapcells", type = "integer", default = NULL,
               help = "Heatmap plots the 'extreme' cells on both ends of the spectrum"),
-  optparse::make_option("--report_folder", type = "character", default = NULL,
-              help = "Folder where the report is written"),
-  optparse::make_option("--experiment_name", type = "character", default = NULL,
-              help = "Experiment name"),
   optparse::make_option("--resolution", type = "double", default = NULL,
               help = "Granularity of the clustering"),
   optparse::make_option(c("-d", "--exp_design"), type = "character", default = NULL,
@@ -70,8 +66,6 @@ option_list <- list(
   optparse::make_option("--int_columns", type = "character", default = "",
             help = "Comma-separated list of conditions by which to perform integration
                     analysis. If empty, all conditions will be analysed."),
-  optparse::make_option("--save_raw", type = "logical", default = FALSE, action = "store_true",
-            help = "Save seurat object before analysis."),
   optparse::make_option("--cluster_annotation", type = "character", default = "",
             help = "Clusters annotation file."),
   optparse::make_option("--target_genes", type = "character", default = "",
@@ -135,25 +129,16 @@ if(opt$samples_to_integrate == "") {
   samples <- strsplit(opt$samples_to_integrate, ",")[[1]]
 }
 
-dimreds_to_do <- c("pca") # For dimensionality reduction
-embeds <- "harmony"
-
-out_path = file.path(opt$report_folder, opt$experiment_name)
-
 if(opt$imported_counts == "") {
   merged_seu <- merge_seurat(project = opt$project_name, samples = samples, exp_design = exp_design,
                             suffix = opt$suffix, count_path = opt$count_path)  
 } else {
   merged_seu <- Seurat::CreateSeuratObject(counts = Seurat::Read10X(opt$imported_counts, gene.column = 1),
-                                           project = opt$experiment_name, min.cells = 1, min.features = 1)
+                                           project = opt$project_name, min.cells = 1, min.features = 1)
   merged_seu_meta <- read.table(file.path(opt$imported_counts, "meta.tsv"), sep = "\t", header = TRUE)
   rownames(merged_seu_meta) <- colnames(merged_seu)
   merged_seu <- Seurat::AddMetaData(merged_seu, merged_seu_meta, row.names("Cell_ID"))
 }
-
-if(opt$save_raw) {
-    saveRDS(seu, file = file.path(out_path, paste0(opt$experiment_name, ".before.seu.RDS")))
-  }
 
 message("Analyzing seurat object")
 
@@ -162,13 +147,16 @@ final_results <- main_analyze_seurat(seu = merged_seu, cluster_annotation = clus
                                      cell_annotation = cell_annotation, DEG_columns = opt$DEG_columns,
                                      minqcfeats = opt$minqcfeats, percentmt = opt$percentmt, hvgs = opt$hvgs,
                                      scalefactor = opt$scalefactor, normalmethod = opt$normalmethod,
-                                     p_adj_cutoff = opt$p_adj_cutoff, verbose = opt$verbose)
+                                     p_adj_cutoff = opt$p_adj_cutoff, verbose = opt$verbose,
+                                     output = opt$output, integrate = TRUE)
+
+saveRDS(final_results, "Isaac_final_results.rds")
 
 message("--------------------------------")
 message("---------Writing report---------")
 message("--------------------------------")
 write_seurat_report(final_results = final_results, template_folder = template_path,
-                    output_dir = opt$report_folder, source_folder = source_folder,
+                    output = file.path(opt$output, "report"), source_folder = source_folder,
                     target_genes = target_genes, name = opt$project_name,
                     int_columns = int_columns, cell_annotation = cell_annotation)
 message(paste0("Report written in ", opt$report_folder))
