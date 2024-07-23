@@ -110,7 +110,6 @@ end.rcode-->
         cat("</div>")
     }
 end.rcode-->
-
 <!--begin.rcode umap_groups,
     for(condition in int_columns) {
         cat(paste0("<h1>Grouped by ", condition, "</h1>"))
@@ -123,12 +122,11 @@ end.rcode-->
 end.rcode-->
 
 <!--begin.rcode DEG_volcanoes, eval = length(plotter$hash_vars$DEG_list) > 0
-    saveRDS(plotter, "down_plotter.rds")
     cat("<h1><strong<DEGenes analysis</strong><h1>")
     for(i in seq(1, length(DEG_list))) {
         condition <- names(DEG_list)[i]
         condition_DEGs <- DEG_list[[condition]]
-        cat(paste0("<h1>Top 10 ", condition, " DEGs</h1>"))
+        cat(paste0("<h1>", condition, " DEGs</h1>"))
         for (j in seq(1, length(condition_DEGs))) {
             level <- names(condition_DEGs)[j]
             plotter$hash_vars$condition_DEGs <- condition_DEGs[[j]]
