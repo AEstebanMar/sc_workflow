@@ -30,23 +30,19 @@ tag_qc <- function(seu, minqcfeats, percentmt){
   
   seu[["percent.mt"]] <- Seurat::PercentageFeatureSet(seu, pattern = "^MT-")
   seu[["percent.rb"]] <- Seurat::PercentageFeatureSet(seu, pattern = "^RP[SL]")
-  # TO DO: doublet detection
-  # seu[['QC']] <- ifelse(seu@meta.data$Is_doublet == 'True', 'Doublet', 'Pass')
-  # seu[['QC']] <- ifelse(TRUE, 'Pass', 'This should not happen')
-  seu[['QC']] <- ifelse(seu@meta.data$nFeature_RNA < minqcfeats &
-                        seu@meta.data$QC == 'Pass','Low_nFeature',
-                        seu@meta.data$QC)
+  seu[['QC']] <- ifelse(seu@meta.data$nFeature_RNA < minqcfeats,
+                        'Low_nFeature', 'Pass')
   seu[['QC']] <- ifelse(seu@meta.data$nFeature_RNA < minqcfeats &
                         seu@meta.data$QC != 'Pass' &
                         seu@meta.data$QC != 'Low_nFeature',
                         paste('Low_nFeature', seu@meta.data$QC, sep = ','),
                               seu@meta.data$QC)
   seu[['QC']] <- ifelse(seu@meta.data$percent.mt > percentmt &
-                        seu@meta.data$QC == 'Pass','High_MT',seu@meta.data$QC)
+                        seu@meta.data$QC == 'Pass','High_MT', seu@meta.data$QC)
   seu[['QC']] <- ifelse(seu@meta.data$nFeature_RNA < minqcfeats &
                         seu@meta.data$QC != 'Pass' &
                         seu@meta.data$QC != 'High_MT',
-                        paste('High_MT', seu@meta.data$QC,sep = ','),
+                        paste('High_MT', seu@meta.data$QC ,sep = ','),
                               seu@meta.data$QC)
   return(seu)
 }
@@ -166,8 +162,10 @@ annotate_clusters <- function(seu, new_clusters = NULL ) {
   types <- unique(new_clusters)
   for(type in types) {
     matches <- new_clusters %in% type
-    marked_dupes <- paste0(new_clusters, " (", letters[cumsum(matches)], ")")
-    new_clusters[matches] <- marked_dupes[matches]
+    if(sum(matches) > 1) {
+      marked_dupes <- paste0(new_clusters, " (", letters[cumsum(matches)], ")")
+      new_clusters[matches] <- marked_dupes[matches]
+    }
   }
   seu <- Seurat::RenameIdents(seu, new_clusters)
   seu@meta.data$named_clusters <- Seurat::Idents(seu)
@@ -256,10 +254,14 @@ match_cell_types <- function(markers_df, cell_annotation, p_adj_cutoff = 1e-5) {
     pvals <- unlist(markers_df[, pcols])
     pvals <- pvals[pvals != 0]
     min_pval <- min(pvals) # Small correction for machine-zeroes
-    markers_df$p_val_adj <- corto::fisherp(c(max(min_pval,
-                                                 markers_df[[pcols[1]]]),
-                                             max(min_pval,
-                                                 markers_df[[pcols[2]]])))
+    int_p_val <- rep(0, nrow(markers_df))
+    p_vals_1 <- markers_df[[pcols[1]]]
+    p_vals_2 <- markers_df[[pcols[2]]]
+    for(i in seq(1, length(int_p_val))) {
+      int_p_val[i] <- corto::fisherp(c(max(min_pval, p_vals_1[i]),
+                                       max(min_pval, p_vals_2[i])))
+    }
+    markers_df$p_val_adj <- int_p_val
   } else {
     colnames(markers_df)[pcols] <- "p_val_adj"
   }
@@ -330,10 +332,9 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE) {
       markers <- Seurat::FindConservedMarkers(seu, ident.1 = clusters[i],
                                               grouping.var = cond,
                                               verbose = FALSE)
-      markers$gene <- rownames(markers)
+      markers <- cbind(rownames(markers), markers)
+      colnames(markers)[1] <- "gene"
       rownames(markers) <- NULL
-      markers <- cbind(markers$gene, markers[,
-                                              -grep("gene", colnames(markers))])
     }
     cluster_markers[[as.character(clusters[i])]] <- markers
   }
