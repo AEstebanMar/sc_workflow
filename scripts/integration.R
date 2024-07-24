@@ -159,4 +159,4 @@ write_seurat_report(final_results = final_results, template_folder = template_pa
                     output = file.path(opt$output, "report"), source_folder = source_folder,
                     target_genes = target_genes, name = opt$project_name,
                     int_columns = int_columns, cell_annotation = cell_annotation)
-message(paste0("Report written in ", opt$report_folder))
+message(paste0("Report written in ", opt$output, "/results"))
