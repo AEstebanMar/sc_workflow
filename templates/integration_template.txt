@@ -31,18 +31,18 @@
     Top_vlnplot <- function(seu) {
         scCustomize::Stacked_VlnPlot(seu,
                         ncol = 1, pt.size = 0, x_lab_rotate = TRUE,
-                        features = features)
+                        features = sort(features))
     }
 
     Canon_vlnplot <- function(seu) {
         scCustomize::Stacked_VlnPlot(seu,
                         ncol = 1, pt.size = 0, x_lab_rotate = TRUE,
-                        features = features)
+                        features = sort(features))
     }
 
     Custom_ftplot <- function(seu) {
         scCustomize::FeaturePlot_scCustom(seu, reduction = "umap", pt.size = 0.1, num_columns = 3,
-                  features = features) +
+                  features = sort(features)) +
         ggplot2::theme_classic(base_size = 18) +
         ggplot2::scale_color_gradientn(colors = colGEX) + ggplot2::coord_fixed()
     }
