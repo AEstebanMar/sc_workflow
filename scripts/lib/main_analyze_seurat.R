@@ -45,15 +45,15 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt,
                            		  normalmethod = "LogNormalize", ndims,
                                 verbose = FALSE, output = getwd(),
                                 save_RDS = FALSE){
+  qc <- tag_qc(seu = seu, minqcfeats = minqcfeats, percentmt = percentmt)
+  seu <- subset(qc, subset = QC != 'High_MT,Low_nFeature')
   message('Normalizing data')
   seu <- Seurat::NormalizeData(object = seu, verbose = verbose,
   									  normalization.method = normalmethod,
                          			  scale.factor = scalefactor)
   message('Scaling data')
   seu <- Seurat::ScaleData(object = seu, verbose = verbose,
-  								  features = rownames(seu))
-  qc <- tag_qc(seu = seu, minqcfeats = minqcfeats, percentmt = percentmt)
-  seu <- subset(qc, subset = QC != 'High_MT,Low_nFeature')
+  								         features = rownames(seu))
   message('Finding variable features')
   seu <- Seurat::FindVariableFeatures(seu, nfeatures = hvgs, verbose = verbose)
   message('Reducing dimensionality')  
@@ -84,6 +84,8 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt,
   }else if(!is.null(cell_annotation)){
 	  message("Clusters annotation file not provided. Dynamically annotating
 			       clusters.")
+    saveRDS(markers, "Isaac_markers.rds")
+    saveRDS(cell_annotation, "Isaac_cell_annotation.rds")
 	  annotated_clusters <- match_cell_types(markers_df = markers,
                                            cell_annotation = cell_annotation,
                                            p_adj_cutoff = p_adj_cutoff)
