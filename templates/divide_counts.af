@@ -1,0 +1,10 @@
+run_count){ 
+	resources: -c 12 -t 0-00:59:59 -m '200gb'
+	source ~soft_bio_267/initializes/init_R
+	export PATH=$script_dir:$PATH
+	echo [cpu]
+	?
+	divide_counts.R -i $imported_counts -s $sample
+}
+
+

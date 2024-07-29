@@ -1,0 +1,32 @@
+sc_preprocessing){
+       resources: -c 2 -t 2-00:00:00 -m '150gb'
+       source ~soft_bio_267/initializes/init_R 
+       export PATH=$aux_sh_dir:$PATH
+       export PATH=$script_dir:$PATH
+       mkdir -p results
+       echo [cpu]
+       ?
+       preprocessing.R --input run_count)/"$sample"/outs \
+                       --output results \
+                       --name $sample \
+                       --filter $preproc_filter \
+                       --mincells $preproc_init_min_cells \
+                       --minfeats $preproc_init_min_feats \
+                       --minqcfeats $preproc_qc_min_feats \
+                       --percentmt $preproc_max_percent_mt \
+                       --normalmethod $preproc_norm_method \
+                       --scalefactor $preproc_scale_factor \
+                       --hvgs $preproc_select_hvgs \
+                       --ndims $preproc_pca_n_dims \
+                       --dimheatmapcells $preproc_pca_n_cells \
+                       --report_folder $report_folder \
+                       --experiment_name $experiment_name \
+                       --resolution $preproc_resolution
+
+       retVal=$?
+       if [ $retVal -ne 0 ]; then
+           echo ERROR: Last command exited with $retVal status
+           exit $retVal
+       fi
+       
+}
