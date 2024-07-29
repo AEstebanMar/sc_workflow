@@ -44,7 +44,7 @@ opt <- optparse::parse_args(optparse::OptionParser(option_list = option_list))
 ## MAIN
 ##########################################
 
-write_qc_report(name = "All samples",
+write_qc_report(name = "All_samples",
                 experiment = opt$experiment_name,
                 template = file.path(template_path, "fastqc_report.Rmd"),
                 outdir = opt$output,
