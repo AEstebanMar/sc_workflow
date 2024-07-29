@@ -105,7 +105,8 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt,
   }
   for(condition in DEG_conditions) {
     message(paste0("Calculating DEGs for condition ", condition))
-    condition_DEGs <- get_sc_markers(seu = seu, cond = condition, DEG = TRUE)
+    condition_DEGs <- get_sc_markers(seu = seu, cond = condition, DEG = TRUE,
+                                     verbose = verbose)
     DEG_list[[condition]] <- condition_DEGs
   }
   if(save_RDS){
@@ -137,10 +138,9 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt,
 #' 
 #' @return nothing
 
-write_seurat_report <- function(final_results, output = getwd(),
-                                markers, template_folder, name = NULL,
-                                source_folder = "none", target_genes,
-                                int_columns, DEG_list = NULL,
+write_seurat_report <- function(final_results, output = getwd(), name = NULL,
+                                template_folder, source_folder = "none",
+                                target_genes, int_columns, DEG_list = NULL,
                                 cell_annotation = NULL){
   if(is.null(template_folder)) {
     stop("No template folder was provided.")
@@ -148,8 +148,8 @@ write_seurat_report <- function(final_results, output = getwd(),
   if(!file.exists(source_folder)) {
     stop(paste0("Source folder not found. Was ", source_folder))
   }
-  if(any(is.null(final_results$seu))) {
-    stop("ERROR: comparison object contains NULL fields. Analysis
+  if(any(is.null(final_results))) {
+    stop("ERROR: final results object contains NULL fields. Analysis
        is not complete.")
   }
   template <- file.path(template_folder, "integration_template.txt")
