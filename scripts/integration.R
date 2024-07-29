@@ -149,9 +149,6 @@ final_results <- main_analyze_seurat(seu = merged_seu, cluster_annotation = clus
                                      scalefactor = opt$scalefactor, normalmethod = opt$normalmethod,
                                      p_adj_cutoff = opt$p_adj_cutoff, verbose = opt$verbose,
                                      output = opt$output, integrate = TRUE)
-
-saveRDS(final_results, "Isaac_final_results.rds")
-
 message("--------------------------------")
 message("---------Writing report---------")
 message("--------------------------------")
@@ -159,4 +156,4 @@ write_seurat_report(final_results = final_results, template_folder = template_pa
                     output = file.path(opt$output, "report"), source_folder = source_folder,
                     target_genes = target_genes, name = opt$project_name,
                     int_columns = int_columns, cell_annotation = cell_annotation)
-message(paste0("Report written in ", opt$output, "/results"))
+message(paste0("Report written in ", opt$output, "/report"))
