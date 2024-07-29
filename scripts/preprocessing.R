@@ -92,7 +92,7 @@ all_seu <- analyze_seurat(raw_seu = seu, out_path = out_path, hvgs = opt$hvgs,
                           embeddings_to_use = embeddings_to_use,
                           integrate = opt$integrate)
 
-write_seurat_report(all_seu = all_seu, minqcfeats = opt$minqcfeats,
+write_sergio_report(all_seu = all_seu, minqcfeats = opt$minqcfeats,
                     template = file.path(template_path,
                                          "preprocessing_report.Rmd"),
                     out_path = out_path, resolution = opt$resolution,
