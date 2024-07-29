@@ -172,41 +172,6 @@ annotate_clusters <- function(seu, new_clusters = NULL ) {
   return(seu)
 }
 
-#' get_marker_idents
-#' `get_marker_idents` performs some checks in input seurat object metadata. It
-#' checks if it is clustered, if clusters are annotated, and, if DEG mode is
-#' active, it checks whether provided condition allows DEG analysis.
-#'
-#' @param seu Seurat object on which DEG analysis will be performed.
-#' @param DEG A boolean.
-#'   * `TRUE`: Function will calculate differentally expressed genes.
-#'   * `FALSE` (the default): Function will calculate conserved markers.
-#' @param cond A string. Condition by which to perform DEG analysis.
-#' @returns A list containing items `idents`, with new seurat identifiers,
-#' and item `conds`, which, if DEG mode is active, contains unique values
-#' of specified column of seurat metadata. If not active, it is set to NULL.
-#' '
-
-get_marker_idents <- function(seu, cond, DEG) {
-  if(is.null(seu@meta.data$seurat_clusters)) {
-    stop("Error: Seurat object contains no clusters. Analysis impossible.")
-  }
-  if(!cond %in% names(seu@meta.data)) {
-    stop("Specified condition does not exist in seurat object metadata.
-          DEG analysis impossible.")
-  }
-  if(DEG) {
-    conds <- unique(seu[[cond]][[1]])
-    if(length(conds) != 2) {
-      stop(paste0("Error: Two groups must be supplied for DEG analysis.
-                   Provided ", length(cond)))
-    }
-    return(list(idents = cond, conds = conds))
-  } else {
-    return(list(idents = "seurat_clusters", conds = NULL))
-  }
-}
-
 #' collapse_markers
 #' `collapse_markers` takes list of marker gene data frames and collapses it
 #' into a cluster-markers data frame.
@@ -225,7 +190,8 @@ collapse_markers <- function(markers_list) {
     rownames(df_list[[i]]) <- NULL
   }
   merged_df <- do.call(plyr::rbind.fill, df_list)
-  merged_df
+  merged_df <- cbind(merged_df$gene, merged_df[, colnames(merged_df) != "gene"])
+  colnames(merged_df)[1] <- "gene"
   return(merged_df)
 }
 
@@ -311,35 +277,52 @@ match_cell_types <- function(markers_df, cell_annotation, p_adj_cutoff = 1e-5) {
 #' `get_sc_markers` performs differential expression analysis on OR selects
 #' conserver markers from a seurat object.
 #'
-#' @inheritParams get_marker_idents
-#' @returns A list containing one marker data frame per cluster.
+#' @param seu Seurat object to analyse.
+#' @param DEG A boolean.
+#'   * `TRUE`: Function will calculate differentally expressed genes.
+#'   * `FALSE` (the default): Function will calculate cluster markers.
+#' @param cond A string. Condition by which to perform DEG analysis, or by which
+#' to group data to find conserved markers.
+#' @param verbose A boolean. Will be passed to Seurat function calls.
+#' @returns A list containing one marker or DEG data frame per cluster, plus
+#' an additional one for global DEGs if performing differential analysis.
 
-get_sc_markers <- function(seu, cond = NULL, DEG = FALSE) {
-  cluster_idents <- get_marker_idents(seu = seu, cond = cond, DEG = DEG)
-  Seurat::Idents(seu) <- cluster_idents$idents
-  conds <- cluster_idents$conds
-  clusters <- sort(unique(seu@meta.data[[cluster_idents$idents]]))
+get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
+  Seurat::Idents(seu) <- "seurat_clusters"
+  conds <- unique(seu@meta.data[[cond]])
+  clusters <- sort(unique(Seurat::Idents(seu)))
   cluster_markers <- list()
   for (i in seq(1, length(clusters))) {
-    if (DEG) {
-      message(paste0("Analysing factor ", i, "/", length(clusters)))
+    message(paste0("Analysing cluster ", i, "/", length(clusters)))
+    if(DEG) {
       # off-by-one correction because Seurat counts clusters from 0
       subset_seu <- subset_seurat(seu, "seurat_clusters", i - 1)
+      Seurat::Idents(subset_seu) <- cond  
       markers <- Seurat::FindMarkers(subset_seu, ident.1 = conds[1],
-                                     ident.2 = conds[2], verbose = FALSE)
+                                     ident.2 = conds[2], verbose = verbose)
     } else {
-      message(paste0("Analysing cluster ", i, "/", length(clusters)))
       markers <- Seurat::FindConservedMarkers(seu, ident.1 = clusters[i],
                                               grouping.var = cond,
-                                              verbose = FALSE)
+                                              verbose = verbose)
       markers <- cbind(rownames(markers), markers)
       colnames(markers)[1] <- "gene"
       rownames(markers) <- NULL
     }
     cluster_markers[[as.character(clusters[i])]] <- markers
   }
+  if(DEG) {
+    message("Calculating global DEGs")
+    Seurat::Idents(seu) <- cond
+    global_markers <- Seurat::FindMarkers(seu, ident.1 = conds[1],
+                                ident.2 = conds[2], verbose = verbose)
+    cluster_markers <- c(global_markers, cluster_markers)
+    names(cluster_markers)[1] <- "global"
+  }
   return(cluster_markers)
 }
+
+#' subset_seurat
+#' `subset_seurat` subsets a seurat object. Documentation in progress.
 
 subset_seurat <- function(seu, column, value) {
   expr <- Seurat::FetchData(seu, vars = column)
