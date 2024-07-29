@@ -11,13 +11,20 @@
 framework_dir=`dirname $0`
 export CODE_PATH=$(readlink -f $framework_dir )
 CONFIG_DAEMON=$1
-#CONFIG_DAEMON=$CODE_PATH'/config_daemon'
 export module=$2 # For setting global vars from config_daemon according to the stage
 source $CONFIG_DAEMON
 export PATH=$LAB_SCRIPTS:$PATH
 export PATH=$CODE_PATH'/scripts:'$PATH
 export PATH=$CODE_PATH'/aux_sh:'$PATH
-export TEMPLATES=$CODE_PATH'/templates'
+export TEMPLATE_PATH=$CODE_PATH'/templates'
+
+if [ "$imported_counts" != "" ]; then
+    TEMPLATES=$TEMPLATE_PATH/divide_counts.af
+else
+    TEMPLATES=$TEMPLATE_PATH/count_sc.af
+fi
+
+TEMPLATES="$TEMPLATES,$TEMPLATE_PATH/preprocessing.af"
 
 . ~soft_bio_267/initializes/init_autoflow
 
@@ -56,7 +63,7 @@ if [ "$module" == "1" ] ; then
         \\$experiment_name=$experiment_name,
         \\$preproc_resolution=$preproc_resolution
         " | tr -d [:space:]`
-        AutoFlow -w $TEMPLATES"/full_workflow.txt" -V "$AF_VARS" $3 -o $FULL_RESULTS/$sample
+        AutoFlow -w $TEMPLATES -V "$AF_VARS" $3 -o $FULL_RESULTS/$sample
     done < $SAMPLES_FILE
 
 elif [ "$module" == "1b" ] ; then
@@ -86,7 +93,7 @@ elif [ "$module" == "1c" ] ; then
         \\$experiment_name=$experiment_name,
         \\$preproc_resolution=$preproc_resolution
         " | tr -d [:space:]`
-        AutoFlow -w $TEMPLATES"/full_workflow.txt" -V "$AF_VARS" $3 -o $FULL_RESULTS/$sample -v
+        AutoFlow -w $TEMPLATES -V "$AF_VARS" $3 -o $FULL_RESULTS/$sample -v
         echo Launching pending and failed jobs for $sample
         flow_logger -e $FULL_RESULTS/$sample -w -l -p
     done < $SAMPLES_FILE
