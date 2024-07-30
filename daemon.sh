@@ -61,7 +61,8 @@ if [ "$module" == "1" ] ; then
         \\$preproc_pca_n_dims=$preproc_pca_n_dims,
         \\$preproc_pca_n_cells=$preproc_pca_n_cells,
         \\$experiment_name=$experiment_name,
-        \\$preproc_resolution=$preproc_resolution
+        \\$preproc_resolution=$preproc_resolution,
+        \\$imported_counts=$imported_counts
         " | tr -d [:space:]`
         AutoFlow -w $TEMPLATES -V "$AF_VARS" $3 -o $FULL_RESULTS/$sample
     done < $SAMPLES_FILE
@@ -91,7 +92,8 @@ elif [ "$module" == "1c" ] ; then
         \\$preproc_pca_n_dims=$preproc_pca_n_dims,
         \\$preproc_pca_n_cells=$preproc_pca_n_cells,
         \\$experiment_name=$experiment_name,
-        \\$preproc_resolution=$preproc_resolution
+        \\$preproc_resolution=$preproc_resolution,
+        \\$imported_counts=$imported_counts
         " | tr -d [:space:]`
         AutoFlow -w $TEMPLATES -V "$AF_VARS" $3 -o $FULL_RESULTS/$sample -v
         echo Launching pending and failed jobs for $sample
