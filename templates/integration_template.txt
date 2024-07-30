@@ -19,31 +19,27 @@
     }
 
     top_table <- function(df) {
-        res <- df[order(df$avg_log2FC, decreasing = TRUE), ][1:10, ]
+        top <- 10
+        if(nrow(df) < 10) {
+            top <- nrow(df)
+        }
+        res <- df[order(df$avg_log2FC, decreasing = TRUE), ][1:top, ]
         return(res)
     }
 
     subset_table <- function(df) {
-        res <- df[features, ]
+        res <- df[df$gene == features, ]
         return(res)
     }
 
     Top_vlnplot <- function(seu) {
-        scCustomize::Stacked_VlnPlot(seu,
-                        ncol = 1, pt.size = 0, x_lab_rotate = TRUE,
-                        features = sort(features))
-    }
-
-    Canon_vlnplot <- function(seu) {
-        scCustomize::Stacked_VlnPlot(seu,
-                        ncol = 1, pt.size = 0, x_lab_rotate = TRUE,
-                        features = sort(features))
+        scCustomize::Stacked_VlnPlot(seu, pt.size = 0, x_lab_rotate = TRUE,
+                                     features = sort(features))
     }
 
     Custom_ftplot <- function(seu) {
-        scCustomize::FeaturePlot_scCustom(seu, reduction = "umap", pt.size = 0.1, num_columns = 3,
-                  features = sort(features)) +
-        ggplot2::theme_classic(base_size = 18) +
+        scCustomize::FeaturePlot_scCustom(seu, reduction = "umap", pt.size = 0.1, num_columns = 1,
+                                          features = feature, na_cutoff = NA, label = TRUE) +
         ggplot2::scale_color_gradientn(colors = colGEX) + ggplot2::coord_fixed()
     }
 
@@ -55,15 +51,15 @@
                                          title = level,
                                          pCutoff = 0.05, FCcutoff = 0.1)
     }
-
-    top_by_p_adj <- function(df, top_N) {
-        res <- head(df[order(df$p_val_adj), ], top_N)
-        return(res)
-    }
     
 end.rcode-->
 
 <h1><strong>Single-Cell RNASeq Integration analysis</strong></h1>
+
+<p>Seurat clusters are defined matematically. Unless a manual cluster annotation file is provided,
+our workflow finds cluster markers and compares them to the cell types annotation file. It then
+analyses matches and determines the most likely cell type for the cluster. These markers are
+plotted in the following graphs.</p
 
 <h1><strong>Markers distribution</strong></h1>
 <h2>Expression of cell type markers across experiment clusters</h2>
@@ -73,35 +69,45 @@ end.rcode-->
         features <- plotter$hash_vars$cell_annotation[plotter$hash_vars$cell_annotation$type == element_name, ]$marker
         cat(paste0("<h2>", element_name, " markers</h2>"))
         cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-        cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DotPlot, height = 6, width = 6))
+        cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DotPlot))
         cat("</div>")
     }
 end.rcode-->
 
 <h1><strong>Top 10 markers</strong></h1>
+<p>These are the markers that best define the seurat cluster. They might
+not match cell type markers.</p>
 
 <!--begin.rcode top_markers
-    for(cluster in unique(plotter$hash_vars$markers$cluster)) {
-        clust_no <- cluster
-        clust_name <- unique(plotter$hash_vars$markers$cell_type)[cluster]
-        cat(paste0("<h2>Cluster ", cluster, ", ", clust_name))
+    names <- plotter$hash_vars$seu@meta.data[["named_clusters"]]
+    seurat_clusters <- plotter$hash_vars$seu@meta.data[["seurat_clusters"]]
+    for(cluster in as.numeric(sort(unique(seurat_clusters)))) {
+        if(!is.null(names)) {
+            name <- unique(plotter$hash_vars$seu@meta.data[seurat_clusters == cluster - 1, ]$named_clusters)
+            title <- name
+        } else {
+            title <- cluster
+        }
+        cat(paste0("<h2>Top markers for cluster ", title))
         plotter$hash_vars$cluster_markers <- plotter$hash_vars$markers[plotter$hash_vars$markers$cluster == cluster, ]
+        cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
         cat(plotter$table("cluster_markers", header = NULL, row_names = NULL, table_rownames = FALSE,
             styled = "dt", func = top_table))  
+        cat("</div>")
     }
 end.rcode-->
 
 <h1><strong>Dimensionality reduction</strong></h1>
 <h1><strong>UMAP</strong></h1>
 
-<!--begin.rcode Complete_UMAP, fig.height = 12, fig.width = 12
+<!--begin.rcode Complete_UMAP
     reduction <- "umap"
     cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
     group.by <- split.by <- NULL
     cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DimPlot))
     cat("</div>")
 end.rcode-->
-<!--begin.rcode umap_splits, fig.height = 12, fig.width = 12,
+<!--begin.rcode umap_splits
     for(condition in int_columns) {
         cat(paste0("<h1>Split by ", condition, "</h1>"))
         split.by <- condition
@@ -129,42 +135,45 @@ end.rcode-->
         cat(paste0("<h1>", condition, " DEGs</h1>"))
         for (j in seq(1, length(condition_DEGs))) {
             level <- names(condition_DEGs)[j]
+            title <- paste0("Cluster ", names(condition_DEGs)[j])
             plotter$hash_vars$condition_DEGs <- condition_DEGs[[j]]
+            cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
             cat(plotter$static_plot_main("condition_DEGs", custom_format = TRUE, plotting_function = DEGs_volcano))
+            cat("</div>")
         }
     }
 end.rcode-->
 
-<h1><strong>Target genes distribution</strong></h1>
-<h2>Expression of target genes across experiment clusters</h2>
+<h1><strong>Query genes distribution</strong></h1>
+<h2>Expression of query genes across identified clusters</h2>
 <p>These genes have <strong>NOT</strong> been used to annotate clusters</p>
 
-<!--begin.rcode target_genes, eval = !is.null(plotter$hash_vars$target_genes)
+<!--begin.rcode query_genes, eval = !is.null(plotter$hash_vars$target_genes)
     for(element_name in names(plotter$hash_vars$target_genes)) {
       features <- plotter$hash_vars$target_genes[[element_name]]
-      cat(paste0("<h2>Target gene group: ", element_name, "</h2>"))
+      cat(paste0("<h2>Query gene group: ", element_name, "</h2>"))
       cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-      cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DotPlot, height = 6, width = 6))
+      cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DotPlot))
       cat("</div>")
     }
 end.rcode-->
 
-<h1><strong>Target gene presence</strong></h1>
-<!--begin.rcode Target_gene_presence, eval = !is.null(plotter$hash_vars$target_genes)
+<h1><strong>Query gene presence</strong></h1>
+<!--begin.rcode Query_gene_presence, eval = !is.null(plotter$hash_vars$target_genes)
     for(element_name in names(plotter$hash_vars$target_genes)) {
       features <- plotter$hash_vars$target_genes[[element_name]]
-      cat(paste0("<h2>Target gene group: ", element_name, "</h2>"))
+      cat(paste0("<h2>Query gene group: ", element_name, "</h2>"))
       cat(plotter$table("markers", header = NULL, row_names = NULL, table_rownames = FALSE,
         styled = "dt", func = subset_table))
     }
 
 end.rcode-->
 
-<h1><strong>Target gene expression</strong></h1>
-<!--begin.rcode Target_gene_expression, eval = !is.null(plotter$hash_vars$target_genes)
+<h1><strong>Query gene expression</strong></h1>
+<!--begin.rcode Query_gene_expression, eval = !is.null(plotter$hash_vars$target_genes)
     for(element_name in names(plotter$hash_vars$target_genes)) {
       features <- plotter$hash_vars$target_genes[[element_name]]
-      cat(paste0("<h2>Target gene group: ", element_name, "</h2>"))
+      cat(paste0("<h2>Query gene group: ", element_name, "</h2>"))
       cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
       cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Top_vlnplot))
       cat("</div>")
@@ -172,13 +181,14 @@ end.rcode-->
 end.rcode-->
 
 
-<h1><strong>Target gene expression patterns</strong></h1>
-<!--begin.rcode Target_patterns, eval = !is.null(plotter$hash_vars$target_genes)
+<h1><strong>Query gene expression patterns</strong></h1>
+<!--begin.rcode Query_patterns, eval = !is.null(plotter$hash_vars$target_genes)
     for(element_name in names(plotter$hash_vars$target_genes)) {
-      features <- plotter$hash_vars$target_genes[[element_name]]
-      cat(paste0("<h2>Target gene group: ", element_name, "</h2>"))
-      cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-      cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_ftplot))
-      cat("</div>")
+        cat(paste0("<h2>Query gene group: ", element_name, "</h2>"))
+        for(feature in plotter$hash_vars$target_genes[[element_name]]) {
+            cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+            cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_ftplot))
+            cat("</div>")
+        }
     }
 end.rcode-->
