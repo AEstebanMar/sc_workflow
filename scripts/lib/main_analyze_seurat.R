@@ -84,18 +84,18 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt,
   }else if(!is.null(cell_annotation)){
 	  message("Clusters annotation file not provided. Dynamically annotating
 			       clusters.")
-    saveRDS(markers, "Isaac_markers.rds")
-    saveRDS(cell_annotation, "Isaac_cell_annotation.rds")
 	  annotated_clusters <- match_cell_types(markers_df = markers,
                                            cell_annotation = cell_annotation,
                                            p_adj_cutoff = p_adj_cutoff)
-	  markers <- annotated_clusters$stats_table
+	  markers <- annotated_clusters$summary
 	  seu <- annotate_clusters(seu, annotated_clusters$cell_types)
   }else{
   	warning("No data provided for cluster annotation")
   }
   markers <- cbind(markers$gene, markers[, -grep("gene", colnames(markers))])
   colnames(markers)[1] <- "gene"
+  nums <- sapply(markers, is.numeric)
+  markers[nums] <- lapply(markers[nums], signif, 3)
   message('Performing DEG analysis')
   DEG_list <- list()
   if(DEG_columns == "") {
