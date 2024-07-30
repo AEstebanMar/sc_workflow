@@ -159,14 +159,6 @@ merge_seurat <- function(project_name, samples, exp_design, count_path,
 
 annotate_clusters <- function(seu, new_clusters = NULL ) {
   names(new_clusters) <- levels(seu)
-  types <- unique(new_clusters)
-  for(type in types) {
-    matches <- new_clusters %in% type
-    if(sum(matches) > 1) {
-      marked_dupes <- paste0(new_clusters, " (", letters[cumsum(matches)], ")")
-      new_clusters[matches] <- marked_dupes[matches]
-    }
-  }
   seu <- Seurat::RenameIdents(seu, new_clusters)
   seu@meta.data$named_clusters <- Seurat::Idents(seu)
   return(seu)
@@ -255,21 +247,32 @@ match_cell_types <- function(markers_df, cell_annotation, p_adj_cutoff = 1e-5) {
       scores[[type]] <- sum(subset$avg_log2FC[found_markers] / max_log2FC)
     }
     if(max(unlist(scores)) == 0 || is.na(max(unlist(scores)))) {
-      subset$cell_type = "Unknown"
+      cluster_match <- "Unknown"
     } else {
       cluster_match <- names(scores[which.max(unlist(scores))])
-      subset$cell_type <- cluster_match
     }
+    subset$cell_type <- paste0(subset$cluster, ". ", cluster_match)
     subset_list[[cluster]] <- subset
   }
   stats_table <- do.call(rbind, subset_list)
   stats_table <- stats_table[order(stats_table$cluster), ]
-  stats_table$gene <- rownames(stats_table)
   columns <- colnames(stats_table)
-  annotated_clusters <- stats_table[, c("cluster", "cell_type")]
-  rownames(annotated_clusters) <- NULL
+  types <- strsplit(stats_table$cell_type, "\\. ")
+  types <- unique(sapply(types, `[`, 2))
+  for(type in types) {
+    matches <- grep(type, stats_table$cell_type)
+    type_clusters <- stats_table$cluster[matches]
+    if(length(unique(type_clusters)) > 1) {
+      index <- as.integer(as.factor(type_clusters))
+      dupe_cluster <- paste0(stats_table$cell_type[matches],
+                             " (", letters[index], ")")
+      stats_table[matches, ]$cell_type <- dupe_cluster
+    }
+  }
+  sum_columns <- c("gene", "p_val_adj", "avg_log2FC", "cluster", "cell_type")
   res <- list(stats_table = stats_table,
-              cell_types = unique(annotated_clusters)$cell_type)
+              cell_types = unique(stats_table$cell_type),
+              summary = stats_table[, sum_columns])
   return(res)
 }
 
@@ -304,9 +307,6 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
       markers <- Seurat::FindConservedMarkers(seu, ident.1 = clusters[i],
                                               grouping.var = cond,
                                               verbose = verbose)
-      markers <- cbind(rownames(markers), markers)
-      colnames(markers)[1] <- "gene"
-      rownames(markers) <- NULL
     }
     cluster_markers[[as.character(clusters[i])]] <- markers
   }
@@ -315,8 +315,12 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
     Seurat::Idents(seu) <- cond
     global_markers <- Seurat::FindMarkers(seu, ident.1 = conds[1],
                                 ident.2 = conds[2], verbose = verbose)
-    cluster_markers <- c(global_markers, cluster_markers)
-    names(cluster_markers)[1] <- "global"
+    cluster_markers[["global"]] <- global_markers
+  }
+  if(!is.null(seu@meta.data$named_clusters)) {
+    metadata <- unique(seu@meta.data[, c("seurat_clusters", "named_clusters")])
+    named_clusters <- metadata[order(metadata$seurat_clusters), ]$named_clusters
+    names(cluster_markers) <- c(as.character(named_clusters), "global")
   }
   return(cluster_markers)
 }
