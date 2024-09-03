@@ -20,7 +20,7 @@ export imported_counts=""	# Imported counts directory containing cellranger outp
 
 ######  EXECUTION VARIABLES #######
 
-export RESOURCES="-c 10 -t '2-00:00:00' -m '30gb'"                          # Global AutoFlow resources 
+export RESOURCES="--cpu 10 --time '1-00:00:00' --memory '30gb'"                          # Global AutoFlow resources 
 export launch_login=FALSE                                                   # TRUE: use batch execution. FALSE: send to slurm.
 export experiment_folder=$FSCRATCH"/NGS_projects/"$experiment_name                 # Execution directory
 export FULL_RESULTS=$experiment_folder"/full_results"                       # Count execution path

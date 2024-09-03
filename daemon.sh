@@ -95,7 +95,7 @@ elif [ "$module" == "1c" ] ; then
         \\$preproc_resolution=$preproc_resolution,
         \\$imported_counts=$imported_counts
         " | tr -d [:space:]`
-        AutoFlow -w $TEMPLATES -V "$AF_VARS" $3 -o $FULL_RESULTS/$sample -v
+        AutoFlow -w $TEMPLATES -V "$AF_VARS" $3 -o $FULL_RESULTS/$sample -v $resources
         echo Launching pending and failed jobs for $sample
         flow_logger -e $FULL_RESULTS/$sample -w -l -p
     done < $SAMPLES_FILE
