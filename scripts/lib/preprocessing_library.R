@@ -345,6 +345,7 @@ get_clusters_distribution <- function(seu, sigfig = 3) {
                       "named_clusters", "seurat_clusters")
   clusters_table <- table(seu@meta.data[, c("sample", clusters_column)])
   percent_table <- signif(clusters_table/rowSums(clusters_table)*100, sigfig)
+  percent_table <- as.data.frame.matrix(percent_table)
   return(percent_table)
 }
 
@@ -362,7 +363,11 @@ get_query_distribution <- function(seu, query, sigfig = 3) {
   colnames(genes)[1] <- "sample"
   gene_distribution <- aggregate(genes[, -1], list(genes$sample), FUN = sum)
   gene_distribution[, -1] <- signif(gene_distribution[, -1], sigfig)
-  colnames(gene_distribution)[1] <- "sample"
+  rownames(gene_distribution) <- gene_distribution[, 1]
+  gene_distribution <- gene_distribution[, -1, drop = FALSE]
+  # In the case where query vector is of length one, its names are dropped.
+  # Therefore, we need to set them forcefully.
+  colnames(gene_distribution) <- query
   return(gene_distribution)
 }
 
