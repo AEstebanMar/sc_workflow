@@ -7,7 +7,7 @@
 #SBATCH --cpus-per-task=12
 #SBATCH --mem='1000gb'
 #SBATCH --constraint=cal
-#SBATCH --time=6-23:59:59
+#SBATCH --time=2-23:59:59
 #SBATCH --error=job.comp.%J.err
 #SBATCH --output=job.comp.%J.out
 
