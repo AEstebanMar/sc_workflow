@@ -95,7 +95,7 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   	warning("No data provided for cluster annotation")
   }
   clusters_pct <- get_clusters_distribution(seu = seu, sigfig = sigfig)
-  query_pct <- get_query_distribution(seu = seu, query = query, sigfig = sigfig)
+  query_exp <- get_query_distribution(seu = seu, query = query, sigfig = sigfig)
   markers <- cbind(markers$gene, markers[, -grep("gene", colnames(markers))])
   colnames(markers)[1] <- "gene"
   message('Performing DEG analysis')
@@ -122,7 +122,7 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   final_results$qc <- qc
   final_results$seu <- seu
   final_results$clusters_pct <- clusters_pct
-  final_results$query_pct <- query_pct
+  final_results$query_exp <- query_exp
   final_results$markers <- markers
   final_results$DEG_list <- DEG_list
   return(final_results)
@@ -162,9 +162,11 @@ write_seurat_report <- function(final_results, output = getwd(), name = NULL,
   container <- list(seu = final_results$seu, int_columns = int_columns,
                     DEG_list = final_results$DEG_list,
                     target_genes = target_genes,
+                    clusters_pct = final_results$clusters_pct,
+                    query_exp = final_results$query_exp,
                     markers = final_results$markers,
                     cell_annotation = cell_annotation)
-  plotter <- htmlReport$new(title_doc = paste0("Single-Cell ", name, " report"), 
+  plotter <- htmlreportR:::htmlReport$new(title_doc = paste0("Single-Cell ", name, " report"), 
                             container = container, tmp_folder = tmp_folder,
                             src = source_folder)
   plotter$build(template)
