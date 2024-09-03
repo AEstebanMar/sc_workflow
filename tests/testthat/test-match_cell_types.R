@@ -8,7 +8,7 @@ test_that("Cell type matching sorted simple case",{
 	cell_annotation <- data.frame(markers = c("A", "B", "C"),
 							 type = c("Type1", "Type2", "Type3"))
 	expected_df <- markers_df
-	expected_df$cell_type <- c("Type1", "Type2", "Type3", "Unknown")
+	expected_df$cell_type <- c("1. Type1", "2. Type2", "3. Type3", "4. Unknown")
 	expected_df$gene <- rownames(expected_df)
 	expected_df <- expected_df[order(expected_df$cluster), ]
 	output_df <- match_cell_types(markers_df = markers_df,
@@ -26,7 +26,7 @@ test_that("Cell type matching unsorted simple case",{
 	cell_annotation <- data.frame(markers = c("C", "B", "A"),
 							 type = c("Type3", "Type2", "Type1"))
 	expected_df <- markers_df
-	expected_df$cell_type <- c("Type1", "Type3", "Type2", "Unknown")
+	expected_df$cell_type <- c("2. Type1", "3. Type3", "1. Type2", "4. Unknown")
 	expected_df$gene <- rownames(expected_df)
 	expected_df <- expected_df[order(expected_df$cluster), ]
 	output_df <- match_cell_types(markers_df, cell_annotation)$stats_table
@@ -45,7 +45,8 @@ test_that("Cell type matching complex case",{
 	cell_annotation <- data.frame(markers = genes,
 							 type = types)
 	expected_df <- markers_df
-	expected_df$cell_type <-  c(rep("type1", 20), rep("type2", 20), rep("type3", 10))
+	expected_df$cell_type <-  c(rep("1. type1", 20), rep("2. type2", 20),
+								rep("3. type3", 10))
 	expected_df$gene <- rownames(expected_df)
 	expected_df <- expected_df[order(expected_df$cluster), ]
 	output_df <- match_cell_types(markers_df, cell_annotation)$stats_table
