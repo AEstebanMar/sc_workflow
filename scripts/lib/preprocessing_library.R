@@ -252,15 +252,16 @@ match_cell_types <- function(markers_df, cell_annotation, p_adj_cutoff = 1e-5) {
       cluster_match <- names(scores[which.max(unlist(scores))])
     }
     subset$cell_type <- paste0(subset$cluster, ". ", cluster_match)
-    subset_list[[cluster]] <- subset
+    subset_list[[cluster + 1]] <- subset
   }
   stats_table <- do.call(rbind, subset_list)
   stats_table <- stats_table[order(stats_table$cluster), ]
   columns <- colnames(stats_table)
-  types <- strsplit(stats_table$cell_type, "\\. ")
-  types <- unique(sapply(types, `[`, 2))
+  anno_types <- strsplit(stats_table$cell_type, "\\. ")
+  anno_types <- sapply(anno_types, `[`, 2)
+  types <- unique(anno_types)
   for(type in types) {
-    matches <- grep(type, stats_table$cell_type)
+    matches <- which(anno_types == type)
     type_clusters <- stats_table$cluster[matches]
     if(length(unique(type_clusters)) > 1) {
       index <- as.integer(as.factor(type_clusters))
@@ -303,11 +304,14 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
       Seurat::Idents(subset_seu) <- cond  
       markers <- Seurat::FindMarkers(subset_seu, ident.1 = conds[1],
                                      ident.2 = conds[2], verbose = verbose)
+      markers$gene <- rownames(markers)
     } else {
       markers <- Seurat::FindConservedMarkers(seu, ident.1 = clusters[i],
                                               grouping.var = cond,
                                               verbose = verbose)
     }
+    nums <- sapply(markers, is.numeric)
+    markers[nums] <- lapply(markers[nums], signif, 3)
     cluster_markers[[as.character(clusters[i])]] <- markers
   }
   if(DEG) {
@@ -315,6 +319,9 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
     Seurat::Idents(seu) <- cond
     global_markers <- Seurat::FindMarkers(seu, ident.1 = conds[1],
                                 ident.2 = conds[2], verbose = verbose)
+    global_markers$gene <- rownames(global_markers)
+    nums <- sapply(global_markers, is.numeric)
+    global_markers[nums] <- lapply(global_markers[nums], signif, 3)
     cluster_markers[["global"]] <- global_markers
   }
   if(!is.null(seu@meta.data$named_clusters)) {
@@ -323,6 +330,40 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
     names(cluster_markers) <- c(as.character(named_clusters), "global")
   }
   return(cluster_markers)
+}
+
+#' get_clusters_distribution
+#' `get_clusters_distribution` calculates the percentage of cells that make up
+#' each cluster for each different sample in a seurat object. If clusters are
+#' annotated, it will show cell types instead of cluster number.
+#'
+#' @param seu Clustered seurat object.
+#' @param sigfig Significant figure cutoff
+
+get_clusters_distribution <- function(seu, sigfig = 3) {
+  clusters_column <- ifelse("named_clusters" %in% colnames(seu@meta.data), 
+                      "named_clusters", "seurat_clusters")
+  clusters_table <- table(seu@meta.data[, c("sample", clusters_column)])
+  percent_table <- signif(clusters_table/rowSums(clusters_table)*100, sigfig)
+  return(percent_table)
+}
+
+#' get_query_distribution
+#' `get_query_distribution` builds a table of query genes expression levels
+#' across all samples of a Seurat object
+#'
+#' @param seu Seurat object
+#' @param query Vector of query genes whose expression to analyse.
+#' @param sigfig Significant figure cutoff
+
+get_query_distribution <- function(seu, query, sigfig = 3) {
+  genes <- FetchData(seu, query)
+  genes <- cbind(seu@meta.data$sample, genes)
+  colnames(genes)[1] <- "sample"
+  gene_distribution <- aggregate(genes[, -1], list(genes$sample), FUN = sum)
+  gene_distribution[, -1] <- signif(gene_distribution[, -1], sigfig)
+  colnames(gene_distribution)[1] <- "sample"
+  return(gene_distribution)
 }
 
 #' subset_seurat
