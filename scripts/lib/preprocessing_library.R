@@ -357,7 +357,7 @@ get_clusters_distribution <- function(seu, sigfig = 3) {
 #' @param sigfig Significant figure cutoff
 
 get_query_distribution <- function(seu, query, sigfig = 3) {
-  genes <- FetchData(seu, query)
+  genes <- SeuratObject::FetchData(seu, query)
   genes <- cbind(seu@meta.data$sample, genes)
   colnames(genes)[1] <- "sample"
   gene_distribution <- aggregate(genes[, -1], list(genes$sample), FUN = sum)
