@@ -63,7 +63,7 @@ end.rcode-->
 
 <h1><strong>Single-Cell RNASeq Integration analysis</strong></h1>
 
-<p>Seurat clusters are defined matematically. Unless a manual cluster annotation file is provided,
+<p>Seurat clusters are defined mathematically. Unless a manual cluster annotation file is provided,
 our workflow finds cluster markers and compares them to the cell types annotation file. It then
 analyses matches and determines the most likely cell type for the cluster. These markers are
 plotted in the following graphs.</p
@@ -103,6 +103,31 @@ not match cell type markers.</p>
         cat("</div>")
     }
 end.rcode-->
+
+<h1><strong>Cluster distribution heatmap</strong></h1>
+<p>This plot represents the percentage of cells in each sample that were
+assigned each cell type.</p>
+
+<div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
+<!--begin.rcode cluster_pct
+    cat(plotter$heatmap(list(id = "clusters_pct", title = "Cell type percentage by sample",
+                             header = NULL, text = FALSE, row_names = NULL,
+                             transpose = TRUE)))
+end.rcode-->
+</div>
+
+<h1><strong>Query gene expression heatmap</strong></h1>
+<p>This plot represents gene expression profile across samples of query genes.<br>
+Represented as the natural logarithm of count ratio, multiplied by a scale factor
+(see config file for exact value of scale factor).</p>
+
+<div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
+<!--begin.rcode query_exp
+    cat(plotter$heatmap(list(id = "query_exp", title = "Query gene expression across samples",
+                             header = NULL, text = FALSE, row_names = NULL,
+                             transpose = TRUE)))
+end.rcode-->
+</div>
 
 <h1><strong>Dimensionality reduction</strong></h1>
 <h1><strong>UMAP</strong></h1>
