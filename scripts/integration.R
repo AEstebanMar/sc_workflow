@@ -148,7 +148,9 @@ final_results <- main_analyze_seurat(seu = merged_seu, cluster_annotation = clus
                                      minqcfeats = opt$minqcfeats, percentmt = opt$percentmt, hvgs = opt$hvgs,
                                      scalefactor = opt$scalefactor, normalmethod = opt$normalmethod,
                                      p_adj_cutoff = opt$p_adj_cutoff, verbose = opt$verbose,
-                                     output = opt$output, integrate = TRUE)
+                                     output = opt$output, integrate = TRUE, query = target_genes,
+                                     sigfig = 2)
+
 message("--------------------------------")
 message("---------Writing report---------")
 message("--------------------------------")
