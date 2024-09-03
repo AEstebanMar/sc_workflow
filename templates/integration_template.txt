@@ -9,11 +9,12 @@
     
     Custom_DotPlot <- function(seu) {
         scCustomize::DotPlot_scCustom(seu, features, flip_axes = TRUE, 
-                                      colors_use = colGEX, x_lab_rotate = TRUE)
+                                      colors_use = colGEX, x_lab_rotate = TRUE) +
+        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90))
     }
 
     Custom_DimPlot <- function(seu) {
-        Seurat::DimPlot(seu, reduction = reduction, label = TRUE, repel = TRUE, split.by = split.by,
+        Seurat::DimPlot(seu, reduction = reduction, label = label, repel = TRUE, split.by = split.by,
                         group.by = group.by) +
         ggplot2::theme(legend.position="none")
     }
@@ -33,7 +34,7 @@
     }
 
     Top_vlnplot <- function(seu) {
-        scCustomize::Stacked_VlnPlot(seu, pt.size = 0, x_lab_rotate = TRUE,
+        scCustomize::Stacked_VlnPlot(seu, pt.size = 0, x_lab_rotate = 90,
                                      features = sort(features))
     }
 
@@ -50,6 +51,12 @@
                                          ylim = -0.5,
                                          title = level,
                                          pCutoff = 0.05, FCcutoff = 0.1)
+    }
+
+    get_top_DEGs <- function(input_DEGs) {
+        res <- input_DEGs[input_DEGs$p_val_adj < 0.05 & abs(input_DEGs$avg_log2FC > 1), ]
+        res <- res[, c("gene", "p_val", "p_val_adj", "avg_log2FC", "pct.1", "pct.2")]
+        return(res)
     }
     
 end.rcode-->
@@ -89,7 +96,7 @@ not match cell type markers.</p>
             title <- cluster
         }
         cat(paste0("<h2>Top markers for cluster ", title))
-        plotter$hash_vars$cluster_markers <- plotter$hash_vars$markers[plotter$hash_vars$markers$cluster == cluster, ]
+        plotter$hash_vars$cluster_markers <- plotter$hash_vars$markers[plotter$hash_vars$markers$cluster == cluster - 1, ]
         cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
         cat(plotter$table("cluster_markers", header = NULL, row_names = NULL, table_rownames = FALSE,
             styled = "dt", func = top_table))  
@@ -102,12 +109,14 @@ end.rcode-->
 
 <!--begin.rcode Complete_UMAP
     reduction <- "umap"
+    label <- TRUE
     cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
     group.by <- split.by <- NULL
     cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DimPlot))
     cat("</div>")
 end.rcode-->
 <!--begin.rcode umap_splits
+    label <- FALSE
     for(condition in int_columns) {
         cat(paste0("<h1>Split by ", condition, "</h1>"))
         split.by <- condition
@@ -117,6 +126,7 @@ end.rcode-->
     }
 end.rcode-->
 <!--begin.rcode umap_groups,
+    label <- TRUE
     for(condition in int_columns) {
         cat(paste0("<h1>Grouped by ", condition, "</h1>"))
         split.by <- NULL
@@ -127,18 +137,24 @@ end.rcode-->
     }
 end.rcode-->
 
-<!--begin.rcode DEG_volcanoes, eval = length(plotter$hash_vars$DEG_list) > 0
+<!--begin.rcode DEG_analysis, eval = length(plotter$hash_vars$DEG_list) > 0
     cat("<h1><strong<DEGenes analysis</strong><h1>")
     for(i in seq(1, length(DEG_list))) {
         condition <- names(DEG_list)[i]
+        idents <- unique(plotter$hash_vars$seu@meta.data[[condition]])
         condition_DEGs <- DEG_list[[condition]]
-        cat(paste0("<h1>", condition, " DEGs</h1>"))
+        cat(paste0("<h1><strong>", idents[1], " vs ", idents[2], "</strong></h1>"))
+        cat(paste0("<p>Positive log2 fold change means higher expression levels in ", idents[1], "</p>"))
         for (j in seq(1, length(condition_DEGs))) {
             level <- names(condition_DEGs)[j]
             title <- paste0("Cluster ", names(condition_DEGs)[j])
             plotter$hash_vars$condition_DEGs <- condition_DEGs[[j]]
             cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
             cat(plotter$static_plot_main("condition_DEGs", custom_format = TRUE, plotting_function = DEGs_volcano))
+            cat("</div>")
+            cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+            cat(plotter$table("condition_DEGs", header = NULL, row_names = NULL, table_rownames = FALSE,
+                              styled = "dt", func = get_top_DEGs))
             cat("</div>")
         }
     }
@@ -182,13 +198,17 @@ end.rcode-->
 
 
 <h1><strong>Query gene expression patterns</strong></h1>
+<p>Expression patterns of query genes. Only genes significantly expressed in dataset are plotted</p>
 <!--begin.rcode Query_patterns, eval = !is.null(plotter$hash_vars$target_genes)
+    expressed_genes <- rownames(SeuratObject::GetAssayData(plotter$hash_vars$seu, "RNA"))
     for(element_name in names(plotter$hash_vars$target_genes)) {
         cat(paste0("<h2>Query gene group: ", element_name, "</h2>"))
         for(feature in plotter$hash_vars$target_genes[[element_name]]) {
-            cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-            cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_ftplot))
-            cat("</div>")
+            if(feature %in% expressed_genes) {
+                cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+                cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_ftplot))
+                cat("</div>")
+            }
         }
     }
 end.rcode-->
