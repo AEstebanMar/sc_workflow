@@ -30,14 +30,15 @@
 #' `integrate_seurat` allows subsetting a seurat object without requiring
 #' literal strings.
 #'
-#' @param seu Merged eurat object
+#' @param seu Merged seurat object
 #' @param annotation_dir Directory with cluster annotation files
 #' @param subset_column Column with categories to subset
-#' @inheritParams analyze_seurat
-#'
+#' @param sigfig Significant decimal figures cutoff in query and cluster
+#' distribution analysis.
+#' @param query Vector of query genes whose expression to analyse.
 #' @returns A subsetted seurat object
 
-main_analyze_seurat <- function(seu, minqcfeats, percentmt,
+main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
                            		  resolution, dimreds_to_do, p_adj_cutoff = 5e-3,
                            		  integrate = FALSE, cluster_annotation = NULL,
                            		  cell_annotation, DEG_columns = NULL,
@@ -77,6 +78,7 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt,
   }else{
     markers <- Seurat::FindAllMarkers(seu, only.pos = TRUE, min.pct = 0.25,
                                       logfc.threshold = 0.25, verbose = verbose)
+    rownames(markers) <- NULL
   }
   if(!is.null(cluster_annotation)) {
   	message("Clusters annotation file provided. Annotating clusters")
@@ -92,10 +94,10 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt,
   }else{
   	warning("No data provided for cluster annotation")
   }
+  clusters_pct <- get_clusters_distribution(seu = seu, sigfig = sigfig)
+  query_pct <- get_query_distribution(seu = seu, query = query, sigfig = sigfig)
   markers <- cbind(markers$gene, markers[, -grep("gene", colnames(markers))])
   colnames(markers)[1] <- "gene"
-  nums <- sapply(markers, is.numeric)
-  markers[nums] <- lapply(markers[nums], signif, 3)
   message('Performing DEG analysis')
   DEG_list <- list()
   if(DEG_columns == "") {
@@ -119,6 +121,8 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt,
   final_results <- list()
   final_results$qc <- qc
   final_results$seu <- seu
+  final_results$clusters_pct <- clusters_pct
+  final_results$query_pct <- query_pct
   final_results$markers <- markers
   final_results$DEG_list <- DEG_list
   return(final_results)
