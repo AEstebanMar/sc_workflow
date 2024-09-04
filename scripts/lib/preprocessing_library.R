@@ -301,17 +301,24 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
     if(DEG) {
       # off-by-one correction because Seurat counts clusters from 0
       subset_seu <- subset_seurat(seu, "seurat_clusters", i - 1)
-      Seurat::Idents(subset_seu) <- cond  
-      markers <- Seurat::FindMarkers(subset_seu, ident.1 = conds[1],
-                                     ident.2 = conds[2], verbose = verbose)
-      markers$gene <- rownames(markers)
-    } else {
+      ncells <- nrow(subset_seu@meta.data)
+      if(ncells < 3) {
+        warning('Cluster contains less than three cells. Skipping DEG analysis',
+                 immediate. = TRUE)
+        markers <- data.frame(FALSE)
+        } else {
+        Seurat::Idents(subset_seu) <- cond  
+        markers <- Seurat::FindMarkers(subset_seu, ident.1 = conds[1],
+                                       ident.2 = conds[2], verbose = verbose)
+        markers$gene <- rownames(markers)
+        }
+      } else {
       markers <- Seurat::FindConservedMarkers(seu, ident.1 = clusters[i],
                                               grouping.var = cond,
                                               verbose = verbose)
     }
     nums <- sapply(markers, is.numeric)
-    markers[nums] <- lapply(markers[nums], signif, 3)
+    markers[nums] <- lapply(markers[nums], signif, 2)
     cluster_markers[[as.character(clusters[i])]] <- markers
   }
   if(DEG) {
@@ -321,7 +328,7 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
                                 ident.2 = conds[2], verbose = verbose)
     global_markers$gene <- rownames(global_markers)
     nums <- sapply(global_markers, is.numeric)
-    global_markers[nums] <- lapply(global_markers[nums], signif, 3)
+    global_markers[nums] <- lapply(global_markers[nums], signif, 2)
     cluster_markers[["global"]] <- global_markers
   }
   if(!is.null(seu@meta.data$named_clusters)) {
