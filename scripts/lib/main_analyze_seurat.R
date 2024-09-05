@@ -72,7 +72,10 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
                    reduction = reduction, verbose = verbose)
   seu <- Seurat::FindClusters(seu, resolution = resolution, verbose = verbose)
   seu <- SeuratObject::JoinLayers(seu)
-  if(length(int_columns) == 1) {
+  run_conserved <- ifelse(test = length(int_columns) == 1, no = FALSE,
+                          yes = !has_exclusive_clusters(seu = seu,
+                                                        cond = int_columns))
+  if(run_conserved) {
     markers <- get_sc_markers(seu = seu, cond = int_columns, DEG = FALSE)
     markers <- collapse_markers(markers)
   }else{
