@@ -394,18 +394,20 @@ get_query_distribution <- function(seu, query, sigfig = 3) {
 
 has_exclusive_clusters <- function(seu, cond) {
   meta <- seu@meta.data[, c(cond, "seurat_clusters")]
-  pairs <- unique(meta)
+  groups <- unique(meta[[cond]])
+  clusters <- unique(meta[["seurat_clusters"]])
+  pairs <- expand.grid(groups, clusters)
   sum_matches <- vector(mode = "integer")
   for(pair in seq(1, nrow(pairs))) {
     matches <- apply(meta, 1, function(x) x == pairs[pair, ])
     sum_matches[pair] <- sum(colSums(matches) == 2)
   }
   if(any(sum_matches < 3)) {
-    warning(paste0('Cluster ', i, ' contains less than three cells for ',
-                   'condition(s) \'',
-                   pairs[which(sum_matches < 3), ][cond],
-                   '\'. Defaulting to general marker analysis.'),
-                    immediate. = TRUE)
+    mismatch <- pairs[which(sum_matches < 3), ]
+    warning('One or more clusters contain less than three cells for one or ',
+            'more categories. Affected pair(s): ',
+            paste(apply(mismatch, 1, paste, collapse = "-"), collapse = ", "),
+            ". \nDefaulting to general marker analysis.")
     res <- TRUE
   }else{
     res <- FALSE
