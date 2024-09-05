@@ -349,10 +349,11 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
 #'
 #' @param seu Clustered seurat object.
 #' @param sigfig Significant figure cutoff
+#' @returns A data frame with cell type distribution in each sample.
 
 get_clusters_distribution <- function(seu, sigfig = 3) {
   clusters_column <- ifelse("named_clusters" %in% colnames(seu@meta.data), 
-                      "named_clusters", "seurat_clusters")
+                            "named_clusters", "seurat_clusters")
   clusters_table <- table(seu@meta.data[, c("sample", clusters_column)])
   percent_table <- signif(clusters_table/rowSums(clusters_table)*100, sigfig)
   percent_table <- as.data.frame.matrix(percent_table)
@@ -366,6 +367,7 @@ get_clusters_distribution <- function(seu, sigfig = 3) {
 #' @param seu Seurat object
 #' @param query Vector of query genes whose expression to analyse.
 #' @param sigfig Significant figure cutoff
+#' @return A data frame with expression levels for query genes in each sample.
 
 get_query_distribution <- function(seu, query, sigfig = 3) {
   genes <- SeuratObject::FetchData(seu, query)
@@ -379,6 +381,36 @@ get_query_distribution <- function(seu, query, sigfig = 3) {
   # Therefore, we need to set them forcefully.
   colnames(gene_distribution) <- query
   return(gene_distribution)
+}
+
+#' has_exclusive_clusters
+#' `has_exclusive_clusters` checks if seurat object contains clusters with
+#' less than three members (cells) for any category in provided experimental
+#' condition.
+#'
+#' @param seu Seurat object
+#' @param cond Experimental condition
+#' @returns A boolean. TRUE if exclusive clusters are found, FALSE otherwise.
+
+has_exclusive_clusters <- function(seu, cond) {
+  meta <- seu@meta.data[, c(cond, "seurat_clusters")]
+  pairs <- unique(meta)
+  sum_matches <- vector(mode = "integer")
+  for(pair in seq(1, nrow(pairs))) {
+    matches <- apply(meta, 1, function(x) x == pairs[pair, ])
+    sum_matches[pair] <- sum(colSums(matches) == 2)
+  }
+  if(any(sum_matches < 3)) {
+    warning(paste0('Cluster ', i, ' contains less than three cells for ',
+                   'condition(s) \'',
+                   pairs[which(sum_matches < 3), ][cond],
+                   '\'. Defaulting to general marker analysis.'),
+                    immediate. = TRUE)
+    res <- TRUE
+  }else{
+    res <- FALSE
+  }
+  return(res)
 }
 
 #' subset_seurat
