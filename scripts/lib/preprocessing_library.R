@@ -293,7 +293,8 @@ match_cell_types <- function(markers_df, cell_annotation, p_adj_cutoff = 1e-5) {
 
 get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
   Seurat::Idents(seu) <- "seurat_clusters"
-  conds <- unique(seu@meta.data[[cond]])
+  meta <- seu@meta.data[[cond]]
+  conds <- unique(meta)
   clusters <- sort(unique(Seurat::Idents(seu)))
   cluster_markers <- list()
   for (i in seq(1, length(clusters))) {
@@ -301,17 +302,19 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
     if(DEG) {
       # off-by-one correction because Seurat counts clusters from 0
       subset_seu <- subset_seurat(seu, "seurat_clusters", i - 1)
-      ncells <- nrow(subset_seu@meta.data)
-      if(ncells < 3) {
-        warning('Cluster contains less than three cells. Skipping DEG analysis',
-                 immediate. = TRUE)
+      ncells <- c(sum(meta==conds[1]), sum(meta==conds[2]))
+      if(any(ncells < 3)) {
+        warning(paste0('Cluster ', i, ' contains less than three cells for',
+                        ' condition \'', conds[which(ncells < 3)],
+                        '\'. Skipping DEG analysis', collapse = ""),
+                immediate. = TRUE)
         markers <- data.frame(FALSE)
-        } else {
+      } else {
         Seurat::Idents(subset_seu) <- cond  
         markers <- Seurat::FindMarkers(subset_seu, ident.1 = conds[1],
                                        ident.2 = conds[2], verbose = verbose)
         markers$gene <- rownames(markers)
-        }
+      }
       } else {
       markers <- Seurat::FindConservedMarkers(seu, ident.1 = clusters[i],
                                               grouping.var = cond,
