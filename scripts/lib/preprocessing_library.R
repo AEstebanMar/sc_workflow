@@ -293,7 +293,6 @@ match_cell_types <- function(markers_df, cell_annotation, p_adj_cutoff = 1e-5) {
 
 get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
   Seurat::Idents(seu) <- "seurat_clusters"
-  meta <- seu@meta.data[[cond]]
   conds <- unique(meta)
   clusters <- sort(unique(Seurat::Idents(seu)))
   cluster_markers <- list()
@@ -302,6 +301,7 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
     if(DEG) {
       # off-by-one correction because Seurat counts clusters from 0
       subset_seu <- subset_seurat(seu, "seurat_clusters", i - 1)
+      meta <- subset_seu@meta.data[[cond]]
       ncells <- c(sum(meta==conds[1]), sum(meta==conds[2]))
       if(any(ncells < 3)) {
         warning(paste0('Cluster ', i, ' contains less than three cells for',
