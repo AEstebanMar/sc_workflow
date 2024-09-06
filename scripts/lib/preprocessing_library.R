@@ -293,7 +293,7 @@ match_cell_types <- function(markers_df, cell_annotation, p_adj_cutoff = 1e-5) {
 
 get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
   Seurat::Idents(seu) <- "seurat_clusters"
-  conds <- unique(meta)
+  conds <- unique(seu@meta.data[[cond]])
   clusters <- sort(unique(Seurat::Idents(seu)))
   cluster_markers <- list()
   for (i in seq(1, length(clusters))) {
