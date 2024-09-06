@@ -1,5 +1,5 @@
 library(Seurat)
-test_that("has_exclusive_clusters works in base case"), {
+test_that("has_exclusive_clusters works in base case", {
   
   pbmc_smaller <- pbmc_small[, 1:15]
   pbmc_smaller@meta.data$groups <- "g1"
@@ -12,9 +12,9 @@ test_that("has_exclusive_clusters works in base case"), {
                  expected_warning)
   expect_true(suppressWarnings(has_exclusive_clusters(seu = pbmc_smaller,
                                                       cond = "groups")))
-}
+})
 
-test_that("has_exclusive_clusters can handle more than one positive"), {
+test_that("has_exclusive_clusters can handle more than one positive", {
   pbmc_smaller <- pbmc_small[, 1:15]
   pbmc_smaller@meta.data$groups <- "g1"
   pbmc_smaller@meta.data$groups[7:15] <- "g2"
@@ -26,10 +26,10 @@ test_that("has_exclusive_clusters can handle more than one positive"), {
                  expected_warning)
   expect_true(suppressWarnings(has_exclusive_clusters(seu = pbmc_smaller,
                                                       cond = "groups")))
-}
+})
 
 test_that("has_exclusive_clusters can predict pairs that should appear but
-           do not (behaves correctly for strictly exclusive clusters)"), {
+           do not (behaves correctly for strictly exclusive clusters)", {
   pbmc_smaller <- pbmc_small[, 1:15]
   pbmc_smaller@meta.data$groups <- "g1"
   pbmc_smaller@meta.data$groups[7:15] <- "g2"
@@ -40,13 +40,13 @@ test_that("has_exclusive_clusters can predict pairs that should appear but
                  expected_warning)
   expect_true(suppressWarnings(has_exclusive_clusters(seu = pbmc_smaller,
                                                       cond = "groups")))
-}
+})
 
 test_that("has_exclusive_clusters can identify that no exclusive clusters
-           exist"), {
+           exist", {
   pbmc_smaller <- pbmc_small[, 1:15]
   pbmc_smaller@meta.data$seurat_clusters <- 0
   pbmc_smaller@meta.data$seurat_clusters[c(8:15)] <- 1
   expect_false(suppressWarnings(has_exclusive_clusters(seu = pbmc_smaller,
                                                        cond = "groups")))
-}
+})
