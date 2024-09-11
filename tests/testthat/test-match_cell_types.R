@@ -1,4 +1,4 @@
-test_that("Cell type matching sorted simple case",{
+test_that("Cell type matching sorted simple case", {
 	markers_df <- data.frame(samples = seq(1, 4),
 							 cluster = seq(1, 4),
 							 gene = c("A", "B", "C", "D"))
@@ -16,7 +16,7 @@ test_that("Cell type matching sorted simple case",{
 	expect_equal(output_df, expected_df)
 })
 
-test_that("Cell type matching unsorted simple case",{
+test_that("Cell type matching unsorted simple case", {
 	markers_df <- data.frame(samples = c(4, 3, 2, 1),
 							 cluster = c(2, 3, 1, 4),
 							 gene = c("A", "C", "B", "D"))
@@ -33,17 +33,16 @@ test_that("Cell type matching unsorted simple case",{
 	expect_equal(output_df, expected_df)
 })
 
-test_that("Cell type matching complex case",{
+test_that("Cell type matching complex case", {
 	markers_df <- data.frame(samples = seq(1, 50),
 							 cluster = c(rep(1, 20), rep(2, 20), rep (3, 10)))
 	markers_df$p_val_adj <- rep(1e-5, nrow(markers_df))
 	markers_df$avg_log2FC <- rep(1, nrow(markers_df))
-	genes <- paste0("gene", seq(1, 50))
+	genes <- paste0("gene", seq(1, 12))
 	rownames(markers_df) <- genes
 	markers_df$gene <- genes
 	types <- c(rep("type1", 20), rep("type2", 13), rep("type3", 17))
-	cell_annotation <- data.frame(markers = genes,
-							 type = types)
+	cell_annotation <- data.frame(markers = genes, type = types)
 	expected_df <- markers_df
 	expected_df$cell_type <-  c(rep("1. type1", 20), rep("2. type2", 20),
 								rep("3. type3", 10))
@@ -51,4 +50,17 @@ test_that("Cell type matching complex case",{
 	expected_df <- expected_df[order(expected_df$cluster), ]
 	output_df <- match_cell_types(markers_df, cell_annotation)$stats_table
 	expect_equal(output_df, expected_df)
+})
+
+test_that("More than one cluster assigned the same cell type", {
+	markers_df <- data.frame(samples = seq(1, 12),
+							 cluster = c(rep(0, 4), 1, rep(2, 3), 4:7))
+	markers_df$p_val_adj <- rep(1e-5, nrow(markers_df))
+	markers_df$avg_log2FC <- rep(1, nrow(markers_df))
+	genes <- paste0("gene", seq(1, 12))
+	rownames(markers_df) <- genes
+	markers_df$gene <- genes
+	types <- c(rep("type1 (1,2,3)", 5), rep("type2 (1,2,3)", 3), rep("type3 (4,5,6)", 4))
+	cell_annotation <- data.frame(markers = genes, type = types)
+	output_df <- match_cell_types(markers_df, cell_annotation)$stats_table
 })
