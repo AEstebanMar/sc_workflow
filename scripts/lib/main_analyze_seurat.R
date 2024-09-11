@@ -50,8 +50,8 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   seu <- subset(qc, subset = QC != 'High_MT,Low_nFeature')
   message('Normalizing data')
   seu <- Seurat::NormalizeData(object = seu, verbose = verbose,
-  									  normalization.method = normalmethod,
-                         			  scale.factor = scalefactor)
+  									           normalization.method = normalmethod,
+                               scale.factor = scalefactor)
   message('Scaling data')
   seu <- Seurat::ScaleData(object = seu, verbose = verbose,
   								         features = rownames(seu))
@@ -99,6 +99,7 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   }
   clusters_pct <- get_clusters_distribution(seu = seu, sigfig = sigfig)
   query_exp <- get_query_distribution(seu = seu, query = query, sigfig = sigfig)
+  query_pct <- get_query_pct(seu = seu, query = query, sigfig = sigfig)
   markers <- cbind(markers$gene, markers[, -grep("gene", colnames(markers))])
   colnames(markers)[1] <- "gene"
   message('Performing DEG analysis')
@@ -126,6 +127,7 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   final_results$seu <- seu
   final_results$clusters_pct <- clusters_pct
   final_results$query_exp <- query_exp
+  final_results$query_pct <- query_pct
   final_results$markers <- markers
   final_results$DEG_list <- DEG_list
   return(final_results)
@@ -174,4 +176,5 @@ write_seurat_report <- function(final_results, output = getwd(), name = NULL,
                             src = source_folder)
   plotter$build(template)
   plotter$write_report(out_file)
+  message(paste0("Report written in ", out_file))
 }
