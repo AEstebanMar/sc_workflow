@@ -64,4 +64,5 @@ integration.R --output $output \
               --DEG_columns "$DEG_columns" \
               --cell_annotation "$cell_annotation" \
               --p_adj_cutoff $p_adj_cutoff \
-              --verbose $verbose
+              --verbose $verbose \
+              --reduce $reduce

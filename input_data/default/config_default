@@ -16,6 +16,7 @@ export exp_design=$exp_data_folder"/experiment_design.tbl"       #    Experiment
 export cluster_annotation="" 		 #	  Cluster annotation file. If empty (""), cell annotation file will be used to dynamically assign cell types.
 export cell_annotation="$exp_data_folder/canon.tsv"
 export imported_counts=""	# Imported counts directory containing cellranger output files. If not empty, daemon 2 will load these files instead of output of daemon 1.
+export reduce=FALSE # If TRUE, dataset seurat object will be randomly downsampled to 3000 cells. Useful in testing.
 
 
 ######  EXECUTION VARIABLES #######

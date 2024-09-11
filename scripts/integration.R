@@ -14,7 +14,7 @@ template_path <- file.path(root_path, "..", "templates")
 # Load custom libraries
 
 library(future)
-options(future.globals.maxSize = 18000 * 1024^2)
+options(future.globals.maxSize = 18 * 1024^6)
 
 sc_source_folder <- file.path(root_path, 'lib')
 source(file.path(sc_source_folder, "preprocessing_library.R"))
@@ -81,7 +81,9 @@ option_list <- list(
   optparse::make_option("--p_adj_cutoff", type = "numeric", default = "5e-3",
             help = "Columns for DEG analysis"),
   optparse::make_option("--verbose", type = "logical", default = FALSE, action = "store_true",
-            help = "Verbosity of base Seurat and harmony function calls.")
+            help = "Verbosity of base Seurat and harmony function calls."),
+  optparse::make_option("--reduce", type = "logical", default = FALSE, action = "store_true",
+            help = "Randomly subset seurat object to 3000 cells, for quick testing.")
 )  
 
 opt <- optparse::parse_args(optparse::OptionParser(option_list = option_list))
@@ -131,13 +133,18 @@ if(opt$samples_to_integrate == "") {
 
 if(opt$imported_counts == "") {
   merged_seu <- merge_seurat(project = opt$project_name, samples = samples, exp_design = exp_design,
-                            suffix = opt$suffix, count_path = opt$count_path)  
+                             suffix = opt$suffix, count_path = opt$count_path)  
 } else {
   merged_seu <- Seurat::CreateSeuratObject(counts = Seurat::Read10X(opt$imported_counts, gene.column = 1),
                                            project = opt$project_name, min.cells = 1, min.features = 1)
   merged_seu_meta <- read.table(file.path(opt$imported_counts, "meta.tsv"), sep = "\t", header = TRUE)
   rownames(merged_seu_meta) <- colnames(merged_seu)
   merged_seu <- Seurat::AddMetaData(merged_seu, merged_seu_meta, row.names("Cell_ID"))
+}
+
+if(opt$reduce) {
+  message('Downsampling seurat object')
+  merged_seu <- merged_seu[, sample(colnames(merged_seu), size = 3000, replace=F)]
 }
 
 message("Analyzing seurat object")
@@ -147,15 +154,14 @@ final_results <- main_analyze_seurat(seu = merged_seu, cluster_annotation = clus
                                      cell_annotation = cell_annotation, DEG_columns = opt$DEG_columns,
                                      minqcfeats = opt$minqcfeats, percentmt = opt$percentmt, hvgs = opt$hvgs,
                                      scalefactor = opt$scalefactor, normalmethod = opt$normalmethod,
-                                     p_adj_cutoff = opt$p_adj_cutoff, verbose = opt$verbose,
-                                     output = opt$output, integrate = TRUE, query = target_genes,
-                                     sigfig = 2)
+                                     p_adj_cutoff = opt$p_adj_cutoff, verbose = opt$verbose, sigfig = 2,
+                                     output = opt$output, integrate = TRUE, query = unlist(target_genes))
 
 message("--------------------------------")
 message("---------Writing report---------")
 message("--------------------------------")
+
 write_seurat_report(final_results = final_results, template_folder = template_path,
                     output = file.path(opt$output, "report"), source_folder = source_folder,
                     target_genes = target_genes, name = opt$project_name,
                     int_columns = int_columns, cell_annotation = cell_annotation)
-message(paste0("Report written in ", opt$output, "/report"))
