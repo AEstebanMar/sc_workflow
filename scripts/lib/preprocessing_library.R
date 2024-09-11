@@ -27,7 +27,6 @@ read_input <- function(name, input, mincells, minfeats){
 #' 
 #' @return Seurat object
 tag_qc <- function(seu, minqcfeats, percentmt){
-  
   seu[["percent.mt"]] <- Seurat::PercentageFeatureSet(seu, pattern = "^MT-")
   seu[["percent.rb"]] <- Seurat::PercentageFeatureSet(seu, pattern = "^RP[SL]")
   seu[['QC']] <- ifelse(seu@meta.data$nFeature_RNA < minqcfeats,
@@ -252,7 +251,7 @@ match_cell_types <- function(markers_df, cell_annotation, p_adj_cutoff = 1e-5) {
       cluster_match <- names(scores[which.max(unlist(scores))])
     }
     subset$cell_type <- paste0(subset$cluster, ". ", cluster_match)
-    subset_list[[cluster + 1]] <- subset
+    subset_list[[as.numeric(cluster) + 1]] <- subset
   }
   stats_table <- do.call(rbind, subset_list)
   stats_table <- stats_table[order(stats_table$cluster), ]
@@ -381,6 +380,47 @@ get_query_distribution <- function(seu, query, sigfig = 3) {
   # Therefore, we need to set them forcefully.
   colnames(gene_distribution) <- query
   return(gene_distribution)
+}
+
+#' get_query_pct
+#' `get_query_pct` gets the percentage of cells in each sample of a seurat
+#' object which expresses genes specified in a list of queries.
+#'
+#' @param seu Seurat object
+#' @param query Vector of query genes whose expression to analyse.
+#' @param sigfig Significant figure cutoff
+#' @param assay Seurat assay from which to extract data. Default is "RNA",
+#' the default assay.
+#' @param layer Layer of Seurat object from which to extract data. Default is
+#' "counts", normalised assay data.
+#' @return A data frame with expression levels for query genes in each sample.
+
+get_query_pct <- function(seu, query, sigfig = 2, assay = "RNA",
+                          layer = "counts") {
+  pct_list <- list()
+  for(sample in unique(seu@meta.data$Sample)) {
+    subset_seu <- subset_seurat(seu, "Sample", sample)
+    genes <- SeuratObject::GetAssayData(seu, assay = assay,
+                                                    layer = layer)
+    missing <- !(query %in% rownames(genes))
+    if(any(missing)) {
+      warning(paste0("Query genes ", paste0(query[missing],
+                                            collapse = ", "),
+                     " not present in seurat object."), immediate. = TRUE)
+      query <- query[!missing]
+    }
+    queries <- genes[query, ]
+    if(is.vector(queries)) {
+      pct <- mean(queries)
+      names(pct) <- query
+    } else {
+      pct <- rowMeans(queries)
+    }
+    pct_list[[sample]] <- pct
+  }
+  res <- do.call(rbind, pct_list) * 100
+  res <- signif(res, sigfig)
+  return(res)
 }
 
 #' has_exclusive_clusters
