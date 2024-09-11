@@ -129,6 +129,17 @@ Represented as the natural logarithm of count ratio, multiplied by a scale facto
 end.rcode-->
 </div>
 
+<h1><strong>Query gene cell percentages</strong></h1>
+<p>This plot represents the percentage of cells in each sample that express query genes.</p>
+
+<div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
+<!--begin.rcode query_pct
+    cat(plotter$heatmap(list(id = "query_pct", title = "Query gene expression across samples",
+                             header = NULL, text = FALSE, row_names = NULL,
+                             transpose = TRUE)))
+end.rcode-->
+</div>
+
 <h1><strong>Dimensionality reduction</strong></h1>
 <h1><strong>UMAP</strong></h1>
 
@@ -162,7 +173,7 @@ end.rcode-->
     }
 end.rcode-->
 
-<!--begin.rcode DEG_analysis, eval = length(plotter$hash_vars$DEG_list) > 0
+<!--begin.rcode DEG_analysis, eval = length(DEG_list) > 0
     cat("<h1><strong<DEGenes analysis</strong><h1>")
     for(i in seq(1, length(DEG_list))) {
         condition <- names(DEG_list)[i]
@@ -175,11 +186,17 @@ end.rcode-->
             title <- paste0("Cluster ", names(condition_DEGs)[j])
             plotter$hash_vars$condition_DEGs <- condition_DEGs[[j]]
             cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-            cat(plotter$static_plot_main("condition_DEGs", custom_format = TRUE, plotting_function = DEGs_volcano))
-            cat("</div>")
-            cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-            cat(plotter$table("condition_DEGs", header = NULL, row_names = NULL, table_rownames = FALSE,
-                              styled = "dt", func = get_top_DEGs))
+            if(FALSE %in% condition_DEGs[[j]]) {
+                cat(paste0("<p>Cluster ", j, "contained exclusive clusters,
+                    DEG analysis was not possible."))
+            }else{
+                cat(plotter$static_plot_main("condition_DEGs", custom_format = TRUE, plotting_function = DEGs_volcano))
+                cat("</div>")
+                cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+                cat(plotter$table("condition_DEGs", header = NULL, row_names = NULL, table_rownames = FALSE,
+                                   styled = "dt", func = get_top_DEGs))
+            }
+
             cat("</div>")
         }
     }
@@ -207,7 +224,6 @@ end.rcode-->
       cat(plotter$table("markers", header = NULL, row_names = NULL, table_rownames = FALSE,
         styled = "dt", func = subset_table))
     }
-
 end.rcode-->
 
 <h1><strong>Query gene expression</strong></h1>
