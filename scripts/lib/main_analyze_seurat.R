@@ -46,8 +46,9 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
                            		  normalmethod = "LogNormalize", ndims,
                                 verbose = FALSE, output = getwd(),
                                 save_RDS = FALSE){
+  colnames(seu@meta.data) <- tolower(colnames(seu@meta.data))
   qc <- tag_qc(seu = seu, minqcfeats = minqcfeats, percentmt = percentmt)
-  seu <- subset(qc, subset = QC != 'High_MT,Low_nFeature')
+  seu <- subset(qc, subset = qc != 'High_MT,Low_nFeature')
   message('Normalizing data')
   seu <- Seurat::NormalizeData(object = seu, verbose = verbose,
   									           normalization.method = normalmethod,
