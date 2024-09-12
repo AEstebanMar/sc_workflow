@@ -173,10 +173,10 @@ annotate_clusters <- function(seu, new_clusters = NULL ) {
 #' markers of that element from the original list separated by commas.
 
 collapse_markers <- function(markers_list) {
-  df_list <- list()
+  df_list <- vector(mode = "list", length = length(markers_list))
   for(i in seq(1, length(markers_list))) {
     df_list[[i]] <- as.data.frame(markers_list[[i]])
-    df_list[[i]]$cluster <- i
+    df_list[[i]]$cluster <- i - 1
     df_list[[i]]$gene <- rownames(df_list[[i]])
     rownames(df_list[[i]]) <- NULL
   }
@@ -199,8 +199,8 @@ collapse_markers <- function(markers_list) {
 
 match_cell_types <- function(markers_df, cell_annotation, p_adj_cutoff = 1e-5) {
   canon_types <- unique(cell_annotation$type)
-  subset_list <- list()
-  res <- list()
+  clusters <- unique(markers_df$cluster)
+  subset_list <- vector(mode = "list", length = length(clusters))
   pcols <- grep("p_val_adj", colnames(markers_df))
   if(any(is.na(markers_df[, pcols]))) {
     warning("WARNING: NAs detected in marker p-values. Coercing to 1.",
@@ -211,7 +211,7 @@ match_cell_types <- function(markers_df, cell_annotation, p_adj_cutoff = 1e-5) {
     pvals <- unlist(markers_df[, pcols])
     pvals <- pvals[pvals != 0]
     min_pval <- min(pvals) # Small correction for machine-zeroes
-    int_p_val <- rep(0, nrow(markers_df))
+    int_p_val <- vector(mode = "double", length = nrow(markers_df))
     p_vals_1 <- markers_df[[pcols[1]]]
     p_vals_2 <- markers_df[[pcols[2]]]
     for(i in seq(1, length(int_p_val))) {
@@ -239,7 +239,8 @@ match_cell_types <- function(markers_df, cell_annotation, p_adj_cutoff = 1e-5) {
     subset <- markers_df[markers_df$cluster == cluster, ]
     subset <- subset[order(subset$p_val_adj), ]
     max_log2FC <- max(subset$avg_log2FC)
-    scores <- list()
+    scores <- vector(mode = "numeric", length = length(canon_types))
+    names(scores) <- canon_types
     for(type in canon_types) {
       type_markers <- cell_annotation[cell_annotation$type == type, ]$marker
       found_markers <- which(subset$gene %in% type_markers)
@@ -397,7 +398,9 @@ get_query_distribution <- function(seu, query, sigfig = 3) {
 
 get_query_pct <- function(seu, query, sigfig = 2, assay = "RNA",
                           layer = "counts") {
-  pct_list <- list()
+  samples <- unique(seu@meta.data$sample)
+  pct_list <- vector(mode = "list", length = length(samples))
+  names(pct_list) <- samples
   for(sample in unique(seu@meta.data$sample)) {
     subset_seu <- subset_seurat(seu, "sample", sample)
     genes <- SeuratObject::GetAssayData(seu, assay = assay,
