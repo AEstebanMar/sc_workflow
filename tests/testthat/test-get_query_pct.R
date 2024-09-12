@@ -1,7 +1,7 @@
 test_that("get_query_pct works in simple case", {
   library(Seurat)
   pbmc_smaller <- pbmc_small[, 1:15]
-  pbmc_smaller@meta.data$Sample <- c(rep("A", 5), rep("B", 5), rep("C", 5))
+  pbmc_smaller@meta.data$sample <- c(rep("A", 5), rep("B", 5), rep("C", 5))
   query <- c("MS4A1", "CD79A", "HLA-DRB5")
   expected_df <- matrix(nrow = 3, ncol = 3)
   rownames(expected_df) <- c("A", "B", "C")
