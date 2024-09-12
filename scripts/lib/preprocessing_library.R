@@ -29,20 +29,20 @@ read_input <- function(name, input, mincells, minfeats){
 tag_qc <- function(seu, minqcfeats, percentmt){
   seu[["percent.mt"]] <- Seurat::PercentageFeatureSet(seu, pattern = "^MT-")
   seu[["percent.rb"]] <- Seurat::PercentageFeatureSet(seu, pattern = "^RP[SL]")
-  seu[['QC']] <- ifelse(seu@meta.data$nFeature_RNA < minqcfeats,
+  seu[['qc']] <- ifelse(seu@meta.data$nfeature_rna < minqcfeats,
                         'Low_nFeature', 'Pass')
-  seu[['QC']] <- ifelse(seu@meta.data$nFeature_RNA < minqcfeats &
-                        seu@meta.data$QC != 'Pass' &
-                        seu@meta.data$QC != 'Low_nFeature',
-                        paste('Low_nFeature', seu@meta.data$QC, sep = ','),
-                              seu@meta.data$QC)
-  seu[['QC']] <- ifelse(seu@meta.data$percent.mt > percentmt &
-                        seu@meta.data$QC == 'Pass','High_MT', seu@meta.data$QC)
-  seu[['QC']] <- ifelse(seu@meta.data$nFeature_RNA < minqcfeats &
-                        seu@meta.data$QC != 'Pass' &
-                        seu@meta.data$QC != 'High_MT',
-                        paste('High_MT', seu@meta.data$QC ,sep = ','),
-                              seu@meta.data$QC)
+  seu[['qc']] <- ifelse(seu@meta.data$nfeature_rna < minqcfeats &
+                        seu@meta.data$qc != 'Pass' &
+                        seu@meta.data$qc != 'Low_nFeature',
+                        paste('Low_nFeature', seu@meta.data$qc, sep = ','),
+                              seu@meta.data$qc)
+  seu[['qc']] <- ifelse(seu@meta.data$percent.mt > percentmt &
+                        seu@meta.data$qc == 'Pass','High_MT', seu@meta.data$qc)
+  seu[['qc']] <- ifelse(seu@meta.data$nfeature_rna < minqcfeats &
+                        seu@meta.data$qc != 'Pass' &
+                        seu@meta.data$qc != 'High_MT',
+                        paste('High_MT', seu@meta.data$qc ,sep = ','),
+                              seu@meta.data$qc)
   return(seu)
 }
 
@@ -398,8 +398,8 @@ get_query_distribution <- function(seu, query, sigfig = 3) {
 get_query_pct <- function(seu, query, sigfig = 2, assay = "RNA",
                           layer = "counts") {
   pct_list <- list()
-  for(sample in unique(seu@meta.data$Sample)) {
-    subset_seu <- subset_seurat(seu, "Sample", sample)
+  for(sample in unique(seu@meta.data$sample)) {
+    subset_seu <- subset_seurat(seu, "sample", sample)
     genes <- SeuratObject::GetAssayData(seu, assay = assay,
                                                     layer = layer)
     missing <- !(query %in% rownames(genes))
