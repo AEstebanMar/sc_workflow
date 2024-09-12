@@ -38,7 +38,7 @@ test_that("Cell type matching complex case", {
 							 cluster = c(rep(1, 20), rep(2, 20), rep (3, 10)))
 	markers_df$p_val_adj <- rep(1e-5, nrow(markers_df))
 	markers_df$avg_log2FC <- rep(1, nrow(markers_df))
-	genes <- paste0("gene", seq(1, 12))
+	genes <- paste0("gene", seq(1, 50))
 	rownames(markers_df) <- genes
 	markers_df$gene <- genes
 	types <- c(rep("type1", 20), rep("type2", 13), rep("type3", 17))
