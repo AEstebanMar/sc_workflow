@@ -401,10 +401,9 @@ get_query_pct <- function(seu, query, sigfig = 2, assay = "RNA",
   samples <- unique(seu@meta.data$sample)
   pct_list <- vector(mode = "list", length = length(samples))
   names(pct_list) <- samples
-  for(sample in unique(seu@meta.data$sample)) {
-    message(paste0("Calculating query percentages for sample ",
-                    sample, "."))
-    subset <- subset_seurat(seu, "sample", sample)
+  for(i in seq(length(samples))) {
+    message(paste0("Calculating sample ", i, "/", length(samples)))
+    subset <- subset_seurat(seu, "sample", samples[i])
     genes <- SeuratObject::GetAssayData(subset, assay = assay, layer = layer)
     missing <- !(query %in% rownames(genes))
     if(any(missing)) {
@@ -420,7 +419,7 @@ get_query_pct <- function(seu, query, sigfig = 2, assay = "RNA",
     } else {
       pct <- rowSums(queries != 0)/ncol(queries)
     }
-    pct_list[[sample]] <- pct
+    pct_list[[samples[i]]] <- pct
   }
   res <- do.call(rbind, pct_list) * 100
   res <- signif(res, sigfig)
