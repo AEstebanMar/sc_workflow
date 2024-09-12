@@ -402,6 +402,8 @@ get_query_pct <- function(seu, query, sigfig = 2, assay = "RNA",
   pct_list <- vector(mode = "list", length = length(samples))
   names(pct_list) <- samples
   for(sample in unique(seu@meta.data$sample)) {
+    message(paste0("Calculating query percentages for sample, ",
+                    sample, "."))
     subset_seu <- subset_seurat(seu, "sample", sample)
     genes <- SeuratObject::GetAssayData(seu, assay = assay,
                                                     layer = layer)
