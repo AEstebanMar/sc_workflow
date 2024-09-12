@@ -167,6 +167,7 @@ write_seurat_report <- function(final_results, output = getwd(), name = NULL,
   out_file <- file.path(output, "integration_report.html")
   container <- list(seu = final_results$seu, int_columns = int_columns,
                     DEG_list = final_results$DEG_list,
+                    query_pct = final_results$query_pct,
                     target_genes = target_genes,
                     clusters_pct = final_results$clusters_pct,
                     query_exp = final_results$query_exp,
