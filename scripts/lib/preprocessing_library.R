@@ -401,8 +401,15 @@ get_query_distribution <- function(seu, query, sigfig = 3) {
 #' "counts", normalised assay data.
 #' @return A data frame with expression levels for query genes in each sample.
 
-get_query_pct <- function(seu, query, sigfig = 2, assay = "RNA",
+get_query_pct <- function(seu, query, by, sigfig = 2, assay = "RNA",
                           layer = "counts") {
+  res <- vector(mode = "list", length = length(query))
+  names(res) <- query
+  for(gene in query) {
+    pct <- breakdown_query(seu = seu, query = query, by = by,
+                           sigfig = sigfig, assay = assay, layer = layer)
+  }
+
   samples <- unique(seu@meta.data$sample)
   pct_list <- vector(mode = "list", length = length(samples))
   names(pct_list) <- samples
@@ -431,14 +438,58 @@ get_query_pct <- function(seu, query, sigfig = 2, assay = "RNA",
   return(res)
 }
 
-#' has_exclusive_clusters
-#' `has_exclusive_clusters` checks if seurat object contains clusters with
-#' less than three members (cells) for any category in provided experimental
-#' condition.
+#' breakdown_query
+#' `breakdown_query` breaks down the expression of a list of query genes by
+#' the specified parameter.
 #'
 #' @param seu Seurat object
-#' @param cond Experimental condition
-#' @returns A boolean. TRUE if exclusive clusters are found, FALSE otherwise.
+#' @param query Vector of query genes whose expression to analyse.
+#' @param by Condition by which expression will be broken down.
+#' @param sigfig Significant figure cutoff, default 2
+#' @param assay Seurat assay from which to extract data. Default is "RNA",
+#' the default assay.
+#' @param layer Layer of Seurat object from which to extract data. Default is
+#' "counts", normalised assay data.
+
+breakdown_query <- function(seu, query, by, sigfig = 2,
+                            assay = "RNA", layer = "counts") {
+  items <- unique(seu@meta.data[[by]])
+  pct_list <- vector(mode = "list", length = length(items))
+  names(pct_list) <- items
+  for(i in seq(length(items))) {
+    message(paste("Calculating", by,  paste0(i, "/", length(items)), sep = " "))
+    subset <- subset_seurat(seu, by, items[i])
+    genes <- SeuratObject::GetAssayData(subset, assay = assay, layer = layer)
+    missing <- !(query %in% rownames(genes))
+    if(any(missing)) {
+      warning(paste0("Query genes ", paste0(query[missing],
+                                            collapse = ", "),
+                     " not present in seurat object."), immediate. = TRUE)
+      query <- query[!missing]
+    }
+    queries <- genes[query, ]
+    if(is.vector(queries)) {
+      pct <- sum(queries != 0)/length(queries)
+      names(pct) <- query
+    } else {
+      pct <- rowSums(queries != 0)/ncol(queries)
+    }
+    pct_list[[as.character(items[i])]] <- pct
+  }
+  res <- do.call(rbind, pct_list) * 100
+  res <- signif(res, sigfig)
+  return(res)
+}
+
+#' has_exclusive_clusters
+#' `has_exclusive_clusters` checks whether any condition-cluster pairs in
+#' seurat object has less than three occurrences, which makes certain analyses
+#' impossible.
+#'
+#' @param seu Seurat object
+#' @param cond Condition to check
+#'
+#' @returns A boolean. `TRUE` if it contains exclusive pairs, `FALSE` otherwise.
 
 has_exclusive_clusters <- function(seu, cond) {
   meta <- seu@meta.data[, c(cond, "seurat_clusters")]
@@ -464,7 +515,13 @@ has_exclusive_clusters <- function(seu, cond) {
 }
 
 #' subset_seurat
-#' `subset_seurat` subsets a seurat object. Documentation in progress.
+#' `subset_seurat` subsets a seurat object by a specified value of provided
+#' column.
+#'
+#' @param seu Seurat object
+#' @param column Column with value by which to subset input
+#' @param value Value to search within column
+#' @returns A subset of the seurat object, which itself is a seurat object.
 
 subset_seurat <- function(seu, column, value) {
   expr <- Seurat::FetchData(seu, vars = column)
