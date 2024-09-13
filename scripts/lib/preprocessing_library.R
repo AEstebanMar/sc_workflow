@@ -249,10 +249,11 @@ match_cell_types <- function(markers_df, cell_annotation, p_adj_cutoff = 1e-5) {
     if(max(unlist(scores)) == 0 || is.na(max(unlist(scores)))) {
       cluster_match <- "Unknown"
     } else {
-      cluster_match <- names(scores[which.max(unlist(scores))])
+      cluster_match <- names(scores[which(scores == max(scores))])
+      cluster_match <- paste0(cluster_match, collapse = " / ")
     }
     subset$cell_type <- paste0(subset$cluster, ". ", cluster_match)
-    subset_list[[as.numeric(cluster) + 1]] <- subset
+    subset_list[[as.numeric(cluster)]] <- subset
   }
   stats_table <- do.call(rbind, subset_list)
   stats_table <- stats_table[order(stats_table$cluster), ]
@@ -263,10 +264,14 @@ match_cell_types <- function(markers_df, cell_annotation, p_adj_cutoff = 1e-5) {
   for(type in types) {
     matches <- which(anno_types == type)
     type_clusters <- stats_table$cluster[matches]
-    if(length(unique(type_clusters)) > 1) {
-      index <- as.integer(as.factor(type_clusters))
+    uniques <- unique(type_clusters)
+    if(length(uniques) > 1) {
+      indices <- vector(mode = "double", length = length(uniques))
+        for (i in seq(type_clusters)) {
+          indices[i] <- which(type_clusters[i] == uniques)
+        }
       dupe_cluster <- paste0(stats_table$cell_type[matches],
-                             " (", letters[index], ")")
+                             " (", letters[indices], ")")
       stats_table[matches, ]$cell_type <- dupe_cluster
     }
   }
@@ -440,7 +445,7 @@ has_exclusive_clusters <- function(seu, cond) {
   groups <- unique(meta[[cond]])
   clusters <- unique(meta[["seurat_clusters"]])
   pairs <- expand.grid(groups, clusters)
-  sum_matches <- vector(mode = "integer")
+  sum_matches <- vector(mode = "integer", length = nrow(pairs))
   for(pair in seq(1, nrow(pairs))) {
     matches <- apply(meta, 1, function(x) x == pairs[pair, ])
     sum_matches[pair] <- sum(colSums(matches) == 2)
