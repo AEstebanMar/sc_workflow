@@ -403,39 +403,44 @@ get_query_distribution <- function(seu, query, sigfig = 3) {
 
 get_query_pct <- function(seu, query, by, sigfig = 2, assay = "RNA",
                           layer = "counts") {
-  res <- vector(mode = "list", length = length(query))
-  names(res) <- query
-  for(gene in query) {
-    pct <- breakdown_query(seu = seu, query = query, by = by,
-                           sigfig = sigfig, assay = assay, layer = layer)
+  if(length(by) < 1 || 2 < length(by)) {
+    stop("Invalid 'by' length. Must be 1 or 2")
   }
-
-  samples <- unique(seu@meta.data$sample)
-  pct_list <- vector(mode = "list", length = length(samples))
-  names(pct_list) <- samples
-  for(i in seq(length(samples))) {
-    message(paste0("Calculating sample ", i, "/", length(samples)))
-    subset <- subset_seurat(seu, "sample", samples[i])
-    genes <- SeuratObject::GetAssayData(subset, assay = assay, layer = layer)
-    missing <- !(query %in% rownames(genes))
-    if(any(missing)) {
-      warning(paste0("Query genes ", paste0(query[missing],
-                                            collapse = ", "),
-                     " not present in seurat object."), immediate. = TRUE)
-      query <- query[!missing]
-    }
-    queries <- genes[query, ]
-    if(is.vector(queries)) {
-      pct <- sum(queries != 0)/length(queries)
-      names(pct) <- query
-    } else {
-      pct <- rowSums(queries != 0)/ncol(queries)
-    }
-    pct_list[[samples[i]]] <- pct
+  items <- unique(seu@meta.data[[by[1]]])
+  subset_list <- vector(mode = "list", length = length(items))
+  names(subset_list) <- items
+  for(i in seq(length(items))) {
+    message(paste("Subsetting", by[1],  paste0(i, "/", length(items)), sep = " "))
+    subset <- subset_seurat(seu, by[1], items[i])
+    subset_list[[as.character(items[i])]] <- subset
   }
-  res <- do.call(rbind, pct_list) * 100
-  res <- signif(res, sigfig)
-  return(res)
+  if(length(by) == 2){
+    pct_list <- vector(mode = "list", length = length(subset_list))
+    for(element in seq(subset_list)) {
+      sec_items <- unique(subset_list[[element]]@meta.data[[by[2]]])
+      new_subset <- vector(mode = "list", length = length(sec_items))
+      names(new_subset) <- sec_items
+      for(j in seq(length(sec_items))) {
+        sublist_name <- as.character(sec_items[j])
+        message(paste("Sub-subsetting", by[2],
+                       paste0(j, "/", length(sec_items)), sep = " "))
+        new_subset[[sublist_name]] <- subset_seurat(subset_list[[element]],
+                                                    by[2], sec_items[j])
+      }
+      subset_list[[element]] <- new_subset
+      pct_list[[element]] <- lapply(X = subset_list[[element]],
+                                    FUN = breakdown_query, query = query,
+                                    assay = assay, layer = layer)
+      pct_list[[element]] <- do.call(rbind, pct_list[[element]]) * 100
+      pct_list[[element]] <- signif(pct_list[[element]], sigfig)
+    }
+  } else {
+    pct_list <- lapply(X = subset_list, FUN = breakdown_query, query = query,
+                       assay = assay, layer = layer)
+    pct_list <- do.call(rbind, pct_list) * 100
+    pct_list <- signif(pct_list, sigfig)
+  }
+  return(pct_list)
 }
 
 #' breakdown_query
@@ -444,41 +449,29 @@ get_query_pct <- function(seu, query, by, sigfig = 2, assay = "RNA",
 #'
 #' @param seu Seurat object
 #' @param query Vector of query genes whose expression to analyse.
-#' @param by Condition by which expression will be broken down.
 #' @param sigfig Significant figure cutoff, default 2
 #' @param assay Seurat assay from which to extract data. Default is "RNA",
 #' the default assay.
 #' @param layer Layer of Seurat object from which to extract data. Default is
 #' "counts", normalised assay data.
 
-breakdown_query <- function(seu, query, by, sigfig = 2,
-                            assay = "RNA", layer = "counts") {
-  items <- unique(seu@meta.data[[by]])
-  pct_list <- vector(mode = "list", length = length(items))
-  names(pct_list) <- items
-  for(i in seq(length(items))) {
-    message(paste("Calculating", by,  paste0(i, "/", length(items)), sep = " "))
-    subset <- subset_seurat(seu, by, items[i])
-    genes <- SeuratObject::GetAssayData(subset, assay = assay, layer = layer)
-    missing <- !(query %in% rownames(genes))
-    if(any(missing)) {
-      warning(paste0("Query genes ", paste0(query[missing],
-                                            collapse = ", "),
-                     " not present in seurat object."), immediate. = TRUE)
-      query <- query[!missing]
-    }
-    queries <- genes[query, ]
-    if(is.vector(queries)) {
-      pct <- sum(queries != 0)/length(queries)
-      names(pct) <- query
-    } else {
-      pct <- rowSums(queries != 0)/ncol(queries)
-    }
-    pct_list[[as.character(items[i])]] <- pct
+breakdown_query <- function(seu, query, assay = "RNA", layer = "counts") {
+  genes <- SeuratObject::GetAssayData(seu, assay = assay, layer = layer)
+  missing <- !(query %in% rownames(genes))
+  if(any(missing)) {
+    warning(paste0("Query genes ", paste0(query[missing],
+                                          collapse = ", "),
+                   " not present in seurat object."), immediate. = TRUE)
+    query <- query[!missing]
   }
-  res <- do.call(rbind, pct_list) * 100
-  res <- signif(res, sigfig)
-  return(res)
+  queries <- genes[query, , drop = FALSE]
+  if(nrow(queries) == 1) {
+    pct <- sum(queries != 0)/length(queries)
+    names(pct) <- query
+  } else {
+    pct <- rowSums(queries != 0)/ncol(queries)
+  }
+  return(pct)   
 }
 
 #' has_exclusive_clusters
