@@ -116,30 +116,6 @@ assigned each cell type.</p>
 end.rcode-->
 </div>
 
-<h1><strong>Query gene expression heatmap</strong></h1>
-<p>This plot represents gene expression profile across samples of query genes.<br>
-Represented as the natural logarithm of count ratio, multiplied by a scale factor
-(see config file for exact value of scale factor).</p>
-
-<div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
-<!--begin.rcode query_exp
-    cat(plotter$heatmap(list(id = "query_exp", title = "Query gene expression across samples",
-                             header = NULL, text = FALSE, row_names = NULL,
-                             transpose = TRUE)))
-end.rcode-->
-</div>
-
-<h1><strong>Query gene cell percentages</strong></h1>
-<p>This plot represents the percentage of cells in each sample that express query genes.</p>
-
-<div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
-<!--begin.rcode query_pct
-    cat(plotter$heatmap(list(id = "query_pct", title = "Query gene expression across samples",
-                             header = NULL, text = FALSE, row_names = NULL,
-                             transpose = TRUE)))
-end.rcode-->
-</div>
-
 <h1><strong>Dimensionality reduction</strong></h1>
 <h1><strong>UMAP</strong></h1>
 
@@ -201,6 +177,31 @@ end.rcode-->
         }
     }
 end.rcode-->
+
+
+<h1><strong>Query gene expression heatmap</strong></h1>
+<p>This plot represents gene expression profile across samples of query genes.<br>
+Represented as the natural logarithm of count ratio, multiplied by a scale factor
+(see config file for exact value of scale factor).</p>
+
+<div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
+<!--begin.rcode query_exp
+    cat(plotter$heatmap(list(id = "query_exp", title = "Query gene expression across samples",
+                             header = NULL, text = FALSE, row_names = NULL,
+                             transpose = TRUE)))
+end.rcode-->
+</div>
+
+<h1><strong>Query gene cell percentages</strong></h1>
+<p>This plot represents the percentage of cells in each sample that express query genes.</p>
+
+<div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
+<!--begin.rcode query_pct
+    cat(plotter$heatmap(list(id = "query_pct", title = "Query gene expression across samples",
+                             header = NULL, text = FALSE, row_names = NULL,
+                             transpose = TRUE)))
+end.rcode-->
+</div>
 
 <h1><strong>Query genes distribution</strong></h1>
 <h2>Expression of query genes across identified clusters</h2>
