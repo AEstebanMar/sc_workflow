@@ -2,6 +2,8 @@ library(Seurat)
 pbmc_smaller <- pbmc_small[, 1:15]
 pbmc_smaller@meta.data$sample <- c(rep("A", 5), rep("B", 5), rep("C", 5))
 pbmc_smaller@meta.data$seurat_clusters <- rep(1:5, 3)
+cell_types <- c("typeA", "typeB", "typeC", "typeD", "typeE")
+pbmc_smaller@meta.data$named_clusters <- rep(cell_types, 3)
 test_that("get_query_pct works in simple case", {
   query <- c("MS4A1", "CD79A", "HLA-DRB5")
   expected_df <- matrix(nrow = 3, ncol = 3)
@@ -39,6 +41,17 @@ test_that("get_query_pct works with query of length one", {
 
 test_that("get_query_pct works with 'by' argument of length 2", {
   query <- c("MS4A1", "CD79A", "HLA-DRB5")
+  types <- paste0("type", toupper(letters[1:5]))
+  matA <- matrix(data = 0, nrow = 5, ncol = 3)
+  matB = matC <- matA
+  matB[, 3] <- c(0, 100, rep(0, 3))
+  matC[, 1] <- rep(100, 5)
+  matC[, 2] <- c(0, rep(100, 4))
+  matC[, 3] <- c(rep(100, 3), 0, 100)
+  colnames(matA) = colnames(matB) = colnames(matC) <- query
+  rownames(matA) = rownames(matB) = rownames(matC) <- types
+  expected_list <- list(A = matA, B = matB, C = matC)
   output_list <- get_query_pct(pbmc_smaller, query,
-                               by = c("sample", "seurat_clusters"))
+                               by = c("sample", "named_clusters"))
+  expect_equal(output_list, expected_list)
 })
