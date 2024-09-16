@@ -104,18 +104,6 @@ not match cell type markers.</p>
     }
 end.rcode-->
 
-<h1><strong>Cluster distribution heatmap</strong></h1>
-<p>This plot represents the percentage of cells in each sample that were
-assigned each cell type.</p>
-
-<div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
-<!--begin.rcode cluster_pct
-    cat(plotter$heatmap(list(id = "clusters_pct", title = "Cell type percentage by sample",
-                             header = NULL, text = FALSE, row_names = NULL,
-                             transpose = TRUE)))
-end.rcode-->
-</div>
-
 <h1><strong>Dimensionality reduction</strong></h1>
 <h1><strong>UMAP</strong></h1>
 
@@ -178,6 +166,17 @@ end.rcode-->
     }
 end.rcode-->
 
+<h1><strong>Cluster distribution heatmap</strong></h1>
+<p>This plot represents the percentage of cells in each sample that were
+assigned each cell type.</p>
+
+<div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
+<!--begin.rcode cluster_pct
+    cat(plotter$heatmap(list(id = "clusters_pct", title = "Cell type percentage by sample",
+                             header = NULL, text = FALSE, row_names = NULL,
+                             transpose = TRUE)))
+end.rcode-->
+</div>
 
 <h1><strong>Query gene expression heatmap</strong></h1>
 <p>This plot represents gene expression profile across samples of query genes.<br>
@@ -198,6 +197,18 @@ end.rcode-->
 <div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
 <!--begin.rcode query_pct
     cat(plotter$heatmap(list(id = "query_pct", title = "Query gene expression across samples",
+                             header = NULL, text = FALSE, row_names = NULL,
+                             transpose = TRUE)))
+end.rcode-->
+</div>
+
+<h1><strong>Query gene cell percentages by cluster</strong></h1>
+<p>This plot represents the same concept as the previous one, but breaks it down
+   by cluster or cell type, if they have been assigned.</p>
+
+<div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
+<!--begin.rcode query_cluster_pct
+    cat(plotter$heatmap(list(id = "query_cluster_pct", title = "Query gene expression across samples",
                              header = NULL, text = FALSE, row_names = NULL,
                              transpose = TRUE)))
 end.rcode-->
