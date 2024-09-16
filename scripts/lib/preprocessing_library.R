@@ -467,7 +467,7 @@ breakdown_query <- function(seu, query, assay = "RNA", layer = "counts") {
     genes <- SeuratObject::GetAssayData(seu, assay = assay, layer = layer)
     missing <- !(query %in% rownames(genes))
   } else {
-    genes <- seu[[assay]][layer]
+    genes <- seu[[assay]][[, layer]]
     missing <- !(query %in% names(genes))
   }
   if(any(missing)) {
