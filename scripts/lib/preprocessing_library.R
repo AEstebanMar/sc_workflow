@@ -417,15 +417,18 @@ get_query_pct <- function(seu, query, by, sigfig = 2, assay = "RNA",
   if(length(by) == 2){
     pct_list <- vector(mode = "list", length = length(subset_list))
     for(element in seq(subset_list)) {
+      message(paste("Subdividing", by[1], paste0(element, "/", length(items)),
+              sep = " "))
       sec_items <- unique(subset_list[[element]]@meta.data[[by[2]]])
       new_subset <- vector(mode = "list", length = length(sec_items))
       names(new_subset) <- sec_items
       for(j in seq(length(sec_items))) {
         sublist_name <- as.character(sec_items[j])
-        message(paste("Re-subsetting", by[2],
+        message(paste("Re-subsetting by", by[2],
                        paste0(j, "/", length(sec_items)), sep = " "))
         new_subset[[sublist_name]] <- subset_seurat(subset_list[[element]],
-                                                    by[2], sec_items[j])
+                                                    by[2],
+                                                    as.character(sec_items[j]))
       }
       subset_list[[element]] <- new_subset
       pct_list[[element]] <- lapply(X = subset_list[[element]],
@@ -460,20 +463,26 @@ get_query_pct <- function(seu, query, by, sigfig = 2, assay = "RNA",
 #' express each query gene.
 
 breakdown_query <- function(seu, query, assay = "RNA", layer = "counts") {
-  genes <- SeuratObject::GetAssayData(seu, assay = assay, layer = layer)
-  missing <- !(query %in% rownames(genes))
+  if(nrow(seu@meta.data) > 1) {
+    genes <- SeuratObject::GetAssayData(seu, assay = assay, layer = layer)
+    missing <- !(query %in% rownames(genes))
+  } else {
+    genes <- seu[[assay]][layer]
+    missing <- !(query %in% names(genes))
+  }
   if(any(missing)) {
-    warning(paste0("Query genes ", paste0(query[missing],
-                                          collapse = ", "),
+    warning(paste0("Query genes ", paste0(query[missing], collapse = ", "),
                    " not present in seurat object."), immediate. = TRUE)
     query <- query[!missing]
   }
-  queries <- genes[query, , drop = FALSE]
-  if(nrow(queries) == 1) {
-    pct <- sum(queries != 0)/length(queries)
-    names(pct) <- query
+  if(!is.vector(genes)) {
+    queries <- genes[query, , drop = FALSE]
+    pct <- Matrix::rowSums(!(queries == 0))/ncol(queries)
+    pct[is.na(pct)] <- 0
   } else {
-    pct <- rowSums(queries != 0)/ncol(queries)
+    queries <- genes[query]
+    pct <- as.numeric(!(queries == 0))
+    names(pct) <- query
   }
   return(pct)   
 }
