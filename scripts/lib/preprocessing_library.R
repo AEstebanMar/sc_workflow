@@ -422,7 +422,7 @@ get_query_pct <- function(seu, query, by, sigfig = 2, assay = "RNA",
       names(new_subset) <- sec_items
       for(j in seq(length(sec_items))) {
         sublist_name <- as.character(sec_items[j])
-        message(paste("Sub-subsetting", by[2],
+        message(paste("Re-subsetting", by[2],
                        paste0(j, "/", length(sec_items)), sep = " "))
         new_subset[[sublist_name]] <- subset_seurat(subset_list[[element]],
                                                     by[2], sec_items[j])
@@ -434,6 +434,7 @@ get_query_pct <- function(seu, query, by, sigfig = 2, assay = "RNA",
       pct_list[[element]] <- do.call(rbind, pct_list[[element]]) * 100
       pct_list[[element]] <- signif(pct_list[[element]], sigfig)
     }
+    names(pct_list) <- names(subset_list)
   } else {
     pct_list <- lapply(X = subset_list, FUN = breakdown_query, query = query,
                        assay = assay, layer = layer)
@@ -454,6 +455,9 @@ get_query_pct <- function(seu, query, by, sigfig = 2, assay = "RNA",
 #' the default assay.
 #' @param layer Layer of Seurat object from which to extract data. Default is
 #' "counts", normalised assay data.
+#'
+#' @returns A data frame of the proportion of cells (between 0 and 1) that
+#' express each query gene.
 
 breakdown_query <- function(seu, query, assay = "RNA", layer = "counts") {
   genes <- SeuratObject::GetAssayData(seu, assay = assay, layer = layer)
