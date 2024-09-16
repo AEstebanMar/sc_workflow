@@ -185,7 +185,7 @@ write_seurat_report <- function(final_results, output = getwd(), name = NULL,
                     clusters_pct = final_results$clusters_pct,
                     query_exp = final_results$query_exp,
                     query_pct = final_results$query_pct,
-                    query_cluster_pct = query_cluster_pct,
+                    query_cluster_pct = final_results$query_cluster_pct,
                     markers = final_results$markers,
                     cell_annotation = cell_annotation)
   plotter <- htmlreportR:::htmlReport$new(title_doc = paste0("Single-Cell ", name, " report"), 
