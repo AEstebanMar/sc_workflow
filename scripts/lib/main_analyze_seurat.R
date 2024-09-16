@@ -45,10 +45,15 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
                            		  scalefactor = 10000, hvgs, int_columns = NULL,
                            		  normalmethod = "LogNormalize", ndims,
                                 verbose = FALSE, output = getwd(),
-                                save_RDS = FALSE){
+                                save_RDS = FALSE, reduce = FALSE){
   colnames(seu@meta.data) <- tolower(colnames(seu@meta.data))
   qc <- tag_qc(seu = seu, minqcfeats = minqcfeats, percentmt = percentmt)
-  seu <- subset(qc, subset = qc != 'High_MT,Low_nFeature')
+  if(!reduce) {
+    seu <- subset(qc, subset = qc != 'High_MT,Low_nFeature')
+  } else {
+    message("Reduce argument is set to TRUE. Skipping QC subsetting")
+    seu <- qc
+  }
   message('Normalizing data')
   seu <- Seurat::NormalizeData(object = seu, verbose = verbose,
   									           normalization.method = normalmethod,
@@ -100,7 +105,15 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   }
   clusters_pct <- get_clusters_distribution(seu = seu, sigfig = sigfig)
   query_exp <- get_query_distribution(seu = seu, query = query, sigfig = sigfig)
-  query_pct <- get_query_pct(seu = seu, query = query, sigfig = sigfig)
+  query_pct <- get_query_pct(seu = seu, query = query, by = "sample",
+                             sigfig = sigfig)
+  if("named_clusters" %in% colnames(seu@meta.data)) {
+    get_by <- c("sample", "named_clusters")
+  } else {
+    get_by <- c("sample", "seurat_clusters")
+  }
+  query_cluster_pct <- get_query_pct(seu = seu, query = query, by = get_by,
+                                     sigfig = sigfig)
   markers <- cbind(markers$gene, markers[, -grep("gene", colnames(markers))])
   colnames(markers)[1] <- "gene"
   message('Performing DEG analysis')
@@ -129,6 +142,7 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   final_results$clusters_pct <- clusters_pct
   final_results$query_exp <- query_exp
   final_results$query_pct <- query_pct
+  final_results$query_cluster_pct <- query_cluster_pct
   final_results$markers <- markers
   final_results$DEG_list <- DEG_list
   return(final_results)
@@ -167,10 +181,11 @@ write_seurat_report <- function(final_results, output = getwd(), name = NULL,
   out_file <- file.path(output, "integration_report.html")
   container <- list(seu = final_results$seu, int_columns = int_columns,
                     DEG_list = final_results$DEG_list,
-                    query_pct = final_results$query_pct,
                     target_genes = target_genes,
                     clusters_pct = final_results$clusters_pct,
                     query_exp = final_results$query_exp,
+                    query_pct = final_results$query_pct,
+                    query_cluster_pct = query_cluster_pct,
                     markers = final_results$markers,
                     cell_annotation = cell_annotation)
   plotter <- htmlreportR:::htmlReport$new(title_doc = paste0("Single-Cell ", name, " report"), 
