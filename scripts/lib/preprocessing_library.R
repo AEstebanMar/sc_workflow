@@ -494,7 +494,7 @@ has_exclusive_clusters <- function(seu, cond) {
   clusters <- unique(meta[["seurat_clusters"]])
   pairs <- expand.grid(groups, clusters)
   sum_matches <- vector(mode = "integer", length = nrow(pairs))
-  for(pair in seq(1, nrow(pairs))) {
+  for(pair in seq(nrow(pairs))) {
     matches <- apply(meta, 1, function(x) x == pairs[pair, ])
     sum_matches[pair] <- sum(colSums(matches) == 2)
   }
