@@ -46,8 +46,8 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
                            		  normalmethod = "LogNormalize", ndims,
                                 verbose = FALSE, output = getwd(),
                                 save_RDS = FALSE, reduce = FALSE){
-  colnames(seu@meta.data) <- tolower(colnames(seu@meta.data))
   qc <- tag_qc(seu = seu, minqcfeats = minqcfeats, percentmt = percentmt)
+  colnames(qc@meta.data) <- tolower(colnames(qc@meta.data))
   if(!reduce) {
     seu <- subset(qc, subset = qc != 'High_MT,Low_nFeature')
   } else {
