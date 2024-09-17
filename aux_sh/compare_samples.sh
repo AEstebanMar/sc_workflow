@@ -24,18 +24,17 @@ hostname
 mkdir -p $output"/report"
 
 if [ "$imported_counts" == "" ]; then
-    echo "Placeholder"
-    # cat $FULL_RESULTS/*/metrics > $experiment_folder'/metrics'
-    # cat $FULL_RESULTS/*/cellranger_metrics > $experiment_folder'/cellranger_metrics'
-    # create_metric_table.rb $experiment_folder'/metrics' sample $experiment_folder'/metric_table'
-    # create_metric_table.rb $experiment_folder'/cellranger_metrics' sample $experiment_folder'/cellranger_metric_table'
+    cat $FULL_RESULTS/*/metrics > $experiment_folder'/metrics'
+    cat $FULL_RESULTS/*/cellranger_metrics > $experiment_folder'/cellranger_metrics'
+    create_metric_table.rb $experiment_folder'/metrics' sample $experiment_folder'/metric_table'
+    create_metric_table.rb $experiment_folder'/cellranger_metrics' sample $experiment_folder'/cellranger_metric_table'
 
-    # compare_samples.R -o $output"/report" \
-    #                   -m $experiment_folder'/metric_table' \
-    #                   -l $experiment_folder'/metrics' \
-    #                   -e $experiment_name \
-    #                   --cellranger_metrics $experiment_folder'/cellranger_metric_table' \
-    #                   --cellranger_long_metrics $experiment_folder'/cellranger_metrics'
+    compare_samples.R -o $output"/report" \
+                      -m $experiment_folder'/metric_table' \
+                      -l $experiment_folder'/metrics' \
+                      -e $experiment_name \
+                      --cellranger_metrics $experiment_folder'/cellranger_metric_table' \
+                      --cellranger_long_metrics $experiment_folder'/cellranger_metrics'
 
 fi
 
