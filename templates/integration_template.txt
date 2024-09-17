@@ -207,10 +207,16 @@ end.rcode-->
    by cluster or cell type, if they have been assigned.</p>
 
 <div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
-<!--begin.rcode query_cluster_pct
-    cat(plotter$heatmap(list(id = "query_cluster_pct", title = "Query gene expression across samples",
-                             header = NULL, text = FALSE, row_names = NULL,
-                             transpose = TRUE)))
+<!--begin.rcode query_cluster_pct, eval = !is.null(plotter$hash_vars$target_genes)
+    for(i in seq(length(plotter$hash_vars$query_cluster_pct))) {
+        plotter$hash_vars$query_combo <- plotter$hash_vars$query_cluster_pct[[i]]
+        name <- names(plotter$hash_vars$query_cluster_pct)[i]
+        cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+        cat(plotter$heatmap(list(id = "query_combo", title = name,
+                                 header = NULL, title = name, text = FALSE, row_names = NULL,
+                                 transpose = TRUE)))
+        cat("</div>")
+    }
 end.rcode-->
 </div>
 
