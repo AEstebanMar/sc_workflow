@@ -66,19 +66,27 @@ end.rcode-->
 <p>Seurat clusters are defined mathematically. Unless a manual cluster annotation file is provided,
 our workflow finds cluster markers and compares them to the cell types annotation file. It then
 analyses matches and determines the most likely cell type for the cluster. These markers are
-plotted in the following graphs.</p
+plotted in the following graphs.</p>
 
 <h1><strong>Markers distribution</strong></h1>
 <h2>Expression of cell type markers across experiment clusters</h2>
 
 <!--begin.rcode cell_markers, eval = !is.null(plotter$hash_vars$cell_annotation)
-    for(element_name in unique(plotter$hash_vars$cell_annotation$type)) {
+    elements <- unique(plotter$hash_vars$cell_annotation$type)
+    collapse_list <- vector(mode = "character", length = length(elements) + 1)
+    names(collapse_list) <- c("subtitle", elements)
+    for(element_name in elements) {
         features <- plotter$hash_vars$cell_annotation[plotter$hash_vars$cell_annotation$type == element_name, ]$marker
-        cat(paste0("<h2>", element_name, " markers</h2>"))
-        cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-        cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DotPlot))
-        cat("</div>")
+        collapse_list[element] <- paste(paste0("<h2>", element_name, " markers</h2>"),
+                                        magic_div,
+                                        plotter$static_plot_main("seu", custom_format = TRUE,
+                                                                 plotting_function = Custom_DotPlot),
+                                        "</div>", sep = "\n")
     }
+    collapse_list["subtitle"] <- "<h2>Expression of cell type markers across experiment clusters</h2>"
+    markers_html <- paste0(paste(collapse_list, collapse = "\n"), "\n")
+    cat(plotter$create_title("Markers distributions", "markers_distribution", hlevel = 1, indexable = TRUE, clickable = TRUE, t_id = "mermaid_chart"))
+    cat(plotter$create_collapsable_container(id = "markers_distribution", html_code = markers_html))
 end.rcode-->
 
 <h1><strong>Top 10 markers</strong></h1>
@@ -212,9 +220,8 @@ end.rcode-->
         plotter$hash_vars$query_combo <- plotter$hash_vars$query_cluster_pct[[i]]
         name <- names(plotter$hash_vars$query_cluster_pct)[i]
         cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-        cat(plotter$heatmap(list(id = "query_combo", title = name,
-                                 header = NULL, title = name, text = FALSE, row_names = NULL,
-                                 transpose = TRUE)))
+        cat(plotter$heatmap(list(id = "query_combo", title = name, header = NULL,
+                                 text = FALSE, row_names = NULL, transpose = TRUE)))
         cat("</div>")
     }
 end.rcode-->
