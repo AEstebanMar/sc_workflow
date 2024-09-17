@@ -29,16 +29,16 @@ read_input <- function(name, input, mincells, minfeats){
 tag_qc <- function(seu, minqcfeats, percentmt){
   seu[["percent.mt"]] <- Seurat::PercentageFeatureSet(seu, pattern = "^MT-")
   seu[["percent.rb"]] <- Seurat::PercentageFeatureSet(seu, pattern = "^RP[SL]")
-  seu[['qc']] <- ifelse(seu@meta.data$nfeature_rna < minqcfeats,
+  seu[['qc']] <- ifelse(seu@meta.data$nFeature_RNA < minqcfeats,
                         'Low_nFeature', 'Pass')
-  seu[['qc']] <- ifelse(seu@meta.data$nfeature_rna < minqcfeats &
+  seu[['qc']] <- ifelse(seu@meta.data$nFeature_RNA < minqcfeats &
                         seu@meta.data$qc != 'Pass' &
                         seu@meta.data$qc != 'Low_nFeature',
                         paste('Low_nFeature', seu@meta.data$qc, sep = ','),
                               seu@meta.data$qc)
   seu[['qc']] <- ifelse(seu@meta.data$percent.mt > percentmt &
                         seu@meta.data$qc == 'Pass','High_MT', seu@meta.data$qc)
-  seu[['qc']] <- ifelse(seu@meta.data$nfeature_rna < minqcfeats &
+  seu[['qc']] <- ifelse(seu@meta.data$nFeature_RNA < minqcfeats &
                         seu@meta.data$qc != 'Pass' &
                         seu@meta.data$qc != 'High_MT',
                         paste('High_MT', seu@meta.data$qc ,sep = ','),
@@ -436,6 +436,13 @@ get_query_pct <- function(seu, query, by, sigfig = 2, assay = "RNA",
                                     assay = assay, layer = layer)
       pct_list[[element]] <- do.call(rbind, pct_list[[element]]) * 100
       pct_list[[element]] <- signif(pct_list[[element]], sigfig)
+      if("named_clusters" %in% by) {
+        rows <- strsplit(rownames(pct_list[[element]]), "\\.")
+        rows <- unlist(lapply(rows, `[[`, 1))
+        pct_list[[element]] <- pct_list[[element]][order(unlist(
+                                                          as.numeric(rows))), ]
+      }
+       
     }
     names(pct_list) <- names(subset_list)
   } else {
