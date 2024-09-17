@@ -2,9 +2,10 @@ library(Seurat)
 pbmc_smaller <- pbmc_small[, 1:15]
 pbmc_smaller@meta.data$sample <- c(rep("A", 5), rep("B", 5), rep("C", 5))
 pbmc_smaller@meta.data$seurat_clusters <- rep(0:4, 3)
-cell_types <- c("typeA", "typeB", "typeC", "typeD", "typeE")
+cell_types <- c("0. typeA", "1. typeB", "2. typeC", "3. typeD", "4. typeE")
 pbmc_smaller@meta.data$named_clusters <- rep(cell_types, 3)
 query <- c("MS4A1", "CD79A", "HLA-DRB5")
+
 test_that("get_query_pct works in simple case", {
   query <- c("MS4A1", "CD79A", "HLA-DRB5")
   expected_df <- matrix(nrow = 3, ncol = 3)
@@ -43,16 +44,21 @@ test_that("get_query_pct works with query of length one", {
 test_that("get_query_pct works with alternate 'by' arguments", {
   single_query <- c("HLA-DRB5")
   expected_df <- matrix(nrow = 5, ncol = 1)
-  rownames(expected_df) <- c(0:4)
+  rownames(expected_df) <- c(paste0(0:4, ". type", toupper(letters[1:5])))
   expected_df[, 1] <- c(33, 67, 33, 0, 33)
   colnames(expected_df) <- single_query
-  output_df <- get_query_pct(pbmc_smaller, single_query, "seurat_clusters")
+  output_df <- get_query_pct(pbmc_smaller, single_query, "named_clusters")
   testthat::expect_equal(output_df, expected_df)
 })
 
 # Test disabled until I figure out a way to add a "counts" element to assays
-# slot
+# in a way that lets me access it in the same way that get_query_pct does.
+# That method breaks in test dataset, I have not figured out what makes it
+# different. Does not have to do with different seurat version.
 # test_that("get_query_pct works with 'by' argument of length 2", {
+#   pbmc_updated <- Seurat::CreateSeuratObject(counts = pbmc_smaller$RNA$counts)
+#   pbmc_updated@meta.data$sample <- c(rep("A", 5), rep("B", 5), rep("C", 5))
+#   pbmc_updated@meta.data$seurat_clusters <- rep(0:4, 3)
 #   types <- paste0("type", toupper(letters[1:5]))
 #   matA <- matrix(data = 0, nrow = 5, ncol = 3)
 #   matB = matC <- matA
@@ -63,7 +69,7 @@ test_that("get_query_pct works with alternate 'by' arguments", {
 #   colnames(matA) = colnames(matB) = colnames(matC) <- query
 #   rownames(matA) = rownames(matB) = rownames(matC) <- types
 #   expected_list <- list(A = matA, B = matB, C = matC)
-#   output_list <- get_query_pct(pbmc_smaller, query,
-#                                by = c("sample", "named_clusters"))
+#   output_list <- get_query_pct(pbmc_updated, query,
+#                                by = c("sample", "seurat_clusters"))
 #   expect_equal(output_list, expected_list)
 # })
