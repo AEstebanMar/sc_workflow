@@ -8,6 +8,9 @@
     DEG_list <- plotter$hash_vars$DEG_list
     
     Custom_DotPlot <- function(seu) {
+        if(!any(features %in% rownames(SeuratObject::GetAssayData(plotter$hash_vars$seu)))) {
+            return("<p>Object contains none of the specified features</p>")
+        }
         scCustomize::DotPlot_scCustom(seu, features, flip_axes = TRUE, 
                                       colors_use = colGEX, x_lab_rotate = TRUE) +
         ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90))
@@ -71,12 +74,13 @@ plotted in the following graphs.</p>
 <h1><strong>Top genes expression heatmap</strong></h1>
 
 <!--begin.rcode sample_qc_pct
-    heatmap <- plotter$heatmap(list(id = "sample_qc_pct", title = "Top gene expression across samples",
-                                    header = NULL, text = FALSE, row_names = NULL,
-                                    transpose = TRUE))
     cat(plotter$create_title("Sample QC heatmap", "sample QC", hlevel = 1, indexable = TRUE, clickable = TRUE,
                              t_id = "sample_qc_pct", clickable_text = ""))
-    cat(plotter$create_collapsable_container(id = "sample_qc_pct", html_code = plotter$prettify_div(heatmap)))
+    cat(plotter$create_collapsable_container(id = "sample_qc_pct",
+        html_code = plotter$prettify_div(plotter$heatmap(list(id = "sample_qc_pct",
+                                                         title = "Top gene expression across samples", header = NULL,
+                                                         text = FALSE, row_names = NULL, transpose = TRUE)),
+                                         preset = "magic")))
 end.rcode-->
 
 <h1><strong>Markers distribution</strong></h1>
@@ -89,8 +93,7 @@ end.rcode-->
         features <- plotter$hash_vars$cell_annotation[plotter$hash_vars$cell_annotation$type == element_name, ]$marker
         collapse_list[element_name] <- paste(paste0("<h2>", element_name, " markers</h2>"),
                                        plotter$prettify_div(plotter$static_plot_main("seu", custom_format = TRUE,
-                                                                 plotting_function = Custom_DotPlot)),
-                                        "</div>", sep = "\n")
+                                                                 plotting_function = Custom_DotPlot), preset = "magic"), sep = "\n")
     }
     collapse_list["subtitle"] <- "<h2>Expression of cell type markers across experiment clusters</h2>"
     markers_html <- paste0(paste(collapse_list, collapse = "\n"), "\n")
@@ -98,9 +101,6 @@ end.rcode-->
                              t_id = "markers_distribution", clickable_text = ""))
     cat(plotter$create_collapsable_container(id = "markers_distribution", html_code = markers_html))
 end.rcode-->
-
- plotter$create_collapsable_container(prettify_div(plotter$static_plot_main("seu", custom_format = TRUE,
-                                                                 plotting_function = Custom_DotPlot)))
 
 <h1><strong>Top 10 markers</strong></h1>
 <p>These are the markers that best define the seurat cluster. They might
@@ -119,11 +119,10 @@ not match cell type markers.</p>
             title <- cluster
         }
         plotter$hash_vars$cluster_markers <- plotter$hash_vars$markers[plotter$hash_vars$markers$cluster == cluster - 1, ]
-        collapse_list[cluster + 1] <- paste(paste0("<h2>Top markers for cluster ", title), magic_div,
-                                                 plotter$table("cluster_markers", header = NULL,
+        collapse_list[cluster + 1] <- paste(paste0("<h2>Top markers for cluster ", title),
+                                            plotter$prettify_div(plotter$table("cluster_markers", header = NULL,
                                                     row_names = NULL, table_rownames = FALSE, styled = "dt",
-                                                    func = top_table),
-                                                 "</div>", sep = "\n")
+                                                    func = top_table)), sep = "\n")
     }
     top_markers_html <- paste0(paste(collapse_list, collapse = "\n"), "\n")
     cat(plotter$create_title("Top 10 markers", "top markers", hlevel = 1, indexable = TRUE, clickable = TRUE,
