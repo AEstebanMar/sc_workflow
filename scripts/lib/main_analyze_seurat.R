@@ -90,19 +90,22 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
     rownames(markers) <- NULL
   }
   if(!is.null(cluster_annotation)) {
-  	message("Clusters annotation file provided. Annotating clusters")
+  	message("Clusters annotation file provided. Annotating clusters.")
   	seu <- annotate_clusters(seu = seu, new_clusters = cluster_annotation$name)
   }else if(!is.null(cell_annotation)){
-	  message("Clusters annotation file not provided. Dynamically annotating
-			       clusters.")
+	  message(paste0("Clusters annotation file not provided. Dynamically ",
+                   "annotating clusters."))
 	  annotated_clusters <- match_cell_types(markers_df = markers,
                                            cell_annotation = cell_annotation,
                                            p_adj_cutoff = p_adj_cutoff)
 	  markers <- annotated_clusters$summary
 	  seu <- annotate_clusters(seu, annotated_clusters$cell_types)
   }else{
-  	warning("No data provided for cluster annotation")
+  	warning("No data provided for cluster annotation.")
   }
+  message("Extracting expression quality metrics.")
+  sample_qc_pct <- get_qc_pct(seu, by = "sample")
+  message("Extracting query expression metrics. This might take a while.")
   clusters_pct <- get_clusters_distribution(seu = seu, sigfig = sigfig)
   query_exp <- get_query_distribution(seu = seu, query = query, sigfig = sigfig)
   query_pct <- get_query_pct(seu = seu, query = query, by = "sample",
@@ -116,7 +119,7 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
                                      sigfig = sigfig)
   markers <- cbind(markers$gene, markers[, -grep("gene", colnames(markers))])
   colnames(markers)[1] <- "gene"
-  message('Performing DEG analysis')
+  message('Performing DEG analysis.')
   DEG_list <- list()
   if(DEG_columns == "") {
     DEG_conditions <- int_columns
@@ -124,13 +127,13 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
     DEG_conditions <- unlist(strsplit(DEG_columns, split = ","))
   }
   for(condition in DEG_conditions) {
-    message(paste0("Calculating DEGs for condition ", condition))
+    message(paste0("Calculating DEGs for condition ", condition, "."))
     condition_DEGs <- get_sc_markers(seu = seu, cond = condition, DEG = TRUE,
                                      verbose = verbose)
     DEG_list[[condition]] <- condition_DEGs
   }
   if(save_RDS){
-  	message('Writing results to disk')
+  	message('Writing results to disk.')
   	saveRDS(qc, file.path(output, paste0(project_name, ".qc.RDS")))
   	saveRDS(seu, file.path(output, paste0(project_name, ".seu.RDS")))
   	saveRDS(markers, file.path(output, paste0(project_name, ".markers.RDS")))
@@ -139,6 +142,7 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   final_results <- list()
   final_results$qc <- qc
   final_results$seu <- seu
+  final_results$sample_qc_pct <- sample_qc_pct
   final_results$clusters_pct <- clusters_pct
   final_results$query_exp <- query_exp
   final_results$query_pct <- query_pct
@@ -182,6 +186,7 @@ write_seurat_report <- function(final_results, output = getwd(), name = NULL,
   container <- list(seu = final_results$seu, int_columns = int_columns,
                     DEG_list = final_results$DEG_list,
                     target_genes = target_genes,
+                    sample_qc_pct = final_results$sample_qc_pct,
                     clusters_pct = final_results$clusters_pct,
                     query_exp = final_results$query_exp,
                     query_pct = final_results$query_pct,
