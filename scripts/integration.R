@@ -144,7 +144,7 @@ if(opt$imported_counts == "") {
 
 if(opt$reduce) {
   message('Downsampling seurat object')
-  merged_seu <- merged_seu[, sample(colnames(merged_seu), size = 3000, replace=F)]
+  merged_seu <- downsample_seurat(merged_seu, cells = 500, features = 5000, keep = unlist(target_genes))
 }
 
 message("Analyzing seurat object")
@@ -155,7 +155,10 @@ final_results <- main_analyze_seurat(seu = merged_seu, cluster_annotation = clus
                                      minqcfeats = opt$minqcfeats, percentmt = opt$percentmt, hvgs = opt$hvgs,
                                      scalefactor = opt$scalefactor, normalmethod = opt$normalmethod,
                                      p_adj_cutoff = opt$p_adj_cutoff, verbose = opt$verbose, sigfig = 2,
-                                     output = opt$output, integrate = TRUE, query = unlist(target_genes))
+                                     output = opt$output, integrate = TRUE, query = unlist(target_genes),
+                                     reduce = opt$reduce)
+
+saveRDS(final_results, paste0(opt$project_name, "_final_results.rds"))
 
 message("--------------------------------")
 message("---------Writing report---------")
