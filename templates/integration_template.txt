@@ -71,19 +71,16 @@ our workflow finds cluster markers and compares them to the cell types annotatio
 analyses matches and determines the most likely cell type for the cluster. These markers are
 plotted in the following graphs.</p>
 
-<h1><strong>Top genes expression heatmap</strong></h1>
+<h1><strong>Quality Control</strong></h1>
 
 <!--begin.rcode sample_qc_pct
-    cat(plotter$create_title("Sample QC heatmap", "sample QC", hlevel = 1, indexable = TRUE, clickable = TRUE,
+    cat(plotter$create_title("Top genes expression heatmap", "sample QC", hlevel = 2, indexable = TRUE, clickable = TRUE,
                              t_id = "sample_qc_pct", clickable_text = ""))
-    cat(plotter$create_collapsable_container(id = "sample_qc_pct",
-        html_code = plotter$prettify_div(plotter$heatmap(list(id = "sample_qc_pct",
-                                                         title = "Top gene expression across samples", header = NULL,
-                                                         text = FALSE, row_names = NULL, transpose = TRUE)),
-                                         preset = "magic")))
+    cat(plotter$prettify_div(plotter$heatmap(list(id = "sample_qc_pct",
+                                                  title = "Top gene expression across samples", header = NULL,
+                                                  text = FALSE, row_names = NULL, transpose = TRUE)),
+                             preset = "magic"))
 end.rcode-->
-
-<h1><strong>Markers distribution</strong></h1>
 
 <!--begin.rcode cell_markers, eval = !is.null(plotter$hash_vars$cell_annotation)
     elements <- unique(plotter$hash_vars$cell_annotation$type)
@@ -97,14 +94,10 @@ end.rcode-->
     }
     collapse_list["subtitle"] <- "<h2>Expression of cell type markers across experiment clusters</h2>"
     markers_html <- paste0(paste(collapse_list, collapse = "\n"), "\n")
-    cat(plotter$create_title("Markers distribution", "markers", hlevel = 1, indexable = TRUE, clickable = TRUE,
+    cat(plotter$create_title("Markers distribution", "markers", hlevel = 2, indexable = TRUE, clickable = TRUE,
                              t_id = "markers_distribution", clickable_text = ""))
     cat(plotter$create_collapsable_container(id = "markers_distribution", html_code = markers_html))
 end.rcode-->
-
-<h1><strong>Top 10 markers</strong></h1>
-<p>These are the markers that best define the seurat cluster. They might
-not match cell type markers.</p>
 
 <!--begin.rcode top_markers
     names <- plotter$hash_vars$seu@meta.data[["named_clusters"]]
@@ -125,174 +118,177 @@ not match cell type markers.</p>
                                                     func = top_table)), sep = "\n")
     }
     top_markers_html <- paste0(paste(collapse_list, collapse = "\n"), "\n")
-    cat(plotter$create_title("Top 10 markers", "top markers", hlevel = 1, indexable = TRUE, clickable = TRUE,
+    cat(plotter$create_title("Top 10 markers", "top markers", hlevel = 2, indexable = TRUE, clickable = TRUE,
                              t_id = "top_markers", clickable_text = ""))
-    cat(plotter$create_collapsable_container(id = "top_markers", html_code = top_markers_html))
+    paragraph <- paste0("<p>These are the markers that best define the seurat cluster. They might ",
+                        "not match cell type markers.</p>")
+    cat(plotter$create_collapsable_container(id = "top_markers",
+                                             html_code = paste(paragraph, top_markers_html,  sep = "\n")))
 end.rcode-->
 
-# <h1><strong>Dimensionality reduction</strong></h1>
-# <h1><strong>UMAP</strong></h1>
+<h1><strong>Dimensionality reduction</strong></h1>
+<h1><strong>UMAP</strong></h1>
 
-# <!--begin.rcode Complete_UMAP
-#     reduction <- "umap"
-#     label <- TRUE
-#     cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-#     group.by <- split.by <- NULL
-#     cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DimPlot))
-#     cat("</div>")
-# end.rcode-->
-# <!--begin.rcode umap_splits
-#     label <- FALSE
-#     for(condition in int_columns) {
-#         cat(paste0("<h1>Split by ", condition, "</h1>"))
-#         split.by <- condition
-#         cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-#         cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DimPlot))
-#         cat("</div>")
-#     }
-# end.rcode-->
-# <!--begin.rcode umap_groups,
-#     label <- TRUE
-#     for(condition in int_columns) {
-#         cat(paste0("<h1>Grouped by ", condition, "</h1>"))
-#         split.by <- NULL
-#         group.by <- condition
-#         cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-#         cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DimPlot))
-#         cat("</div>")
-#     }
-# end.rcode-->
+<!--begin.rcode Complete_UMAP
+    reduction <- "umap"
+    label <- TRUE
+    cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+    group.by <- split.by <- NULL
+    cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DimPlot))
+    cat("</div>")
+end.rcode-->
+<!--begin.rcode umap_splits
+    label <- FALSE
+    for(condition in int_columns) {
+        cat(paste0("<h1>Split by ", condition, "</h1>"))
+        split.by <- condition
+        cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+        cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DimPlot))
+        cat("</div>")
+    }
+end.rcode-->
+<!--begin.rcode umap_groups,
+    label <- TRUE
+    for(condition in int_columns) {
+        cat(paste0("<h1>Grouped by ", condition, "</h1>"))
+        split.by <- NULL
+        group.by <- condition
+        cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+        cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DimPlot))
+        cat("</div>")
+    }
+end.rcode-->
 
-# <!--begin.rcode DEG_analysis, eval = length(DEG_list) > 0
-#     cat("<h1><strong<DEGenes analysis</strong><h1>")
-#     for(i in seq(1, length(DEG_list))) {
-#         condition <- names(DEG_list)[i]
-#         idents <- unique(plotter$hash_vars$seu@meta.data[[condition]])
-#         condition_DEGs <- DEG_list[[condition]]
-#         cat(paste0("<h1><strong>", idents[1], " vs ", idents[2], "</strong></h1>"))
-#         cat(paste0("<p>Positive log2 fold change means higher expression levels in ", idents[1], "</p>"))
-#         for (j in seq(1, length(condition_DEGs))) {
-#             level <- names(condition_DEGs)[j]
-#             title <- paste0("Cluster ", names(condition_DEGs)[j])
-#             plotter$hash_vars$condition_DEGs <- condition_DEGs[[j]]
-#             cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-#             if(FALSE %in% condition_DEGs[[j]]) {
-#                 cat(paste0("<p>Cluster ", j, "contained exclusive clusters,
-#                     DEG analysis was not possible."))
-#             }else{
-#                 cat(plotter$static_plot_main("condition_DEGs", custom_format = TRUE, plotting_function = DEGs_volcano))
-#                 cat("</div>")
-#                 cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-#                 cat(plotter$table("condition_DEGs", header = NULL, row_names = NULL, table_rownames = FALSE,
-#                                    styled = "dt", func = get_top_DEGs))
-#             }
+<!--begin.rcode DEG_analysis, eval = length(DEG_list) > 0
+    cat("<h1><strong<DEGenes analysis</strong><h1>")
+    for(i in seq(1, length(DEG_list))) {
+        condition <- names(DEG_list)[i]
+        idents <- unique(plotter$hash_vars$seu@meta.data[[condition]])
+        condition_DEGs <- DEG_list[[condition]]
+        cat(paste0("<h1><strong>", idents[1], " vs ", idents[2], "</strong></h1>"))
+        cat(paste0("<p>Positive log2 fold change means higher expression levels in ", idents[1], "</p>"))
+        for (j in seq(1, length(condition_DEGs))) {
+            level <- names(condition_DEGs)[j]
+            title <- paste0("Cluster ", names(condition_DEGs)[j])
+            plotter$hash_vars$condition_DEGs <- condition_DEGs[[j]]
+            cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+            if(FALSE %in% condition_DEGs[[j]]) {
+                cat(paste0("<p>Cluster ", j, "contained exclusive clusters,
+                    DEG analysis was not possible."))
+            }else{
+                cat(plotter$static_plot_main("condition_DEGs", custom_format = TRUE, plotting_function = DEGs_volcano))
+                cat("</div>")
+                cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+                cat(plotter$table("condition_DEGs", header = NULL, row_names = NULL, table_rownames = FALSE,
+                                   styled = "dt", func = get_top_DEGs))
+            }
 
-#             cat("</div>")
-#         }
-#     }
-# end.rcode-->
+            cat("</div>")
+        }
+    }
+end.rcode-->
 
-# <h1><strong>Cluster distribution heatmap</strong></h1>
-# <p>This plot represents the percentage of cells in each sample that were
-# assigned each cell type.</p>
+<h1><strong>Cluster distribution heatmap</strong></h1>
+<p>This plot represents the percentage of cells in each sample that were
+assigned each cell type.</p>
 
-# <div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
-# <!--begin.rcode cluster_pct
-#     cat(plotter$heatmap(list(id = "clusters_pct", title = "Cell type percentage by sample",
-#                              header = NULL, text = FALSE, row_names = NULL,
-#                              transpose = TRUE)))
-# end.rcode-->
-# </div>
+<div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
+<!--begin.rcode cluster_pct
+    cat(plotter$heatmap(list(id = "clusters_pct", title = "Cell type percentage by sample",
+                             header = NULL, text = FALSE, row_names = NULL,
+                             transpose = TRUE)))
+end.rcode-->
+</div>
 
-# <h1><strong>Query gene expression heatmap</strong></h1>
-# <p>This plot represents gene expression profile across samples of query genes.<br>
-# Represented as the natural logarithm of count ratio, multiplied by a scale factor
-# (see config file for exact value of scale factor).</p>
+<h1><strong>Query gene expression heatmap</strong></h1>
+<p>This plot represents gene expression profile across samples of query genes.<br>
+Represented as the natural logarithm of count ratio, multiplied by a scale factor
+(see config file for exact value of scale factor).</p>
 
-# <div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
-# <!--begin.rcode query_exp
-#     cat(plotter$heatmap(list(id = "query_exp", title = "Query gene expression across samples",
-#                              header = NULL, text = FALSE, row_names = NULL,
-#                              transpose = TRUE)))
-# end.rcode-->
-# </div>
+<div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
+<!--begin.rcode query_exp
+    cat(plotter$heatmap(list(id = "query_exp", title = "Query gene expression across samples",
+                             header = NULL, text = FALSE, row_names = NULL,
+                             transpose = TRUE)))
+end.rcode-->
+</div>
 
-# <h1><strong>Query gene cell percentages</strong></h1>
-# <p>This plot represents the percentage of cells in each sample that express query genes.</p>
+<h1><strong>Query gene cell percentages</strong></h1>
+<p>This plot represents the percentage of cells in each sample that express query genes.</p>
 
-# <div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
-# <!--begin.rcode query_pct
-#     cat(plotter$heatmap(list(id = "query_pct", title = "Query gene expression across samples",
-#                              header = NULL, text = FALSE, row_names = NULL,
-#                              transpose = TRUE)))
-# end.rcode-->
-# </div>
+<div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
+<!--begin.rcode query_pct
+    cat(plotter$heatmap(list(id = "query_pct", title = "Query gene expression across samples",
+                             header = NULL, text = FALSE, row_names = NULL,
+                             transpose = TRUE)))
+end.rcode-->
+</div>
 
-# <h1><strong>Query gene cell percentages by cluster</strong></h1>
-# <p>This plot represents the same concept as the previous one, but breaks it down
-#    by cluster or cell type, if they have been assigned.</p>
+<h1><strong>Query gene cell percentages by cluster</strong></h1>
+<p>This plot represents the same concept as the previous one, but breaks it down
+   by cluster or cell type, if they have been assigned.</p>
 
-# <div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
-# <!--begin.rcode query_cluster_pct, eval = !is.null(plotter$hash_vars$target_genes)
-#     for(i in seq(length(plotter$hash_vars$query_cluster_pct))) {
-#         plotter$hash_vars$query_combo <- plotter$hash_vars$query_cluster_pct[[i]]
-#         name <- names(plotter$hash_vars$query_cluster_pct)[i]
-#         cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-#         cat(plotter$heatmap(list(id = "query_combo", title = name, header = NULL,
-#                                  text = FALSE, row_names = NULL, transpose = TRUE)))
-#         cat("</div>")
-#     }
-# end.rcode-->
-# </div>
+<div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
+<!--begin.rcode query_cluster_pct, eval = !is.null(plotter$hash_vars$target_genes)
+    for(i in seq(length(plotter$hash_vars$query_cluster_pct))) {
+        plotter$hash_vars$query_combo <- plotter$hash_vars$query_cluster_pct[[i]]
+        name <- names(plotter$hash_vars$query_cluster_pct)[i]
+        cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+        cat(plotter$heatmap(list(id = "query_combo", title = name, header = NULL,
+                                 text = FALSE, row_names = NULL, transpose = TRUE)))
+        cat("</div>")
+    }
+end.rcode-->
+</div>
 
-# <h1><strong>Query genes distribution</strong></h1>
-# <h2>Expression of query genes across identified clusters</h2>
-# <p>These genes have <strong>NOT</strong> been used to annotate clusters</p>
+<h1><strong>Query genes distribution</strong></h1>
+<h2>Expression of query genes across identified clusters</h2>
+<p>These genes have <strong>NOT</strong> been used to annotate clusters</p>
 
-# <!--begin.rcode query_genes, eval = !is.null(plotter$hash_vars$target_genes)
-#     for(element_name in names(plotter$hash_vars$target_genes)) {
-#       features <- plotter$hash_vars$target_genes[[element_name]]
-#       cat(paste0("<h2>Query gene group: ", element_name, "</h2>"))
-#       cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-#       cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DotPlot))
-#       cat("</div>")
-#     }
-# end.rcode-->
+<!--begin.rcode query_genes, eval = !is.null(plotter$hash_vars$target_genes)
+    for(element_name in names(plotter$hash_vars$target_genes)) {
+      features <- plotter$hash_vars$target_genes[[element_name]]
+      cat(paste0("<h2>Query gene group: ", element_name, "</h2>"))
+      cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+      cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DotPlot))
+      cat("</div>")
+    }
+end.rcode-->
 
-# <h1><strong>Query gene presence</strong></h1>
-# <!--begin.rcode Query_gene_presence, eval = !is.null(plotter$hash_vars$target_genes)
-#     for(element_name in names(plotter$hash_vars$target_genes)) {
-#       features <- plotter$hash_vars$target_genes[[element_name]]
-#       cat(paste0("<h2>Query gene group: ", element_name, "</h2>"))
-#       cat(plotter$table("markers", header = NULL, row_names = NULL, table_rownames = FALSE,
-#         styled = "dt", func = subset_table))
-#     }
-# end.rcode-->
+<h1><strong>Query gene presence</strong></h1>
+<!--begin.rcode Query_gene_presence, eval = !is.null(plotter$hash_vars$target_genes)
+    for(element_name in names(plotter$hash_vars$target_genes)) {
+      features <- plotter$hash_vars$target_genes[[element_name]]
+      cat(paste0("<h2>Query gene group: ", element_name, "</h2>"))
+      cat(plotter$table("markers", header = NULL, row_names = NULL, table_rownames = FALSE,
+        styled = "dt", func = subset_table))
+    }
+end.rcode-->
 
-# <h1><strong>Query gene expression</strong></h1>
-# <!--begin.rcode Query_gene_expression, eval = !is.null(plotter$hash_vars$target_genes)
-#     for(element_name in names(plotter$hash_vars$target_genes)) {
-#       features <- plotter$hash_vars$target_genes[[element_name]]
-#       cat(paste0("<h2>Query gene group: ", element_name, "</h2>"))
-#       cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-#       cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Top_vlnplot))
-#       cat("</div>")
-#     }
-# end.rcode-->
+<h1><strong>Query gene expression</strong></h1>
+<!--begin.rcode Query_gene_expression, eval = !is.null(plotter$hash_vars$target_genes)
+    for(element_name in names(plotter$hash_vars$target_genes)) {
+      features <- plotter$hash_vars$target_genes[[element_name]]
+      cat(paste0("<h2>Query gene group: ", element_name, "</h2>"))
+      cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+      cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Top_vlnplot))
+      cat("</div>")
+    }
+end.rcode-->
 
 
-# <h1><strong>Query gene expression patterns</strong></h1>
-# <p>Expression patterns of query genes. Only genes significantly expressed in dataset are plotted</p>
-# <!--begin.rcode Query_patterns, eval = !is.null(plotter$hash_vars$target_genes)
-#     expressed_genes <- rownames(SeuratObject::GetAssayData(plotter$hash_vars$seu, "RNA"))
-#     for(element_name in names(plotter$hash_vars$target_genes)) {
-#         cat(paste0("<h2>Query gene group: ", element_name, "</h2>"))
-#         for(feature in plotter$hash_vars$target_genes[[element_name]]) {
-#             if(feature %in% expressed_genes) {
-#                 cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-#                 cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_ftplot))
-#                 cat("</div>")
-#             }
-#         }
-#     }
-# end.rcode-->
+<h1><strong>Query gene expression patterns</strong></h1>
+<p>Expression patterns of query genes. Only genes significantly expressed in dataset are plotted</p>
+<!--begin.rcode Query_patterns, eval = !is.null(plotter$hash_vars$target_genes)
+    expressed_genes <- rownames(SeuratObject::GetAssayData(plotter$hash_vars$seu, "RNA"))
+    for(element_name in names(plotter$hash_vars$target_genes)) {
+        cat(paste0("<h2>Query gene group: ", element_name, "</h2>"))
+        for(feature in plotter$hash_vars$target_genes[[element_name]]) {
+            if(feature %in% expressed_genes) {
+                cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
+                cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_ftplot))
+                cat("</div>")
+            }
+        }
+    }
+end.rcode-->
