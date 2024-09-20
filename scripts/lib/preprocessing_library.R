@@ -392,13 +392,9 @@ get_query_distribution <- function(seu, query, sigfig = 3) {
 #' `get_query_pct` gets the percentage of cells in each sample of a seurat
 #' object which expresses genes specified in a list of queries.
 #'
-#' @param seu Seurat object
+#' @inheritParams breakdown_query
 #' @param query Vector of query genes whose expression to analyse.
 #' @param sigfig Significant figure cutoff
-#' @param assay Seurat assay from which to extract data. Default is "RNA",
-#' the default assay.
-#' @param layer Layer of Seurat object from which to extract data. Default is
-#' "counts", normalised assay data.
 #' @return A data frame with expression levels for query genes in each sample.
 
 get_query_pct <- function(seu, query, by, sigfig = 2, assay = "RNA",
@@ -452,6 +448,53 @@ get_query_pct <- function(seu, query, by, sigfig = 2, assay = "RNA",
     pct_list <- signif(pct_list, sigfig)
   }
   return(pct_list)
+}
+
+#' get_top_genes
+#' `get_top_genes` extracts the top N genes expressed in the highest percentage
+#' of cells for each sample in a seurat object, and returns a vector with the
+#' union of these genes.
+#'
+#' @inheritParams qc_pct
+#' @return A vector containing the union of the top N genes of each sample of
+#' input Seurat object.
+
+get_top_genes <- function(seu, top = 20, assay = "RNA", layer = "counts") {
+  if(top < 1) {
+    stop(paste0("Invalid \"top\" argument. Must be greater than 1, was ",
+                 top))
+  }
+  samples <- unique(seu@meta.data$sample)
+  top_samples <- vector(mode = "list", length = length(samples))
+  names(top_samples) <- samples
+  for(sample in samples) {
+    subset <- subset_seurat(seu, "sample", sample)
+    genes <- Seurat::GetAssayData(subset, assay, layer)
+    expressed_genes <- vector(mode = "integer", length = nrow(genes))
+    names(expressed_genes) <- rownames(genes)
+    for(i in seq(nrow(genes))) {
+      expressed_genes[i] <- sum(genes[i ,] != 0) / length(genes[i, ])
+    }
+    expressed_genes <- expressed_genes[expressed_genes != 0]
+    if(length(expressed_genes) > top) {
+      expressed_genes <- sort(expressed_genes)[1:top]
+    }
+    top_samples[[sample]] <- names(expressed_genes)
+  }
+  top_genes <- unique(unlist(top_samples))
+}
+
+#' get_qc_pct
+#' `get_qc_pct` creates a gene expressio matrix of the union of the top N genes
+#' expressed in every sample in a seurat object.
+#' @param top Top N genes to take from each sample.
+#' @inheritParams breakdown_query get_query_pct
+
+get_qc_pct <- function(seu, top = 20, assay = "RNA", layer = "counts", by,
+                   sigfig = 2) {
+  top <- get_top_genes(seu = seu, top = top, assay = assay, layer = layer)
+  res <- get_query_pct(seu = seu, query = top, by = by, sigfig = sigfig)
+  return(res)
 }
 
 #' breakdown_query
@@ -540,6 +583,44 @@ subset_seurat <- function(seu, column, value) {
   expr <- Seurat::FetchData(seu, vars = column)
   subset <- seu[, which(expr == value)]
   return(subset)
+}
+
+#' downsample_seurat
+#' `downsample_seurat` takes a seurat object as input, and downsamples it to
+#' specified number of cells and features. You can also input specific lists
+#' if you know which cells and/or features you want to retrieve.
+#'
+#' @param seu Seurat object.
+#' @param cells,features Lists or integers. An integer will trigger random
+#' downsampling by its respective variable.
+#' @param keep A vector of genes to keep when downsampling features.
+#' @returns A downsampled seurat object.
+
+downsample_seurat <- function(seu, cells = NULL, features = NULL, keep = "",
+                              assay = "RNA", layer = "counts") {
+  if(!is.null(features)) {
+    seu <- SeuratObject::JoinLayers(seu)
+    counts <- SeuratObject::GetAssayData(seu, assay = assay, layer = layer)
+    if(is.numeric(features)) {
+      gene_list <- sample(rownames(counts), size = features, replace = F)
+      if(!"" %in% keep) {
+        gene_list <- unique(c(gene_list), keep)
+      }
+    } else {
+      gene_list <- features
+    }
+    counts <- counts[gene_list, ]
+    seu <- subset(seu, features = rownames(counts))
+  }
+  if(!is.null(cells)) {
+    if(is.numeric(cells)) {
+      cell_list <- sample(colnames(seu), size = cells, replace = F)
+    } else {
+      cell_list <- cells
+    }
+    seu <- seu[, cell_list]
+  }
+  return(seu)
 }
 
 #' write_sergio_report
