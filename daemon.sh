@@ -106,6 +106,6 @@ elif [ "$module" == "2" ] ; then
     if [ $launch_login == TRUE ]; then  
         compare_samples.sh
     else
-        sbatch aux_sh/compare_samples.sh
+        sbatch aux_sh/compare_samples.sh --cpus-per-task $CPU --mem $mem 
     fi
 fi
