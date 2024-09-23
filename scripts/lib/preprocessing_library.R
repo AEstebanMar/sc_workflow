@@ -253,7 +253,7 @@ match_cell_types <- function(markers_df, cell_annotation, p_adj_cutoff = 1e-5) {
       cluster_match <- paste0(cluster_match, collapse = " / ")
     }
     subset$cell_type <- paste0(subset$cluster, ". ", cluster_match)
-    subset_list[[as.numeric(cluster + 1)]] <- subset
+    subset_list[[as.numeric(cluster) + 1]] <- subset
   }
   stats_table <- do.call(rbind, subset_list)
   stats_table <- stats_table[order(stats_table$cluster), ]
