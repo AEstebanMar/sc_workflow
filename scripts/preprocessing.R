@@ -18,6 +18,7 @@ source_folder <- file.path(root_path, 'lib')
 library(optparse)
 library(Seurat)
 library(scCustomize)
+source(file.path(source_folder, "main_analyze_seurat.R"))
 source(file.path(source_folder, "preprocessing_library.R"))
 
 ##########################################
@@ -84,13 +85,11 @@ seu <- ScaleData(seu, features = rownames(seu), verbose = FALSE)
 dimreds_to_do <- c("pca", "tsne", "umap") # For dimensionality reduction
 embeddings_to_use <- "pca"
 
-all_seu <- analyze_seurat(raw_seu = seu, out_path = out_path, hvgs = opt$hvgs,
-                          minqcfeats = opt$minqcfeats, ndims = opt$ndims,
-                          percentmt = opt$percentmt,
-                          resolution = opt$resolution,
-                          dimreds_to_do = dimreds_to_do,
-                          embeddings_to_use = embeddings_to_use,
-                          integrate = opt$integrate)
+all_seu <- main_analyze_seurat(seu = seu, output = opt$report_folder, hvgs = opt$hvgs,
+                               minqcfeats = opt$minqcfeats, ndims = opt$ndims,
+                               percentmt = opt$percentmt,
+                               resolution = opt$resolution,
+                               integrate = opt$integrate)
 
 write_sergio_report(all_seu = all_seu, minqcfeats = opt$minqcfeats,
                     template = file.path(template_path,
