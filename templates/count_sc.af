@@ -36,4 +36,9 @@ bam_quality_control){
 	?
 	qualimap bamqc -nt [cpu] -bam run_count)/$sample/outs/possorted_genome_bam.bam -outdir results --java-mem-size=20G
 	#rm run_count)/$name/outs/possorted_genome_bam.bam
+	retVal=$?
+    if [ $retVal -ne 0 ]; then
+        echo ERROR: Last command exited with $retVal status
+        exit $retVal
+    fi
 }
