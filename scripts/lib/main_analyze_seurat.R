@@ -41,7 +41,7 @@
 main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
                            		  resolution, dimreds_to_do, p_adj_cutoff = 5e-3,
                            		  integrate = FALSE, cluster_annotation = NULL,
-                           		  cell_annotation, DEG_columns = NULL,
+                           		  cell_annotation = NULL, DEG_columns = NULL,
                            		  scalefactor = 10000, hvgs, int_columns = NULL,
                            		  normalmethod = "LogNormalize", ndims,
                                 verbose = FALSE, output = getwd(),
