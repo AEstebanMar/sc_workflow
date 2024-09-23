@@ -72,106 +72,116 @@ analyses matches and determines the most likely cell type for the cluster. These
 plotted in the following graphs.</p>
 
 
-# <!--begin.rcode intro
-# cat(plotter$create_title("Quality Control", "QC", hlevel = 1, indexable = TRUE, clickable = FALSE,
-#                           t_id = "QC", clickable_text = ""))
-# end.rcode-->
+<!--begin.rcode intro
+cat(plotter$create_title("Quality Control", "QC", hlevel = 1, indexable = TRUE, clickable = FALSE,
+                          t_id = "QC", clickable_text = ""))
+end.rcode-->
 
-# <!--begin.rcode sample_qc_pct
-#     cat(plotter$create_title("Top genes expression heatmap", "sample QC", hlevel = 2, indexable = FALSE,
-#                               clickable = FALSE, t_id = "sample_qc_pct", clickable_text = ""))
-#     cat(plotter$prettify_div(plotter$heatmap(list(id = "sample_qc_pct",
-#                                                   title = "Top gene expression across samples", header = NULL,
-#                                                   text = FALSE, row_names = NULL, transpose = TRUE)),
-#                              preset = "magic"))
-# end.rcode-->
+<!--begin.rcode sample_qc_pct
+    cat(plotter$create_title("Top genes expression heatmap", "sample QC", hlevel = 2, indexable = FALSE,
+                              clickable = FALSE, t_id = "sample_qc_pct", clickable_text = ""))
+    cat(plotter$prettify_div(plotter$heatmap(list(id = "sample_qc_pct",
+                                                  title = "Top gene expression across samples", header = NULL,
+                                                  text = FALSE, row_names = NULL, transpose = TRUE)),
+                             preset = "magic"))
+end.rcode-->
 
-# <!--begin.rcode cell_markers, eval = !is.null(plotter$hash_vars$cell_annotation)
-#     elements <- unique(plotter$hash_vars$cell_annotation$type)
-#     collapse_list <- vector(mode = "character", length = length(elements) + 1)
-#     names(collapse_list) <- c("subtitle", elements)
-#     for(element_name in elements) {
-#         features <- plotter$hash_vars$cell_annotation[plotter$hash_vars$cell_annotation$type == element_name, ]$marker
-#         collapse_list[element_name] <- paste(paste0("<h2>", element_name, " markers</h2>"),
-#                                        plotter$prettify_div(plotter$static_plot_main("seu", custom_format = TRUE,
-#                                                                  plotting_function = Custom_DotPlot), preset = "magic"), sep = "\n")
-#     }
-#     collapse_list["subtitle"] <- "<h2>Expression of cell type markers across experiment clusters</h2>"
-#     markers_html <- paste0(paste(collapse_list, collapse = "\n"), "\n")
-#     cat(plotter$create_title("Markers distribution", "markers", hlevel = 2, indexable = FALSE, clickable = TRUE,
-#                              t_id = "markers_distribution", clickable_text = ""))
-#     cat(plotter$create_collapsable_container(id = "markers_distribution", html_code = markers_html))
-# end.rcode-->
+<!--begin.rcode cell_markers, eval = !is.null(plotter$hash_vars$cell_annotation)
+    elements <- unique(plotter$hash_vars$cell_annotation$type)
+    collapse_list <- vector(mode = "character", length = length(elements) + 1)
+    names(collapse_list) <- c("subtitle", elements)
+    for(element_name in elements) {
+        features <- plotter$hash_vars$cell_annotation[plotter$hash_vars$cell_annotation$type == element_name, ]$marker
+        collapse_list[element_name] <- paste(paste0("<h2>", element_name, " markers</h2>"),
+                                       plotter$prettify_div(plotter$static_plot_main("seu", custom_format = TRUE,
+                                                                 plotting_function = Custom_DotPlot), preset = "magic"), sep = "\n")
+    }
+    collapse_list["subtitle"] <- "<h2>Expression of cell type markers across experiment clusters</h2>"
+    markers_html <- paste0(paste(collapse_list, collapse = "\n"), "\n")
+    cat(plotter$create_title("Markers distribution", "markers", hlevel = 2, indexable = FALSE, clickable = TRUE,
+                             t_id = "markers_distribution", clickable_text = ""))
+    cat(plotter$create_collapsable_container(id = "markers_distribution", html_code = markers_html))
+end.rcode-->
 
-# <!--begin.rcode top_markers
-#     names <- plotter$hash_vars$seu@meta.data[["named_clusters"]]
-#     seurat_clusters <- plotter$hash_vars$seu@meta.data[["seurat_clusters"]]
-#     unique_clusters <- sort(unique(seurat_clusters))
-#     collapse_list <- vector(mode = "character", length = length(unique_clusters))
-#     for(cluster in as.numeric(unique_clusters)) {
-#         if(!is.null(names)) {
-#             name <- unique(plotter$hash_vars$seu@meta.data[seurat_clusters == cluster - 1, ]$named_clusters)
-#             title <- name
-#         } else {
-#             title <- cluster
-#         }
-#         plotter$hash_vars$cluster_markers <- plotter$hash_vars$markers[plotter$hash_vars$markers$cluster == cluster - 1, ]
-#         collapse_list[cluster + 1] <- paste(paste0("<h2>Top markers for cluster ", title),
-#                                             plotter$prettify_div(plotter$table("cluster_markers", header = NULL,
-#                                                     row_names = NULL, table_rownames = FALSE, styled = "dt",
-#                                                     func = top_table)), sep = "\n")
-#     }
-#     top_markers_html <- paste0(paste(collapse_list, collapse = "\n"), "\n")
-#     cat(plotter$create_title("Top 10 markers", "top markers", hlevel = 2, indexable = FALSE, clickable = TRUE,
-#                              t_id = "top_markers", clickable_text = ""))
-#     paragraph <- paste0("<p>These are the markers that best define the seurat cluster. They might ",
-#                         "not match cell type markers.</p>")
-#     cat(plotter$create_collapsable_container(id = "top_markers",
-#                                              html_code = paste(paragraph, top_markers_html,  sep = "\n")))
-# end.rcode-->
+<!--begin.rcode top_markers
+    names <- plotter$hash_vars$seu@meta.data[["named_clusters"]]
+    seurat_clusters <- plotter$hash_vars$seu@meta.data[["seurat_clusters"]]
+    unique_clusters <- sort(unique(seurat_clusters))
+    collapse_list <- vector(mode = "character", length = length(unique_clusters))
+    for(cluster in as.numeric(unique_clusters)) {
+        if(!is.null(names)) {
+            name <- unique(plotter$hash_vars$seu@meta.data[seurat_clusters == cluster - 1, ]$named_clusters)
+            title <- name
+        } else {
+            title <- cluster
+        }
+        plotter$hash_vars$cluster_markers <- plotter$hash_vars$markers[plotter$hash_vars$markers$cluster == cluster - 1, ]
+        collapse_list[cluster + 1] <- paste(paste0("<h2>Top markers for cluster ", title),
+                                            plotter$prettify_div(plotter$table("cluster_markers", header = NULL,
+                                                    row_names = NULL, table_rownames = FALSE, styled = "dt",
+                                                    func = top_table)), sep = "\n")
+    }
+    top_markers_html <- paste0(paste(collapse_list, collapse = "\n"), "\n")
+    cat(plotter$create_title("Top 10 markers", "top markers", hlevel = 2, indexable = FALSE, clickable = TRUE,
+                             t_id = "top_markers", clickable_text = ""))
+    paragraph <- paste0("<p>These are the markers that best define the seurat cluster. They might ",
+                        "not match cell type markers.</p>")
+    cat(plotter$create_collapsable_container(id = "top_markers",
+                                             html_code = paste(paragraph, top_markers_html,  sep = "\n")))
+end.rcode-->
 
-# <!--begin.rcode Complete_UMAP
-#     cat(plotter$create_title("Dimensionality reduction", "dimreds", hlevel = 1, indexable = TRUE, clickable = FALSE,
-#                               t_id = "dimreds", clickable_text = ""))
-#     cat(plotter$create_title("UMAP", "full_umap", hlevel = 2, indexable = TRUE, clickable = FALSE,
-#                               t_id = "full_umap", clickable_text = ""))
-#     reduction <- "umap"
-#     label <- TRUE
-#     group.by <- split.by <- NULL
-#     cat(plotter$prettify_div(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DimPlot),
-#                              preset = "magic"))
-# end.rcode-->
+<!--begin.rcode Complete_UMAP
+    cat(plotter$create_title("Dimensionality reduction", "dimreds", hlevel = 1, indexable = TRUE, clickable = FALSE,
+                              t_id = "dimreds", clickable_text = ""))
+    cat(plotter$create_title("UMAP", "full_umap", hlevel = 2, indexable = TRUE, clickable = FALSE,
+                              t_id = "full_umap", clickable_text = ""))
+    reduction <- "umap"
+    label <- TRUE
+    group.by <- split.by <- NULL
+    cat(plotter$prettify_div(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DimPlot),
+                             preset = "magic"))
+end.rcode-->
 
-# <!--begin.rcode umap_splits
-#     label <- FALSE
-#     for(condition in int_columns) {
-#         title <- paste0("<h1>Split by ", condition, "</h1>")
-#         split.by <- condition
-#         html_code <- plotter$prettify_div(plotter$static_plot_main("seu", custom_format = TRUE,
-#                                           plotting_function = Custom_DimPlot), preset = "magic")
-#         html_code <- paste(title, html_code, sep = "\n")
-#         cat(plotter$create_title(paste0("Split by ", condition), paste0(condition, " split"), hlevel = 2,
-#                                  indexable = FALSE, clickable = TRUE, t_id = paste0(condition, "_split"),
-#                                  clickable_text = ""))
-#         cat(plotter$create_collapsable_container(id = paste0(condition, "_split"), html_code = html_code))
-#     }
-# end.rcode-->
+<!--begin.rcode umap_splits
+    label <- FALSE
+    for(condition in int_columns) {
+        title <- paste0("<h1>Split by ", condition, "</h1>")
+        split.by <- condition
+        html_code <- plotter$prettify_div(plotter$static_plot_main("seu", custom_format = TRUE,
+                                          plotting_function = Custom_DimPlot), preset = "magic")
+        html_code <- paste(title, html_code, sep = "\n")
+        cat(plotter$create_title(paste0("Split by ", condition), paste0(condition, " split"), hlevel = 2,
+                                 indexable = FALSE, clickable = TRUE, t_id = paste0(condition, "_split"),
+                                 clickable_text = ""))
+        cat(plotter$create_collapsable_container(id = paste0(condition, "_split"), html_code = html_code))
+    }
+end.rcode-->
 
-# <!--begin.rcode umap_groups,
-#     label <- TRUE
-#     for(condition in int_columns) {
-#         title <- paste0("<h1>Grouped by ", condition, "</h1>")
-#         split.by <- NULL
-#         group.by <- condition
-#         html_code <- plotter$prettify_div(plotter$static_plot_main("seu", custom_format = TRUE,
-#                                           plotting_function = Custom_DimPlot), preset = "magic")
-#         html_code <- paste(title, html_code, sep = "\n")
-#         cat(plotter$create_title(paste0("Grouped by ", condition), paste0(condition, " grouped"), hlevel = 2,
-#                                  indexable = FALSE, clickable = TRUE, t_id = paste0(condition, "_grouped"),
-#                                  clickable_text = ""))
-#         cat(plotter$create_collapsable_container(id = paste0(condition, "_grouped"), html_code = html_code))
-#     }
-# end.rcode-->
+<!--begin.rcode umap_groups,
+    label <- TRUE
+    for(condition in int_columns) {
+        title <- paste0("<h1>Grouped by ", condition, "</h1>")
+        split.by <- NULL
+        group.by <- condition
+        html_code <- plotter$prettify_div(plotter$static_plot_main("seu", custom_format = TRUE,
+                                          plotting_function = Custom_DimPlot), preset = "magic")
+        html_code <- paste(title, html_code, sep = "\n")
+        cat(plotter$create_title(paste0("Grouped by ", condition), paste0(condition, " grouped"), hlevel = 2,
+                                 indexable = FALSE, clickable = TRUE, t_id = paste0(condition, "_grouped"),
+                                 clickable_text = ""))
+        cat(plotter$create_collapsable_container(id = paste0(condition, "_grouped"), html_code = html_code))
+    }
+end.rcode-->
+
+<!--begin.rcode cluster_pct
+    cat(plotter$create_title("Cluster distribution heatmap", "cluster distribution", hlevel = 2,
+                              indexable = TRUE, clickable = FALSE, t_id = "cluster_distribution",
+                              clickable_text = ""))
+    cat("<p>This plot represents the cluster composition of each sample.</p>")
+    cat(plotter$prettify_div(plotter$heatmap(list(id = "clusters_pct", title = "Cell type percentage by sample",
+                                             header = NULL, text = FALSE, row_names = NULL,
+                                             transpose = TRUE)), preset = "magic"))
+end.rcode-->
 
 <!--begin.rcode DEG_analysis, eval = length(DEG_list) > 0
     cat(plotter$create_title("Differential expression analysis", "DEG", hlevel = 1, indexable = TRUE,
@@ -226,107 +236,106 @@ plotted in the following graphs.</p>
     }
 end.rcode-->
 
-# <h1><strong>Cluster distribution heatmap</strong></h1>
-# <p>This plot represents the percentage of cells in each sample that were
-# assigned each cell type.</p>
+<!--begin.rcode query_title
+    cat(plotter$create_title("Query gene analysis", "query title", hlevel = 1,
+                              indexable = TRUE, clickable = FALSE, t_id = "query_title",
+                              clickable_text = ""))
+end.rcode-->
 
-# <div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
-# <!--begin.rcode cluster_pct
-#     cat(plotter$heatmap(list(id = "clusters_pct", title = "Cell type percentage by sample",
-#                              header = NULL, text = FALSE, row_names = NULL,
-#                              transpose = TRUE)))
-# end.rcode-->
-# </div>
+<!--begin.rcode query_exp
+    cat(plotter$create_title("Query gene expression heatmap", "query heatmap", hlevel = 2,
+                              indexable = FALSE, clickable = FALSE, t_id = "query_heatmap",
+                              clickable_text = ""))
+    cat("<p>This plot represents gene expression profile across samples of query genes.
+        Represented as the natural logarithm of count ratio, multiplied by a scale factor
+        (see config file for exact value of scale factor).</p>")
+    cat(plotter$prettify_div(plotter$heatmap(list(id = "query_exp",
+                             title = "Query gene expression across samples",
+                             header = NULL, text = FALSE, row_names = NULL,
+                             transpose = TRUE)), preset = "magic"))
+end.rcode-->
 
-# <h1><strong>Query gene expression heatmap</strong></h1>
-# <p>This plot represents gene expression profile across samples of query genes.<br>
-# Represented as the natural logarithm of count ratio, multiplied by a scale factor
-# (see config file for exact value of scale factor).</p>
+<!--begin.rcode query_pct
+    cat(plotter$create_title("Query gene cell percentages", "query samples", hlevel = 2,
+                              indexable = FALSE, clickable = FALSE, t_id = "query_samples",
+                              clickable_text = ""))
+    cat(paste0("This plot represents the percentage of cells that express the query genes in each sample."))
+    cat(plotter$prettify_div(plotter$heatmap(list(id = "query_pct",
+                             title = "Query gene expression across samples",
+                             header = NULL, text = FALSE, row_names = NULL,
+                             transpose = TRUE)), preset = "magic"))
+end.rcode-->
 
-# <div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
-# <!--begin.rcode query_exp
-#     cat(plotter$heatmap(list(id = "query_exp", title = "Query gene expression across samples",
-#                              header = NULL, text = FALSE, row_names = NULL,
-#                              transpose = TRUE)))
-# end.rcode-->
-# </div>
+<!--begin.rcode query_cluster_pct, eval = !is.null(plotter$hash_vars$target_genes)
+    query_clusters <- vector(mode = "character", length = length(plotter$hash_vars$query_cluster_pct))
+    for(i in seq(length(plotter$hash_vars$query_cluster_pct))) {
+        plotter$hash_vars$query_combo <- plotter$hash_vars$query_cluster_pct[[i]]
+        name <- names(plotter$hash_vars$query_cluster_pct)[i]
+        query_clusters[i] <- plotter$prettify_div(plotter$heatmap(list(id = "query_combo", title = name,
+                                                  header = NULL, text = FALSE, row_names = NULL, 
+                                                  transpose = TRUE)), preset = "magic")
+    }
+    html_code <- paste(query_clusters, collapse = "\n")
+    cat(plotter$create_title("Query gene cell percentages by cluster", "query cluster", hlevel = 2,
+                              indexable = FALSE, clickable = TRUE, t_id = "query_cluster",
+                              clickable_text = ""))
+    cat(plotter$create_collapsable_container(id = "query_cluster", html_code = html_code))
+end.rcode-->
 
-# <h1><strong>Query gene cell percentages</strong></h1>
-# <p>This plot represents the percentage of cells in each sample that express query genes.</p>
+<!--begin.rcode query_genes, eval = !is.null(plotter$hash_vars$target_genes)
+    cat(plotter$create_title("Query genes distribution", "query genes distribution", hlevel = 2,
+                              indexable = FALSE, clickable = TRUE, t_id = "query_distrib",
+                              clickable_text = ""))
+    paragraph <- "<p>These genes have <strong>NOT</strong> been used to annotate clusters</p>"
+    genes_code <- vector(mode = "character", length = length(plotter$hash_vars$target_genes))
+    names(genes_code) <- names(plotter$hash_vars$target_genes)
+    for(element_name in names(plotter$hash_vars$target_genes)) {
+      features <- plotter$hash_vars$target_genes[[element_name]]
+      title <- paste0("<h2>Query gene group: ", element_name, "</h2>")
+      code <- plotter$prettify_div(plotter$static_plot_main("seu", custom_format = TRUE,
+                                   plotting_function = Custom_DotPlot), preset = "magic")
+      table_title <- plotter$create_title(paste0(element_name, " query table"), paste0(element_name, " Query Table"),
+                                          hlevel = 3, indexable = FALSE, clickable = TRUE,
+                                          t_id = paste0(element_name, "_query_table"), clickable_text = "")
+      table <- plotter$prettify_div(plotter$table("markers", header = NULL, row_names = NULL,
+                                                  table_rownames = FALSE, styled = "dt", func = subset_table),
+                                                  preset = "magic")
+      table <- plotter$create_collapsable_container(id = paste0(element_name, "_query_table"),
+                                                    html_code = table)
+      genes_code[element_name] <- paste(title, code, table_title, table, sep = "\n")
+    }
+    genes_code <- paste(genes_code, collapse = "\n")
+    genes_code <- paste(paragraph, genes_code, sep = "\n")
+    cat(plotter$create_collapsable_container(id = "query_distrib", html_code = genes_code))
+end.rcode-->
 
-# <div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
-# <!--begin.rcode query_pct
-#     cat(plotter$heatmap(list(id = "query_pct", title = "Query gene expression across samples",
-#                              header = NULL, text = FALSE, row_names = NULL,
-#                              transpose = TRUE)))
-# end.rcode-->
-# </div>
+<!--begin.rcode Query_gene_expression, eval = !is.null(plotter$hash_vars$target_genes)
+    plotter$create_title("Query gene expression", "query violins", hlevel = 2, indexable = FALSE,
+                          clickable = FALSE, t_id = "query_violins", clickable_text = "")
+    for(element_name in names(plotter$hash_vars$target_genes)) {
+      features <- plotter$hash_vars$target_genes[[element_name]]
+      cat(paste0("<h2>Query gene group: ", element_name, "</h2>"))
+      cat(plotter$prettify_div(plotter$static_plot_main("seu", custom_format = TRUE,
+                               plotting_function = Top_vlnplot), preset = "magic"))
+    }
+end.rcode-->
 
-# <h1><strong>Query gene cell percentages by cluster</strong></h1>
-# <p>This plot represents the same concept as the previous one, but breaks it down
-#    by cluster or cell type, if they have been assigned.</p>
-
-# <div style="overflow: hidden; display: flex; flex-direction: row; justify-content: center">
-# <!--begin.rcode query_cluster_pct, eval = !is.null(plotter$hash_vars$target_genes)
-#     for(i in seq(length(plotter$hash_vars$query_cluster_pct))) {
-#         plotter$hash_vars$query_combo <- plotter$hash_vars$query_cluster_pct[[i]]
-#         name <- names(plotter$hash_vars$query_cluster_pct)[i]
-#         cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-#         cat(plotter$heatmap(list(id = "query_combo", title = name, header = NULL,
-#                                  text = FALSE, row_names = NULL, transpose = TRUE)))
-#         cat("</div>")
-#     }
-# end.rcode-->
-# </div>
-
-# <h1><strong>Query genes distribution</strong></h1>
-# <h2>Expression of query genes across identified clusters</h2>
-# <p>These genes have <strong>NOT</strong> been used to annotate clusters</p>
-
-# <!--begin.rcode query_genes, eval = !is.null(plotter$hash_vars$target_genes)
-#     for(element_name in names(plotter$hash_vars$target_genes)) {
-#       features <- plotter$hash_vars$target_genes[[element_name]]
-#       cat(paste0("<h2>Query gene group: ", element_name, "</h2>"))
-#       cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-#       cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_DotPlot))
-#       cat("</div>")
-#     }
-# end.rcode-->
-
-# <h1><strong>Query gene presence</strong></h1>
-# <!--begin.rcode Query_gene_presence, eval = !is.null(plotter$hash_vars$target_genes)
-#     for(element_name in names(plotter$hash_vars$target_genes)) {
-#       features <- plotter$hash_vars$target_genes[[element_name]]
-#       cat(paste0("<h2>Query gene group: ", element_name, "</h2>"))
-#       cat(plotter$table("markers", header = NULL, row_names = NULL, table_rownames = FALSE,
-#         styled = "dt", func = subset_table))
-#     }
-# end.rcode-->
-
-# <h1><strong>Query gene expression</strong></h1>
-# <!--begin.rcode Query_gene_expression, eval = !is.null(plotter$hash_vars$target_genes)
-#     for(element_name in names(plotter$hash_vars$target_genes)) {
-#       features <- plotter$hash_vars$target_genes[[element_name]]
-#       cat(paste0("<h2>Query gene group: ", element_name, "</h2>"))
-#       cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-#       cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Top_vlnplot))
-#       cat("</div>")
-#     }
-# end.rcode-->
-
-
-# <h1><strong>Query gene expression patterns</strong></h1>
-# <p>Expression patterns of query genes. Only genes significantly expressed in dataset are plotted</p>
-# <!--begin.rcode Query_patterns, eval = !is.null(plotter$hash_vars$target_genes)
-#     expressed_genes <- rownames(SeuratObject::GetAssayData(plotter$hash_vars$seu, "RNA"))
-#     for(element_name in names(plotter$hash_vars$target_genes)) {
-#         cat(paste0("<h2>Query gene group: ", element_name, "</h2>"))
-#         for(feature in plotter$hash_vars$target_genes[[element_name]]) {
-#             if(feature %in% expressed_genes) {
-#                 cat("<div style=\"overflow: hidden; display: flex; flex-direction: row; justify-content: center\">")
-#                 cat(plotter$static_plot_main("seu", custom_format = TRUE, plotting_function = Custom_ftplot))
-#                 cat("</div>")
-#             }
-#         }
-#     }
-# end.rcode-->
+<!--begin.rcode Query_patterns, eval = !is.null(plotter$hash_vars$target_genes)
+    plotter$create_title("Query expression map", "query maps", hlevel = 2, indexable = FALSE,
+                          clickable = FALSE, t_id = "query_maps", clickable_text = "")
+    cat("<p>Expression patterns of query genes. Only genes significantly expressed in dataset are plotted</p>")
+    expressed_genes <- rownames(SeuratObject::GetAssayData(plotter$hash_vars$seu, "RNA"))
+    for(element_name in names(plotter$hash_vars$target_genes)) {
+        cat(paste0("<h2>Query gene group: ", element_name, "</h2>"))
+        for(feature in plotter$hash_vars$target_genes[[element_name]]) {
+            if(feature %in% expressed_genes) {
+                cat(plotter$create_title(paste0("Query gene group: ", element_name),
+                                         paste0(element_name, " map"), hlevel = 3, indexable = FALSE,
+                                         clickable = FALSE, t_id = paste0(element_name, "_map"),
+                                         clickable_text = ""))
+                cat(plotter$prettify_div(plotter$static_plot_main("seu", custom_format = TRUE,
+                    plotting_function = Custom_ftplot), preset = "magic"))
+            }
+        }
+    }
+end.rcode-->
