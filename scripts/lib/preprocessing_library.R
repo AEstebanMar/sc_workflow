@@ -475,12 +475,9 @@ get_top_genes <- function(seu, top = 20, assay = "RNA", layer = "counts") {
     genes <- Seurat::GetAssayData(subset, assay, layer)
     expressed_genes <- vector(mode = "integer", length = nrow(genes))
     names(expressed_genes) <- rownames(genes)
-    for(i in seq(nrow(genes))) {
-      expressed_genes[i] <- sum(genes[i ,] != 0) / length(genes[i, ])
-    }
-    expressed_genes <- expressed_genes[expressed_genes != 0]
+    expressed_genes <- Matrix::rowSums(genes!=0) / ncol(genes)
     if(length(expressed_genes) > top) {
-      expressed_genes <- sort(expressed_genes)[1:top]
+      expressed_genes <- sort(expressed_genes, decreasing = TRUE)[1:top]
     }
     top_samples[[sample]] <- names(expressed_genes)
   }
@@ -584,7 +581,7 @@ has_exclusive_clusters <- function(seu, cond) {
 #' @returns A subset of the seurat object, which itself is a seurat object.
 
 subset_seurat <- function(seu, column, value) {
-  expr <- seu@meta.data[[column]]
+  expr <- Seurat::FetchData(seu, vars = column)
   subset <- seu[, which(expr == value)]
   return(subset)
 }
