@@ -496,8 +496,8 @@ get_top_genes <- function(seu, top = 20, assay = "RNA", layer = "counts") {
 
 get_qc_pct <- function(seu, top = 20, assay = "RNA", layer = "counts", by,
                    sigfig = 2) {
-  top <- get_top_genes(seu = seu, top = top, assay = assay, layer = layer)
-  res <- get_query_pct(seu = seu, query = top, by = by, sigfig = sigfig)
+  top_genes <- get_top_genes(seu = seu, top = top, assay = assay, layer = layer)
+  res <- get_query_pct(seu = seu, query = top_genes, by = by, sigfig = sigfig)
   return(res)
 }
 
@@ -584,7 +584,7 @@ has_exclusive_clusters <- function(seu, cond) {
 #' @returns A subset of the seurat object, which itself is a seurat object.
 
 subset_seurat <- function(seu, column, value) {
-  expr <- Seurat::FetchData(seu, vars = column)
+  expr <- seu@meta.data[[column]]
   subset <- seu[, which(expr == value)]
   return(subset)
 }
