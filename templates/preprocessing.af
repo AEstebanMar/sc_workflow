@@ -22,7 +22,8 @@ sc_preprocessing){
                        --report_folder $report_folder \
                        --experiment_name $experiment_name \
                        --resolution $preproc_resolution \
-                       --exp_design $exp_design
+                       --exp_design $exp_design \
+                       --target_genes "$target_genes"
 
        retVal=$?
        if [ $retVal -ne 0 ]; then
