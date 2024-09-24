@@ -155,7 +155,7 @@ end.rcode-->
     }
 end.rcode-->
 
-<!--begin.rcode umap_groups,
+<!--begin.rcode umap_groups
     label <- TRUE
     for(condition in int_columns) {
         split.by <- NULL
@@ -171,7 +171,7 @@ end.rcode-->
 
 <!--begin.rcode cluster_pct
     cat(plotter$create_title("Cluster distribution heatmap", "cluster distribution", hlevel = 2,
-                              indexable = TRUE, clickable = FALSE, t_id = "cluster_distribution",
+                              indexable = FALSE, clickable = FALSE, t_id = "cluster_distribution",
                               clickable_text = ""))
     cat("<p>This plot represents the cluster composition of each sample.</p>")
     cat(plotter$prettify_div(plotter$heatmap(list(id = "clusters_pct", title = "Cell type percentage by sample",
@@ -187,7 +187,7 @@ end.rcode-->
         idents <- unique(plotter$hash_vars$seu@meta.data[[condition]])
         condition_DEGs <- DEG_list[[condition]]
         plotter$create_title(paste0("DEGs by ", condition), paste0(condition, "_DEGs"), hlevel = 2,
-                             indexable = TRUE, clickable = FALSE, t_id = paste0(condition, "_DEGs"),
+                             indexable = TRUE, clickable = TRUE, t_id = paste0(condition, "_DEGs"),
                              clickable_text = "")
         cat(paste0("<p>Positive log2 fold change means higher expression levels in ", idents[1], "</p>"))
         level <- "global"
@@ -232,13 +232,13 @@ end.rcode-->
     }
 end.rcode-->
 
-<!--begin.rcode query_title
+<!--begin.rcode query_title, eval = !is.null(plotter$hash_vars$target_genes)
     cat(plotter$create_title("Query gene analysis", "query title", hlevel = 1,
                               indexable = TRUE, clickable = FALSE, t_id = "query_title",
                               clickable_text = ""))
 end.rcode-->
 
-<!--begin.rcode query_exp
+<!--begin.rcode query_exp, eval = !is.null(plotter$hash_vars$query_exp)
     cat(plotter$create_title("Query gene expression heatmap", "query heatmap", hlevel = 2,
                               indexable = FALSE, clickable = FALSE, t_id = "query_heatmap",
                               clickable_text = ""))
@@ -251,7 +251,7 @@ end.rcode-->
                              transpose = TRUE)), preset = "magic"))
 end.rcode-->
 
-<!--begin.rcode query_pct
+<!--begin.rcode query_pct, eval = !is.null(plotter$hash_vars$query_pct)
     cat(plotter$create_title("Query gene cell percentages", "query samples", hlevel = 2,
                               indexable = FALSE, clickable = FALSE, t_id = "query_samples",
                               clickable_text = ""))
@@ -262,7 +262,7 @@ end.rcode-->
                              transpose = TRUE)), preset = "magic"))
 end.rcode-->
 
-<!--begin.rcode query_cluster_pct, eval = !is.null(plotter$hash_vars$target_genes)
+<!--begin.rcode query_cluster_pct, eval = !is.null(plotter$hash_vars$query_cluster_pct)
     query_clusters <- vector(mode = "character", length = length(plotter$hash_vars$query_cluster_pct))
     for(i in seq(length(plotter$hash_vars$query_cluster_pct))) {
         plotter$hash_vars$query_combo <- plotter$hash_vars$query_cluster_pct[[i]]
@@ -278,6 +278,21 @@ end.rcode-->
     cat(plotter$create_collapsable_container(id = "query_cluster", html_code = html_code))
 end.rcode-->
 
+<!--begin.rcode Query_gene_expression, eval = !is.null(plotter$hash_vars$target_genes)
+    expressed_genes <- rownames(SeuratObject::GetAssayData(plotter$hash_vars$seu, "RNA"))
+    for(element_name in names(plotter$hash_vars$target_genes)) {
+      features <- plotter$hash_vars$target_genes[[element_name]]
+      cat(plotter$create_title(paste0("Violin plot of gene ", element_name), paste0(element_name, "query group"),
+                               hlevel = 3, indexable = FALSE, clickable = FALSE, t_id = ))
+      if(all(!features %in% expressed_genes)) {
+        cat(paste0("<p>None of the ", element_name, " group query genes were found in dataset.</p>"))  
+      } else {
+        cat(plotter$prettify_div(plotter$static_plot_main("seu", custom_format = TRUE,
+                                 plotting_function = Top_vlnplot), preset = "magic"))
+      }
+    }
+end.rcode-->
+
 <!--begin.rcode query_genes, eval = !is.null(plotter$hash_vars$target_genes)
     cat(plotter$create_title("Query genes distribution", "query genes distribution", hlevel = 2,
                               indexable = FALSE, clickable = TRUE, t_id = "query_distrib",
@@ -287,10 +302,14 @@ end.rcode-->
     names(genes_code) <- names(plotter$hash_vars$target_genes)
     for(element_name in names(plotter$hash_vars$target_genes)) {
       features <- plotter$hash_vars$target_genes[[element_name]]
-      title <- paste0("<h2>Query gene group: ", element_name, "</h2>")
+      title <- plotter$create_title(paste0("Query gene group: ", element_name),
+                                    paste0(element_name, " distr"),
+                                    hlevel = 2, indexable = FALSE, clickable = FALSE,
+                                    t_id = paste0(element_name, "_distr"), clickable_text = "")
       code <- plotter$prettify_div(plotter$static_plot_main("seu", custom_format = TRUE,
                                    plotting_function = Custom_DotPlot), preset = "magic")
-      table_title <- plotter$create_title(paste0(element_name, " query table"), paste0(element_name, " Query Table"),
+      table_title <- plotter$create_title(paste0(element_name, " query table"),
+                                          paste0(element_name, " Query Table"),
                                           hlevel = 3, indexable = FALSE, clickable = TRUE,
                                           t_id = paste0(element_name, "_query_table"), clickable_text = "")
       table <- plotter$prettify_div(plotter$table("markers", header = NULL, row_names = NULL,
@@ -305,25 +324,11 @@ end.rcode-->
     cat(plotter$create_collapsable_container(id = "query_distrib", html_code = genes_code))
 end.rcode-->
 
-<!--begin.rcode Query_gene_expression, eval = !is.null(plotter$hash_vars$target_genes)
-    cat(plotter$create_title("Expression violin plots", "query violins", hlevel = 2, indexable = FALSE,
-                              clickable = FALSE, t_id = "query_violins", clickable_text = ""))
-    for(element_name in names(plotter$hash_vars$target_genes)) {
-      features <- plotter$hash_vars$target_genes[[element_name]]
-      cat(plotter$create_title(paste0("Query gene group: ", element_name), paste0(element_name, "query group"),
-                               hlevel = 3, indexable = FALSE, clickable = FALSE, t_id = ))
-      cat(plotter$prettify_div(plotter$static_plot_main("seu", custom_format = TRUE,
-                               plotting_function = Top_vlnplot), preset = "magic"))
-    }
-end.rcode-->
-
 <!--begin.rcode Query_patterns, eval = !is.null(plotter$hash_vars$target_genes)
-    plotter$create_title("Query expression map", "query maps", hlevel = 2, indexable = FALSE,
-                          clickable = FALSE, t_id = "query_maps", clickable_text = "")
-    cat("<p>Expression patterns of query genes. Only genes significantly expressed in dataset are plotted</p>")
+    cat(plotter$create_title("Query expression map", "query maps", hlevel = 3, indexable = FALSE,
+                          clickable = FALSE, t_id = "query_maps", clickable_text = ""))
     expressed_genes <- rownames(SeuratObject::GetAssayData(plotter$hash_vars$seu, "RNA"))
     for(element_name in names(plotter$hash_vars$target_genes)) {
-        cat(paste0("<h2>Query gene group: ", element_name, "</h2>"))
         for(feature in plotter$hash_vars$target_genes[[element_name]]) {
             if(feature %in% expressed_genes) {
                 cat(plotter$create_title(paste0("Query gene group: ", element_name),
@@ -332,6 +337,8 @@ end.rcode-->
                                          clickable_text = ""))
                 cat(plotter$prettify_div(plotter$static_plot_main("seu", custom_format = TRUE,
                     plotting_function = Custom_ftplot), preset = "magic"))
+            } else {
+                cat(paste0("<p>Feature ", feature, " is not significantly expressed.</p>"))
             }
         }
     }
