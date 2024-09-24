@@ -350,6 +350,34 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
   return(cluster_markers)
 }
 
+#' analyze_query
+
+analyze_query <- function(seu, query, sigfig) {
+  if(!is.null(query)) {
+    if(all(!query %in% rownames(Seurat::GetAssayData(seu)))) {
+      warning("None of the query genes are expressed in the dataset",
+               immediate. = TRUE)
+      res <- NULL
+    } else {
+      query_exp <- get_query_distribution(seu = seu, query = query, sigfig = sigfig)
+      query_pct <- get_query_pct(seu = seu, query = query, by = "sample",
+                             sigfig = sigfig)
+      if("named_clusters" %in% colnames(seu@meta.data)) {
+        get_by <- c("sample", "named_clusters")
+      } else {
+        get_by <- c("sample", "seurat_clusters")
+      }
+      query_cluster_pct <- get_query_pct(seu = seu, query = query, by = get_by,
+                                         sigfig = sigfig)
+      res <- list(query_exp = query_exp, query_pct = query_pct,
+                  query_cluster_pct = query_cluster_pct)
+    }
+  }
+  return(res)
+}
+
+
+
 #' get_clusters_distribution
 #' `get_clusters_distribution` calculates the percentage of cells that make up
 #' each cluster for each different sample in a seurat object. If clusters are
