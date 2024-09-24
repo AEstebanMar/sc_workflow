@@ -58,8 +58,8 @@ option_list <- list(
               help="Experiment name"),
   optparse::make_option(c("--resolution"), type = "double",
               help="Granularity of the clustering"),
-  optparse::make_option(c("--integrate"), type = "logical", default=FALSE, action = "store_true",
-              help="Perform integrative analysis")
+  optparse::make_option(c("--exp_design"), type = "character",
+              help="Path to experiment design file")
 )  
 
 
@@ -77,19 +77,16 @@ out_path = file.path(opt$report_folder, paste0(opt$experiment_name, '.', opt$nam
 input <- file.path(opt$input, ifelse(opt$filter, "filtered_feature_bc_matrix",
                                                  "raw_feature_bc_matrix"))
 
-seu <- read_input(name = opt$name,  input = input, mincells = opt$mincells,
-                  minfeats = opt$minfeats)
-seu <- NormalizeData(seu, normalization.method = opt$normalmethod,
-                       scale.factor = opt$scalefactor, verbose = FALSE)
-seu <- ScaleData(seu, features = rownames(seu), verbose = FALSE)
-dimreds_to_do <- c("pca", "tsne", "umap") # For dimensionality reduction
-embeddings_to_use <- "pca"
+exp_design <- read.table(opt$exp_design, sep = "\t", header = TRUE)
+
+seu <- read_input(name = opt$name, input = input, mincells = opt$mincells,
+                  minfeats = opt$minfeats, exp_design = exp_design)
 
 all_seu <- main_analyze_seurat(seu = seu, output = opt$report_folder, hvgs = opt$hvgs,
                                minqcfeats = opt$minqcfeats, ndims = opt$ndims,
                                percentmt = opt$percentmt,
                                resolution = opt$resolution,
-                               integrate = opt$integrate)
+                               integrate = FALSE)
 
 write_sergio_report(all_seu = all_seu, minqcfeats = opt$minqcfeats,
                     template = file.path(template_path,
