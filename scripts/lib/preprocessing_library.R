@@ -7,12 +7,15 @@
 #' @param input path to cellranger counts
 #' @param mincells min number of cells for which a feature is recorded
 #' @param minfeats min number of features for which a cell is recorded
+#' @param exp_design experiment design table
 #' 
 #' @return Seurat object
-read_input <- function(name, input, mincells, minfeats){
-  mtx <- Read10X(input)
-  seu <- CreateSeuratObject(counts = mtx, project = name, min.cells = mincells, 
-                            min.features = minfeats)
+read_input <- function(name, input, mincells, minfeats, exp_design){
+  mtx <- Seurat::Read10X(input)
+  seu <- Seurat::CreateSeuratObject(counts = mtx, project = name,
+                                    min.cells = mincells,
+                                    min.features = minfeats)
+  seu <- add_exp_design(seu = seu, name = name, exp_design = exp_design)
   return(seu)
 }
 
@@ -482,6 +485,7 @@ get_top_genes <- function(seu, top = 20, assay = "RNA", layer = "counts") {
     top_samples[[sample]] <- names(expressed_genes)
   }
   top_genes <- unique(unlist(top_samples))
+  return(top_genes)
 }
 
 #' get_qc_pct
