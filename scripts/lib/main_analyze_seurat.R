@@ -55,6 +55,7 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
     seu <- qc
   }
   message('Normalizing data')
+  seu <- SeuratObject::JoinLayers(seu)
   seu <- Seurat::NormalizeData(object = seu, verbose = verbose,
   									           normalization.method = normalmethod,
                                scale.factor = scalefactor)
@@ -107,16 +108,7 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   sample_qc_pct <- get_qc_pct(seu, by = "sample")
   message("Extracting query expression metrics. This might take a while.")
   clusters_pct <- get_clusters_distribution(seu = seu, sigfig = sigfig)
-  query_exp <- get_query_distribution(seu = seu, query = query, sigfig = sigfig)
-  query_pct <- get_query_pct(seu = seu, query = query, by = "sample",
-                             sigfig = sigfig)
-  if("named_clusters" %in% colnames(seu@meta.data)) {
-    get_by <- c("sample", "named_clusters")
-  } else {
-    get_by <- c("sample", "seurat_clusters")
-  }
-  query_cluster_pct <- get_query_pct(seu = seu, query = query, by = get_by,
-                                     sigfig = sigfig)
+  query_data <- analyze_query(seu = seu, query = query, sigfig = sigfig)
   markers <- cbind(markers$gene, markers[, -grep("gene", colnames(markers))])
   colnames(markers)[1] <- "gene"
   message('Performing DEG analysis.')
@@ -144,9 +136,9 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   final_results$seu <- seu
   final_results$sample_qc_pct <- sample_qc_pct
   final_results$clusters_pct <- clusters_pct
-  final_results$query_exp <- query_exp
-  final_results$query_pct <- query_pct
-  final_results$query_cluster_pct <- query_cluster_pct
+  final_results$query_exp <- query_data$query_exp
+  final_results$query_pct <- query_data$query_pct
+  final_results$query_cluster_pct <- query_data$query_cluster_pct
   final_results$markers <- markers
   final_results$DEG_list <- DEG_list
   return(final_results)
