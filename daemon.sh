@@ -64,6 +64,7 @@ if [ "$module" == "1" ] ; then
         \\$preproc_pca_n_cells=$preproc_pca_n_cells,
         \\$experiment_name=$experiment_name,
         \\$preproc_resolution=$preproc_resolution,
+        \\$target_genes=$target_genes,
         \\$imported_counts=$imported_counts
         " | tr -d [:space:]`
         AutoFlow -w $TEMPLATES -V "$AF_VARS" $3 -o $FULL_RESULTS/$sample
@@ -97,6 +98,7 @@ elif [ "$module" == "1c" ] ; then
         \\$preproc_pca_n_cells=$preproc_pca_n_cells,
         \\$experiment_name=$experiment_name,
         \\$preproc_resolution=$preproc_resolution,
+        \\$target_genes=$target_genes,
         \\$imported_counts=$imported_counts
         " | tr -d [:space:]`
         AutoFlow -w $TEMPLATES -V "$AF_VARS" $3 -o $FULL_RESULTS/$sample -v $resources
