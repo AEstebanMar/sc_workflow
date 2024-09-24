@@ -47,9 +47,11 @@ if [ "$module" == "1" ] ; then
         echo Launching $sample
         AF_VARS=`echo "
         \\$sample=$sample,
+        \\$exp_design=$exp_design,
         \\$read_path=$read_path,
         \\$aux_sh_dir=$CODE_PATH/aux_sh,
         \\$script_dir=$CODE_PATH/scripts,
+        \\$report_folder=$output/report,
         \\$preproc_filter=$preproc_filter,
         \\$preproc_init_min_cells=$preproc_init_min_cells,
         \\$preproc_init_min_feats=$preproc_init_min_feats,
@@ -78,9 +80,11 @@ elif [ "$module" == "1c" ] ; then
     while IFS= read sample; do
         AF_VARS=`echo "
         \\$sample=$sample,
+        \\$exp_design=$exp_design,
         \\$read_path=$read_path,
         \\$aux_sh_dir=$CODE_PATH/aux_sh,
         \\$script_dir=$CODE_PATH/scripts,
+        \\$report_folder=$output/report,
         \\$preproc_filter=$preproc_filter,
         \\$preproc_init_min_cells=$preproc_init_min_cells,
         \\$preproc_init_min_feats=$preproc_init_min_feats,
@@ -106,6 +110,6 @@ elif [ "$module" == "2" ] ; then
     if [ $launch_login == TRUE ]; then  
         compare_samples.sh
     else
-        sbatch aux_sh/compare_samples.sh --cpus-per-task $CPU --mem $mem 
+        sbatch aux_sh/compare_samples.sh --cpus-per-task $CPU --mem $mem
     fi
 fi
