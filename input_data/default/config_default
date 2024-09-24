@@ -52,4 +52,4 @@ export int_columns=colA,colB                             #-------#    Columns by
 export DEG_columns=""	#-------#	Columns contaning factors by which DEG analysis will be performed. If empty, int_columns will be analysed.
 export samples_to_integrate="" # Comma-separated list of samples to integrate. If empty ("") whole experiment will
 			       # be analysed.
-export target_genes="path/to/targets/file" # Path to target genes file, or list of comma-separated target genes ("target_1","target_2").
+export target_genes="path/to/targets/file" # Path to target genes file, or list of semicolon-separated target genes ("target_1;target_2").
