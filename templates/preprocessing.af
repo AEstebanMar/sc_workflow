@@ -21,7 +21,8 @@ sc_preprocessing){
                        --dimheatmapcells $preproc_pca_n_cells \
                        --report_folder $report_folder \
                        --experiment_name $experiment_name \
-                       --resolution $preproc_resolution
+                       --resolution $preproc_resolution \
+                       --exp_design $exp_design
 
        retVal=$?
        if [ $retVal -ne 0 ]; then
