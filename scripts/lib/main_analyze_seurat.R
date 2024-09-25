@@ -93,7 +93,7 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   if(!is.null(cluster_annotation)) {
   	message("Clusters annotation file provided. Annotating clusters.")
   	seu <- annotate_clusters(seu = seu, new_clusters = cluster_annotation$name)
-  }else if(!is.null(cell_annotation)){
+  } else if(!is.null(cell_annotation)){
 	  message(paste0("Clusters annotation file not provided. Dynamically ",
                    "annotating clusters."))
 	  annotated_clusters <- match_cell_types(markers_df = markers,
@@ -101,28 +101,36 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
                                            p_adj_cutoff = p_adj_cutoff)
 	  markers <- annotated_clusters$summary
 	  seu <- annotate_clusters(seu, annotated_clusters$cell_types)
-  }else{
+  } else {
   	warning("No data provided for cluster annotation.")
   }
   message("Extracting expression quality metrics.")
   sample_qc_pct <- get_qc_pct(seu, by = "sample")
   message("Extracting query expression metrics. This might take a while.")
   clusters_pct <- get_clusters_distribution(seu = seu, sigfig = sigfig)
-  query_data <- analyze_query(seu = seu, query = query, sigfig = sigfig)
+  if(!is.null(query)) {
+    query_data <- analyze_query(seu = seu, query = query, sigfig = sigfig)
+  } else {
+    query_data <- NULL
+  }
   markers <- cbind(markers$gene, markers[, -grep("gene", colnames(markers))])
   colnames(markers)[1] <- "gene"
-  message('Performing DEG analysis.')
-  DEG_list <- list()
-  if(DEG_columns == "") {
-    DEG_conditions <- int_columns
-  }else{
-    DEG_conditions <- unlist(strsplit(DEG_columns, split = ","))
-  }
-  for(condition in DEG_conditions) {
-    message(paste0("Calculating DEGs for condition ", condition, "."))
-    condition_DEGs <- get_sc_markers(seu = seu, cond = condition, DEG = TRUE,
-                                     verbose = verbose)
-    DEG_list[[condition]] <- condition_DEGs
+  if(!is.null(DEG_columns)) {
+    message('Performing DEG analysis.')
+    if(DEG_columns == "") {
+      DEG_conditions <- int_columns
+    } else {
+      DEG_conditions <- unlist(strsplit(DEG_columns, split = ","))
+    }
+    DEG_list <- vector(mode = "list", length = length(DEG_conditions))
+    for(condition in DEG_conditions) {
+      message(paste0("Calculating DEGs for condition ", condition, "."))
+      condition_DEGs <- get_sc_markers(seu = seu, cond = condition, DEG = TRUE,
+                                       verbose = verbose)
+      DEG_list[[condition]] <- condition_DEGs
+    }
+  } else {
+    DEG_list <- NULL
   }
   if(save_RDS){
   	message('Writing results to disk.')
