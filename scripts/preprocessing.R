@@ -93,9 +93,9 @@ if(opt$target_genes == ""){
 seu <- read_input(name = opt$name, input = input, mincells = opt$mincells,
                   minfeats = opt$minfeats, exp_design = exp_design)
 
-all_seu <- main_analyze_seurat(seu = seu, output = opt$report_folder, hvgs = opt$hvgs,
-                               minqcfeats = opt$minqcfeats, ndims = opt$ndims,
-                               percentmt = opt$percentmt,
+all_seu <- main_analyze_seurat(seu = seu, output = opt$report_folder,
+                               hvgs = opt$hvgs, minqcfeats = opt$minqcfeats,
+                               ndims = opt$ndims, percentmt = opt$percentmt,
                                resolution = opt$resolution,
                                integrate = FALSE, query = unlist(target_genes))
 
