@@ -95,7 +95,7 @@ plan("multicore", workers = opt$cpu)
 ##########################################
 
 if(opt$cluster_annotation != "") {
-    cluster_annotation <- read.table(opt$cluster_annotation, sep = "\t", header = TRUE)
+  cluster_annotation <- read.table(opt$cluster_annotation, sep = "\t", header = TRUE)
 } else {
   cluster_annotation <- NULL
 }
@@ -111,7 +111,7 @@ if(opt$target_genes == ""){
 } else if(file.exists(opt$target_genes)) {
   target_genes <- read_and_format_targets(opt$target_genes)
 } else {
-  target_genes <- list(Custom = strsplit(opt$target_genes, split = ",")[[1]])
+  target_genes <- list(Custom = strsplit(opt$target_genes, split = ";")[[1]])
 }
 
 exp_design <- read.table(opt$exp_design, sep = "\t", header = TRUE)
@@ -157,8 +157,6 @@ final_results <- main_analyze_seurat(seu = merged_seu, cluster_annotation = clus
                                      p_adj_cutoff = opt$p_adj_cutoff, verbose = opt$verbose, sigfig = 2,
                                      output = opt$output, integrate = TRUE, query = unlist(target_genes),
                                      reduce = opt$reduce)
-
-saveRDS(final_results, paste0(opt$project_name, "_final_results.rds"))
 
 message("--------------------------------")
 message("---------Writing report---------")
