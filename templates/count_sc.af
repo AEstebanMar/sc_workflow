@@ -12,6 +12,11 @@ before_fastqc){
 		fastqc_results=`basename -s .fastq.gz $f`
 		get_fastqc_data.rb -i $fastqc_results"_fastqc.zip" -T -H | awk '{print "'$sample'" "_" "'$lane'" "_" "'$pair'" "\tinitial_" $0 }' >> ../metrics
 	done
+	retVal=$?
+    if [ $retVal -ne 0 ]; then
+        echo ERROR: Fastqc exited with code $retVal
+        exit $retVal
+    fi
 }
 
 run_count){
@@ -24,6 +29,11 @@ run_count){
 	              --fastqs=$read_path \
 	              --localcores=[cpu] \
 	              --localmem=50
+	retVal=$?
+    if [ $retVal -ne 0 ]; then
+        echo ERROR: Cellranger exited with code $retVal
+        exit $retVal
+    fi
 	input_file="$sample/outs/metrics_summary.csv"
 	get_cellranger_metrics.sh $input_file $sample >> ../cellranger_metrics
 	rm -rf ./*/SC_RNA_COUNTER_CS
@@ -38,7 +48,7 @@ bam_quality_control){
 	#rm run_count)/$name/outs/possorted_genome_bam.bam
 	retVal=$?
     if [ $retVal -ne 0 ]; then
-        echo ERROR: Last command exited with $retVal status
+        echo ERROR: Qualimap exited with code $retVal
         exit $retVal
     fi
 }
