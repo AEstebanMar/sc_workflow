@@ -4,22 +4,26 @@
 ##########################################
 ## LOAD LIBRARIES
 ##########################################
+
+##########################################
+## LOAD LIBRARIES
+##########################################
 # Obtain this script directory
 full.fpath <- normalizePath(unlist(strsplit(commandArgs()[grep('^--file=', 
                 commandArgs())], '='))[2])
-
 main_path_script <- dirname(full.fpath)
 root_path <- file.path(main_path_script)
 template_path <- file.path(root_path, "..", "templates")
-# Load custom libraries
-# devtools::load_all(file.path(root_path))
 
-source_folder <- file.path(root_path, 'lib')
-library(optparse)
-library(Seurat)
-library(scCustomize)
-source(file.path(source_folder, "main_analyze_seurat.R"))
-source(file.path(source_folder, "preprocessing_library.R"))
+# Load custom libraries
+
+sc_source_folder <- file.path(root_path, 'lib')
+source(file.path(sc_source_folder, "preprocessing_library.R"))
+source(file.path(sc_source_folder, "main_analyze_seurat.R"))
+
+# Temporary path until we have htmlreportR installed
+devtools::load_all('~/dev_R/htmlreportR')
+source_folder <- file.path(find.package("htmlreportR"), "inst")
 
 ##########################################
 ## OPTPARSE
@@ -99,9 +103,6 @@ all_seu <- main_analyze_seurat(seu = seu, output = opt$report_folder,
                                resolution = opt$resolution,
                                integrate = FALSE, query = unlist(target_genes))
 
-write_sergio_report(all_seu = all_seu, minqcfeats = opt$minqcfeats,
-                    template = file.path(template_path,
-                                         "preprocessing_report.Rmd"),
-                    out_path = out_path, resolution = opt$resolution,
-                    intermediate_files = "int_files",
-                    percentmt = opt$percentmt, hvgs = opt$hvgs)
+write_seurat_report(final_results = all_seu, template_folder = template_path,
+                    output = file.path(opt$output, "report"), source_folder = source_folder,
+                    target_genes = target_genes, name = opt$name)
