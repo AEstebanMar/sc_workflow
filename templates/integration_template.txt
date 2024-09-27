@@ -122,7 +122,7 @@ end.rcode-->
                                                     func = top_table)), sep = "\n")
     }
     top_markers_html <- paste0(paste(collapse_list, collapse = "\n"), "\n")
-    cat(plotter$create_title("Top 10 markers", "top markers", hlevel = 2, indexable = FALSE, clickable = TRUE,
+    cat(plotter$create_title("Top 10 markers by cluster", "top markers", hlevel = 2, indexable = FALSE, clickable = TRUE,
                              t_id = "top_markers", clickable_text = ""))
     paragraph <- paste0("<p>These are the markers that best define the seurat cluster. They might ",
                         "not match cell type markers.</p>")
@@ -170,7 +170,7 @@ end.rcode-->
 end.rcode-->
 
 <!--begin.rcode cluster_pct
-    cat(plotter$create_title("Cluster distribution heatmap", "cluster distribution", hlevel = 2,
+    cat(plotter$create_title("Cluster composition of samples", "cluster distribution", hlevel = 2,
                               indexable = FALSE, clickable = FALSE, t_id = "cluster_distribution",
                               clickable_text = ""))
     cat("<p>This plot represents the cluster composition of each sample.</p>")
@@ -186,9 +186,9 @@ end.rcode-->
         condition <- names(DEG_list)[i]
         idents <- unique(plotter$hash_vars$seu@meta.data[[condition]])
         condition_DEGs <- DEG_list[[condition]]
-        plotter$create_title(paste0("DEGs by ", condition), paste0(condition, "_DEGs"), hlevel = 2,
+        cat(plotter$create_title(paste0("DEGs by ", condition), paste0(condition, "_DEGs"), hlevel = 2,
                              indexable = TRUE, clickable = TRUE, t_id = paste0(condition, "_DEGs"),
-                             clickable_text = "")
+                             clickable_text = ""))
         cat(paste0("<p>Positive log2 fold change means higher expression levels in ", idents[1], "</p>"))
         level <- "global"
         title <- "Global"
@@ -243,8 +243,8 @@ end.rcode-->
                               indexable = FALSE, clickable = FALSE, t_id = "query_heatmap",
                               clickable_text = ""))
     cat("<p>This plot represents gene expression profile across samples of query genes.
-        Represented as the natural logarithm of count ratio, multiplied by a scale factor
-        (see config file for exact value of scale factor).</p>")
+         Represented as the natural logarithm of count ratio, multiplied by a scale factor
+         (see config file for exact value of scale factor).</p>")
     cat(plotter$prettify_div(plotter$heatmap(list(id = "query_exp",
                              title = "Query gene expression across samples",
                              header = NULL, text = FALSE, row_names = NULL,
@@ -257,7 +257,7 @@ end.rcode-->
                               clickable_text = ""))
     cat(paste0("This plot represents the percentage of cells that express the query genes in each sample."))
     cat(plotter$prettify_div(plotter$heatmap(list(id = "query_pct",
-                             title = "Query gene expression across samples",
+                             title = "Percentage of cells expressing query gene",
                              header = NULL, text = FALSE, row_names = NULL,
                              transpose = TRUE)), preset = "magic"))
 end.rcode-->
@@ -280,17 +280,26 @@ end.rcode-->
 
 <!--begin.rcode Query_gene_expression, eval = !is.null(plotter$hash_vars$target_genes)
     expressed_genes <- rownames(SeuratObject::GetAssayData(plotter$hash_vars$seu, "RNA"))
+    html_code <- vector(mode = "character", length = length(plotter$hash_vars$target_genes))
+    names(html_code) <- names(plotter$hash_vars$target_genes)
     for(element_name in names(plotter$hash_vars$target_genes)) {
       features <- plotter$hash_vars$target_genes[[element_name]]
-      cat(plotter$create_title(paste0("Violin plot of gene ", element_name), paste0(element_name, "query group"),
-                               hlevel = 3, indexable = FALSE, clickable = FALSE, t_id = ))
+      title <- cat(plotter$create_title(paste0("Violin plot of gene ", element_name),
+                                        paste0(element_name, " violin"),
+                                        hlevel = 3, indexable = FALSE, clickable = FALSE,
+                                        t_id = paste0(element_name,"query_violin")))
       if(all(!features %in% expressed_genes)) {
-        cat(paste0("<p>None of the ", element_name, " group query genes were found in dataset.</p>"))  
+        code <- cat(paste0("<p>None of the ", element_name, " group query genes were found in dataset.</p>"))  
       } else {
-        cat(plotter$prettify_div(plotter$static_plot_main("seu", custom_format = TRUE,
-                                 plotting_function = Top_vlnplot), preset = "magic"))
+        code <- cat(plotter$prettify_div(plotter$static_plot_main("seu", custom_format = TRUE,
+                                         plotting_function = Top_vlnplot), preset = "magic"))
       }
+      html_code[element_name] <- paste(title, code, sep = "\n")
     }
+    html_code <- paste(html_code, collapse = "\n")
+    cat(plotter$create_title("Query violin plots", "query_violins", hlevel = 2,
+                              indexable = FALSE, clickable = TRUE))
+    cat(plotter$create_collapsable_container(id = "query_violins", html_code <- html_code))
 end.rcode-->
 
 <!--begin.rcode query_genes, eval = !is.null(plotter$hash_vars$target_genes)
@@ -326,7 +335,7 @@ end.rcode-->
 
 <!--begin.rcode Query_patterns, eval = !is.null(plotter$hash_vars$target_genes)
     cat(plotter$create_title("Query expression map", "query maps", hlevel = 3, indexable = FALSE,
-                          clickable = FALSE, t_id = "query_maps", clickable_text = ""))
+                              clickable = FALSE, t_id = "query_maps", clickable_text = ""))
     expressed_genes <- rownames(SeuratObject::GetAssayData(plotter$hash_vars$seu, "RNA"))
     for(element_name in names(plotter$hash_vars$target_genes)) {
         for(feature in plotter$hash_vars$target_genes[[element_name]]) {
