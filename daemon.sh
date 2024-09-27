@@ -74,6 +74,7 @@ if [ "$module" == "1" ] ; then
 elif [ "$module" == "1b" ] ; then
     echo Checking workflow execution
     while IFS= read sample; do
+        echo Sample $sample
         flow_logger -e $FULL_RESULTS/$sample -w -r all
     done < $samples_to_process
 
