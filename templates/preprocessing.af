@@ -23,7 +23,8 @@ sc_preprocessing){
                        --experiment_name $experiment_name \
                        --resolution $preproc_resolution \
                        --exp_design $exp_design \
-                       --target_genes "$target_genes"
+                       --target_genes "$target_genes" \
+                       --cell_annotation "$cell_annotation"
 
        retVal=$?
        if [ $retVal -ne 0 ]; then
