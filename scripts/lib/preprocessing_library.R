@@ -123,18 +123,19 @@ add_exp_design <- function(seu, name, exp_design){
 #' `merge_seurat` loads single-cell count matrices and creates a merged
 #' seurat object.
 #'
-#' @param exp_cond Experimental condition
-#' @param samples Vector of samples with that experimental condition
-#' @param exp_design Experiment design table in CSV format
-#' @param count_path Directory with count results
+#' @param project_name Will appear in output project.name slot.
+#' @param exp_design Experiment design table in TSV format
+#' @param count_path Directory that will be searched for count matrices.
+#' @param suffix Suffix to paste with main count_path. Avoids unnecessary
+#' globbing.
 #' 
 #' @keywords preprocessing, merging, integration
 #' 
 #' @return Merged Seurat object
-merge_seurat <- function(project_name, samples, exp_design, count_path,
+merge_seurat <- function(project_name, exp_design, count_path,
                          suffix=''){
   full_paths <- Sys.glob(paste(count_path, suffix, sep = "/"))
-  seu.list <- sapply(samples, function(sample){
+  seu.list <- sapply(exp_design$sample, function(sample) {
     sample_path <- grep(sample, full_paths, value = TRUE)
     d10x <- Seurat::Read10X(sample_path)
     seu <- Seurat::CreateSeuratObject(counts = d10x, project = sample, min.cells = 1,
@@ -143,7 +144,6 @@ merge_seurat <- function(project_name, samples, exp_design, count_path,
     seu[["percent.mt"]] <- Seurat::PercentageFeatureSet(seu, pattern = "^MT-")
     seu <- subset(seu, subset = nFeature_RNA > 500 & nCount_RNA > 1000
                                 & percent.mt < 20)
-    return(seu)
     })
   merged_seu <- merge(seu.list[[1]], y = seu.list[-1], add.cell.ids = samples,
                       project = project_name)
@@ -419,7 +419,7 @@ get_query_distribution <- function(seu, query, sigfig = 3) {
   gene_distribution <- gene_distribution[, -1, drop = FALSE]
   # In the case where query vector is of length one, its names are dropped.
   # Therefore, we need to set them forcefully.
-  colnames(gene_distribution) <- query
+  colnames(gene_distribution) <- query[query %in% colnames(genes)]
   return(gene_distribution)
 }
 
@@ -554,7 +554,7 @@ breakdown_query <- function(seu, query, assay = "RNA", layer = "counts") {
     missing <- !(query %in% names(genes))
   }
   if(any(missing)) {
-    warning(paste0("Query genes ", paste0(query[missing], collapse = ", "),
+    warning(paste0("Query gene(s) ", paste0(query[missing], collapse = ", "),
                    " not present in seurat object."), immediate. = TRUE)
     query <- query[!missing]
   }
