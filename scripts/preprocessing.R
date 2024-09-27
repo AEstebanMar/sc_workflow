@@ -65,7 +65,10 @@ option_list <- list(
   optparse::make_option(c("--exp_design"), type = "character",
               help="Path to experiment design file"),
   optparse::make_option("--target_genes", type = "character", default = "",
-              help = "Path to target genes table, or comma-separated list of target genes")
+              help = "Path to target genes table, or comma-separated list of target genes"),
+  optparse::make_option("--cell_annotation", type = "character", default = "",
+            help = "Cell types annotation file. Will be used to dynamically
+                    annotate clusters.")
 )  
 
 
@@ -92,6 +95,12 @@ if(opt$target_genes == ""){
   target_genes <- read_and_format_targets(opt$target_genes)
 } else {
   target_genes <- list(Custom = strsplit(opt$target_genes, split = ";")[[1]])
+}
+
+if(opt$cell_annotation != "") {
+  cell_annotation <- read.table(opt$cell_annotation, sep = "\t", header = TRUE)
+} else {
+  cell_annotation <- NULL
 }
 
 seu <- read_input(name = opt$name, input = input, mincells = opt$mincells,
