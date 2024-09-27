@@ -9,6 +9,7 @@
 ######  EXPERIMENT VARIABLES #######
 
 export experiment_name=Default    #    Experiment name
+genome=GRCh38 # Genome version. For human, GRCh38. For mouse, mm10.
 export exp_data_folder=$CODE_PATH"/input_data/"$experiment_name  #    Project data folder
 export samples_to_process=$exp_data_folder"/samples_to_process.lst"    #    List of sample names. Must match files in input_data (e.g, for sample_A_1.fastq.gz, sample_A_2.fastq.gz and sample_B.fastq.gz, samples are sample_A and sample_B)
 export read_path=$exp_data_folder"/raw_data"                     #    Input file location
@@ -27,7 +28,7 @@ export experiment_folder=$FSCRATCH"/NGS_projects/"$experiment_name              
 export FULL_RESULTS=$experiment_folder"/full_results"                       # Count execution path
 export INTEGRATE_RESULTS_FOLDER=$experiment_folder"/integrate_results"      #-------#    Integration execution path
 export LAB_SCRIPTS="/mnt/home/soft/soft_bio_267/programs/x86_64/scripts"    #-------#    Folder with the lab scripts in Picasso (bio_267)
-export transcriptome=$CODE_PATH"/references/refdata-gex-GRCh38-2020-A"    #-------#    Transcriptome for reference (MOUSE -> mm10, HUMAN -> GRCh38)
+export transcriptome=$CODE_PATH"/references/refdata-gex-$genome-2020-A"    #-------#    Transcriptome for reference (MOUSE -> mm10, HUMAN -> GRCh38)
 export verbose=FALSE	#-------# Set to TRUE to set "verbose" argument of base Seurat functions to TRUE. Only recommended for debugging, as it bloats the error logs with progress bars. However, it is also the only way to monitor how many clusters have been found by the FindClusters function.
 
 ##################################
