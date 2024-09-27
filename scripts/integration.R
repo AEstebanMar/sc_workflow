@@ -94,7 +94,6 @@ plan("multicore", workers = opt$cpu)
 ##########################################
 ## MAIN
 ##########################################
-
 if(opt$cluster_annotation != "") {
   cluster_annotation <- read.table(opt$cluster_annotation, sep = "\t", header = TRUE)
 } else {
@@ -140,8 +139,10 @@ if(opt$samples_to_integrate == "") {
   samples <- read.table(opt$samples_to_integrate, sep = "\t", header = FALSE)[[1]]
 }
 
+exp_design <- exp_design[exp_design$sample %in% samples, ]
+
 if(opt$imported_counts == "") {
-  merged_seu <- merge_seurat(project = opt$project_name, samples = samples, exp_design = exp_design,
+  merged_seu <- merge_seurat(project = opt$project_name, exp_design = exp_design,
                              suffix = opt$suffix, count_path = opt$count_path)  
 } else {
   merged_seu <- Seurat::CreateSeuratObject(counts = Seurat::Read10X(opt$imported_counts, gene.column = 1),
