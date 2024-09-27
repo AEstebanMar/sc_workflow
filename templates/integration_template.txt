@@ -234,7 +234,7 @@ end.rcode-->
 
 <!--begin.rcode query_title, eval = !is.null(plotter$hash_vars$target_genes)
     cat(plotter$create_title("Query gene analysis", "query title", hlevel = 1,
-                              indexable = TRUE, clickable = FALSE, t_id = "query_title",
+                              indexable = TRUE, clickable = TRUE, t_id = "query_title",
                               clickable_text = ""))
 end.rcode-->
 
@@ -284,22 +284,22 @@ end.rcode-->
     names(html_code) <- names(plotter$hash_vars$target_genes)
     for(element_name in names(plotter$hash_vars$target_genes)) {
       features <- plotter$hash_vars$target_genes[[element_name]]
-      title <- cat(plotter$create_title(paste0("Violin plot of gene ", element_name),
+      title <- plotter$create_title(paste0("Violin plot of gene ", element_name),
                                         paste0(element_name, " violin"),
                                         hlevel = 3, indexable = FALSE, clickable = FALSE,
-                                        t_id = paste0(element_name,"query_violin")))
+                                        t_id = paste0(element_name,"query_violin"))
       if(all(!features %in% expressed_genes)) {
-        code <- cat(paste0("<p>None of the ", element_name, " group query genes were found in dataset.</p>"))  
+        code <- paste0("<p>None of the ", element_name, " group query genes were found in dataset.</p>")  
       } else {
-        code <- cat(plotter$prettify_div(plotter$static_plot_main("seu", custom_format = TRUE,
-                                         plotting_function = Top_vlnplot), preset = "magic"))
+        code <- plotter$prettify_div(plotter$static_plot_main("seu", custom_format = TRUE,
+                                         plotting_function = Top_vlnplot), preset = "magic")
       }
       html_code[element_name] <- paste(title, code, sep = "\n")
     }
     html_code <- paste(html_code, collapse = "\n")
     cat(plotter$create_title("Query violin plots", "query_violins", hlevel = 2,
                               indexable = FALSE, clickable = TRUE))
-    cat(plotter$create_collapsable_container(id = "query_violins", html_code <- html_code))
+    cat(plotter$create_collapsable_container(id = "query_violins", html_code = html_code))
 end.rcode-->
 
 <!--begin.rcode query_genes, eval = !is.null(plotter$hash_vars$target_genes)
