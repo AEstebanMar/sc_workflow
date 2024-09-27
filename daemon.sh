@@ -13,6 +13,7 @@ export CODE_PATH=$(readlink -f $framework_dir )
 CONFIG_DAEMON=$1
 export module=$2 # For setting global vars from config_daemon according to the stage
 source $CONFIG_DAEMON
+mkdir -p $output
 export PATH=$LAB_SCRIPTS:$PATH
 export PATH=$CODE_PATH'/scripts:'$PATH
 export PATH=$CODE_PATH'/aux_sh:'$PATH
@@ -68,13 +69,13 @@ if [ "$module" == "1" ] ; then
         \\$imported_counts=$imported_counts
         " | tr -d [:space:]`
         AutoFlow -w $TEMPLATES -V "$AF_VARS" $3 -o $FULL_RESULTS/$sample
-    done < $SAMPLES_FILE
+    done < $samples_to_process
 
 elif [ "$module" == "1b" ] ; then
     echo Checking workflow execution
     while IFS= read sample; do
         flow_logger -e $FULL_RESULTS/$sample -w -r all
-    done < $SAMPLES_FILE
+    done < $samples_to_process
 
 elif [ "$module" == "1c" ] ; then
     echo Regenerating code
@@ -104,7 +105,7 @@ elif [ "$module" == "1c" ] ; then
         AutoFlow -w $TEMPLATES -V "$AF_VARS" $3 -o $FULL_RESULTS/$sample -v $resources
         echo Launching pending and failed jobs for $sample
         flow_logger -e $FULL_RESULTS/$sample -w -l -p
-    done < $SAMPLES_FILE
+    done < $samples_to_process
 
 elif [ "$module" == "2" ] ; then
     # STAGE 2 SEURAT ANALYSIS
