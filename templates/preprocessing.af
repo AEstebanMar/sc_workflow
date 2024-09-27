@@ -7,7 +7,7 @@ sc_preprocessing){
        echo [cpu]
        ?
        preprocessing.R --input run_count)/"$sample"/outs \
-                       --output results \
+                       --output $output \
                        --name $sample \
                        --filter $preproc_filter \
                        --mincells $preproc_init_min_cells \
