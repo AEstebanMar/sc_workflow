@@ -73,12 +73,11 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   	 							verbose = verbose)
     reduction <- "harmony"
   }
-  seu <- Seurat::RunUMAP(object = seu, dims = seq(1, ndims),
-                 reduction = reduction, verbose = verbose)
+  seu <- Seurat::RunUMAP(object = seu, dims = seq(ndims),
+                         reduction = reduction, verbose = verbose)
   seu <- Seurat::FindNeighbors(object = seu, dims = seq(1, ndims),
-                   reduction = reduction, verbose = verbose)
+                               reduction = reduction, verbose = verbose)
   seu <- Seurat::FindClusters(seu, resolution = resolution, verbose = verbose)
-  seu <- SeuratObject::JoinLayers(seu)
   run_conserved <- ifelse(test = length(int_columns) == 1, no = FALSE,
                           yes = !has_exclusive_clusters(seu = seu,
                                                         cond = int_columns))
@@ -90,6 +89,8 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
                                       logfc.threshold = 0.25, verbose = verbose)
     rownames(markers) <- NULL
   }
+  markers <- cbind(markers$gene, markers[, -grep("gene", colnames(markers))])
+  colnames(markers)[1] <- "gene"
   if(!is.null(cluster_annotation)) {
   	message("Clusters annotation file provided. Annotating clusters.")
   	seu <- annotate_clusters(seu = seu, new_clusters = cluster_annotation$name)
@@ -113,8 +114,6 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   } else {
     query_data <- NULL
   }
-  markers <- cbind(markers$gene, markers[, -grep("gene", colnames(markers))])
-  colnames(markers)[1] <- "gene"
   if(!is.null(DEG_columns)) {
     message('Performing DEG analysis.')
     if(DEG_columns == "") {
@@ -123,6 +122,7 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
       DEG_conditions <- unlist(strsplit(DEG_columns, split = ","))
     }
     DEG_list <- vector(mode = "list", length = length(DEG_conditions))
+    names(DEG_list) <- DEG_conditions
     for(condition in DEG_conditions) {
       message(paste0("Calculating DEGs for condition ", condition, "."))
       condition_DEGs <- get_sc_markers(seu = seu, cond = condition, DEG = TRUE,
@@ -131,13 +131,6 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
     }
   } else {
     DEG_list <- NULL
-  }
-  if(save_RDS){
-  	message('Writing results to disk.')
-  	saveRDS(qc, file.path(output, paste0(project_name, ".qc.RDS")))
-  	saveRDS(seu, file.path(output, paste0(project_name, ".seu.RDS")))
-  	saveRDS(markers, file.path(output, paste0(project_name, ".markers.RDS")))
-  	saveRDS(DEG_list, file.path(output, paste0(project_name, ".DEGs.RDS")))
   }
   final_results <- list()
   final_results$qc <- qc
@@ -149,6 +142,10 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   final_results$query_cluster_pct <- query_data$query_cluster_pct
   final_results$markers <- markers
   final_results$DEG_list <- DEG_list
+  if(save_RDS){
+    message('Writing results to disk.')
+    saveRDS(final_results, file.path(output, paste0(project_name, ".final_results.rds")))
+  }
   return(final_results)
 }
 
@@ -168,8 +165,8 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
 
 write_seurat_report <- function(final_results, output = getwd(), name = NULL,
                                 template_folder, source_folder = "none",
-                                target_genes, int_columns, DEG_list = NULL,
-                                cell_annotation = NULL){
+                                target_genes = NULL, int_columns = NULL,
+                                DEG_list = NULL, cell_annotation = NULL){
   if(is.null(template_folder)) {
     stop("No template folder was provided.")
   }
@@ -182,7 +179,12 @@ write_seurat_report <- function(final_results, output = getwd(), name = NULL,
   }
   template <- file.path(template_folder, "integration_template.txt")
   tmp_folder <- "tmp_lib"
-  out_file <- file.path(output, "integration_report.html")
+  if(!is.null(int_columns)) {
+    out_file <- file.path(output, "integration_report.html")
+  } else {
+    out_file <- file.path(output, paste0(name, "_report.html"))
+  }
+  
   container <- list(seu = final_results$seu, int_columns = int_columns,
                     DEG_list = final_results$DEG_list,
                     target_genes = target_genes,
