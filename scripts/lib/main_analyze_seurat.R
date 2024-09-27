@@ -144,7 +144,7 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   final_results$DEG_list <- DEG_list
   if(save_RDS){
     message('Writing results to disk.')
-    saveRDS(final_results, file.path(output, paste0(project_name, ".final_results.rds")))
+    saveRDS(final_results, file.path(output, paste0(seu@project.name, ".final_results.rds")))
   }
   return(final_results)
 }
