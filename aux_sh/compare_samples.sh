@@ -55,7 +55,6 @@ integration.R --output $output \
               --int_columns "$int_columns" \
               --count_path $FULL_RESULTS"/*/cellranger_0000/*" \
               --suffix "outs/filtered_feature_bc_matrix" \
-              --samples_to_integrate "$samples_to_integrate" \
               --cluster_annotation "$cluster_annotation" \
               --target_genes $target_genes \
               --cpu $SLURM_CPUS_PER_TASK \
@@ -64,4 +63,5 @@ integration.R --output $output \
               --cell_annotation "$cell_annotation" \
               --p_adj_cutoff $p_adj_cutoff \
               --verbose $verbose \
-              --reduce $reduce
+              --reduce $reduce \
+              --samples_to_integrate $samples_to_process
