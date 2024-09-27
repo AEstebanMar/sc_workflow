@@ -30,56 +30,57 @@ source_folder <- file.path(find.package("htmlreportR"), "inst")
 
 option_list <- list(
   optparse::make_option(c("-p", "--project_name"), type = "character", default = NULL,
-              help = "Project name"),
+              help = "Project name."),
   optparse::make_option(c("-o", "--output"), type = "character", default = NULL,
-              help = "Output folder"),
+              help = "Output folder."),
   optparse::make_option("--filter", type = "character", default = NULL,
-              help = "TRUE for using only detected cell-associated barcodes, FALSE for using all detected barcodes"),
+              help = "TRUE for using only detected cell-associated barcodes,
+                      FALSE for using all detected barcodes."),
   optparse::make_option("--mincells", type = "integer", default = NULL,
-              help = "Min number of cells for which a feature was recorded"),
+              help = "Min number of cells for which a feature was recorded."),
   optparse::make_option("--minfeats", type = "integer", default = NULL,
-              help = "Min number of features for which a cell was recorded"),
+              help = "Min number of features for which a cell was recorded."),
   optparse::make_option("--minqcfeats", type = "integer", default = NULL,
-              help = "Min number of features for which a cell was selected in QC"),
+              help = "Min number of features for which a cell was selected in QC."),
   optparse::make_option("--percentmt", type = "integer", default = NULL,
-              help = "Max percentage of reads mapped to mitochondrial genes for which a cell is recorded"),
+              help = "Max percentage of reads mapped to mitochondrial genes for which a cell is recorded."),
   optparse::make_option("--normalmethod", type = "character", default = NULL,
-              help = "Method for normalization. LogNormalize, CLR or RC"),
+              help = "Method for normalization. LogNormalize, CLR or RC."),
   optparse::make_option("--scalefactor", type = "integer", default = NULL,
-              help = "Scale factor for cell-level normalization"),
+              help = "Scale factor for cell-level normalization."),
   optparse::make_option("--hvgs", type = "integer", default = NULL,
-              help = "Number of HVG to be selected"),
+              help = "Number of HVG to be selected."),
   optparse::make_option("--ndims", type = "integer", default = NULL,
               help = "Number of PC to be used for clustering / UMAP / tSNE"),
   optparse::make_option("--dimheatmapcells", type = "integer", default = NULL,
-              help = "Heatmap plots the 'extreme' cells on both ends of the spectrum"),
+              help = "Heatmap plots the 'extreme' cells on both ends of the spectrum."),
   optparse::make_option("--resolution", type = "double", default = NULL,
-              help = "Granularity of the clustering"),
+              help = "Granularity of the clustering."),
   optparse::make_option(c("-d", "--exp_design"), type = "character", default = NULL,
-              help = "Input file with the experiment design"),
+              help = "Input file with the experiment design."),
   optparse::make_option("--count_path", type = "character", default = NULL,
-            help = "Count results folder"),
+            help = "Count results folder."),
   optparse::make_option("--suffix", type = "character", help = "Suffix to specific file"),
   optparse::make_option("--samples_to_integrate", type = "character", default = "",
-            help = "Comma-separated list of samples to integrate, will integrate all
-                    samples if not specified."),
+            help = "Path to file containing samples to be processed."),
   optparse::make_option("--int_columns", type = "character", default = "",
             help = "Comma-separated list of conditions by which to perform integration
                     analysis. If empty, all conditions will be analysed."),
   optparse::make_option("--cluster_annotation", type = "character", default = "",
             help = "Clusters annotation file."),
   optparse::make_option("--target_genes", type = "character", default = "",
-            help = "Path to target genes table, or comma-separated list of target genes"),
+            help = "Path to target genes table, or comma-separated list of target genes."),
   optparse::make_option("--cpu", type = "double", default = 1,
-            help = "Provided CPUs"),
+            help = "Provided CPUs."),
   optparse::make_option("--imported_counts", type = "character", default = "",
-            help = "Imported counts directory"),
+            help = "Imported counts directory."),
   optparse::make_option("--DEG_columns", type = "character", default = "",
-            help = "Columns for DEG analysis"),
+            help = "Columns for DEG analysis."),
   optparse::make_option("--cell_annotation", type = "character", default = "",
-            help = "Columns for DEG analysis"),
+            help = "Cell types annotation file. Will be used to dynamically
+                    annotate clusters."),
   optparse::make_option("--p_adj_cutoff", type = "numeric", default = "5e-3",
-            help = "Columns for DEG analysis"),
+            help = "Adjusted p-value cutoff."),
   optparse::make_option("--verbose", type = "logical", default = FALSE, action = "store_true",
             help = "Verbosity of base Seurat and harmony function calls."),
   optparse::make_option("--reduce", type = "logical", default = FALSE, action = "store_true",
@@ -115,11 +116,19 @@ if(opt$target_genes == ""){
 }
 
 exp_design <- read.table(opt$exp_design, sep = "\t", header = TRUE)
+
+
 if(opt$int_columns == "") {
   warning("No conditions specified for integration. Analysing every condition")
   int_columns <- colnames(exp_design)[!colnames(exp_design)=="sample"]
 } else {
   int_columns <- unlist(strsplit(opt$int_columns, ","))
+}
+
+if(opt$DEG_columns == "") {
+  DEG_columns <- int_columns
+} else {
+  DEG_columns <- opt$DEG_columns
 }
 
 message(paste0("Selected ", length(int_columns), " condition(s) for analysis: ", paste0(int_columns, collapse = ", ")))
@@ -128,7 +137,7 @@ message(paste0("Selected ", length(int_columns), " condition(s) for analysis: ",
 if(opt$samples_to_integrate == "") {
   samples <- exp_design$sample
 } else {
-  samples <- strsplit(opt$samples_to_integrate, ",")[[1]]
+  samples <- read.table(opt$samples_to_integrate, sep = "\t", header = FALSE)[[1]]
 }
 
 if(opt$imported_counts == "") {
@@ -156,7 +165,7 @@ final_results <- main_analyze_seurat(seu = merged_seu, cluster_annotation = clus
                                      scalefactor = opt$scalefactor, normalmethod = opt$normalmethod,
                                      p_adj_cutoff = opt$p_adj_cutoff, verbose = opt$verbose, sigfig = 2,
                                      output = opt$output, integrate = TRUE, query = unlist(target_genes),
-                                     reduce = opt$reduce)
+                                     reduce = opt$reduce, save_RDS = TRUE)
 
 message("--------------------------------")
 message("---------Writing report---------")
