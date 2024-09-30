@@ -1,4 +1,4 @@
-##### Temporary docs from original functions
+
 #' analyze_seurat
 #' `analyze_seurat` performs all the analyses (individually or combining all
 #' samples with and without integration)
@@ -26,17 +26,31 @@
 #' 
 #' @return Seurat object
 
-#' integrate_seurat
-#' `integrate_seurat` allows subsetting a seurat object without requiring
-#' literal strings.
+#' main_analyze_seurat
+#' `main_analyze_seurat` is the main seurat analysis function. Can be used
+#' for integrative or non-integrative analysis.
 #'
 #' @param seu Merged seurat object
-#' @param annotation_dir Directory with cluster annotation files
-#' @param subset_column Column with categories to subset
-#' @param sigfig Significant decimal figures cutoff in query and cluster
-#' distribution analysis.
-#' @param query Vector of query genes whose expression to analyse.
-#' @returns A subsetted seurat object
+#' @param minqcfeats
+#' @param percentmt
+#' @param query
+#' @param sigfig
+#' @param resolution
+#' @param dimreds_to_do
+#' @param p_adj_cutoff
+#' @param integrate
+#' @param cluster_annotation
+#' @param cell_annotation
+#' @param DEG_columns
+#' @param scalefactor
+#' @param hvgs
+#' @param int_columns
+#' @param normalmethod
+#' @param ndims
+#' @param verbose
+#' @param output
+#' @param save_RDS
+#' @param reduce
 
 main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
                            		  resolution, dimreds_to_do, p_adj_cutoff = 5e-3,
@@ -166,24 +180,27 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
 write_seurat_report <- function(final_results, output = getwd(), name = NULL,
                                 template_folder, source_folder = "none",
                                 target_genes = NULL, int_columns = NULL,
-                                DEG_list = NULL, cell_annotation = NULL){
+                                DEG_list = NULL, cell_annotation = NULL,
+                                template = NULL, out_name = NULL){
   if(is.null(template_folder)) {
     stop("No template folder was provided.")
   }
   if(!file.exists(source_folder)) {
-    stop(paste0("Source folder not found. Was ", source_folder))
+    stop(paste0("Source folder not found. Was ", source_folder, " ."))
   }
   if(any(is.null(final_results))) {
     stop("ERROR: final results object contains NULL fields. Analysis
        is not complete.")
   }
-  template <- file.path(template_folder, "integration_template.txt")
-  tmp_folder <- "tmp_lib"
-  if(!is.null(int_columns)) {
-    out_file <- file.path(output, "integration_report.html")
-  } else {
-    out_file <- file.path(output, paste0(name, "_report.html"))
+  if(is.null(template)) {
+    stop("Please specify a template to render")
   }
+  template <- file.path(template_folder, template)
+  if(!file.exists(template)) {
+    stop("Specified template does not exist in template folder.")
+  }
+  tmp_folder <- "tmp_lib"
+  out_file <- file.path(output, paste0(name, "_", out_name))
   
   container <- list(seu = final_results$seu, int_columns = int_columns,
                     DEG_list = final_results$DEG_list,

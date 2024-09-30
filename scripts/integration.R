@@ -168,11 +168,12 @@ final_results <- main_analyze_seurat(seu = merged_seu, cluster_annotation = clus
                                      output = opt$output, integrate = TRUE, query = unlist(target_genes),
                                      reduce = opt$reduce, save_RDS = TRUE)
 
-message("--------------------------------")
-message("---------Writing report---------")
-message("--------------------------------")
+message("--------------------------------------------")
+message("---------Writing integrative report---------")
+message("--------------------------------------------")
 
 write_seurat_report(final_results = final_results, template_folder = template_path,
                     output = file.path(opt$output, "report"), source_folder = source_folder,
                     target_genes = target_genes, name = opt$project_name,
-                    int_columns = int_columns, cell_annotation = cell_annotation)
+                    int_columns = int_columns, cell_annotation = cell_annotation,
+                    template = "analysis_template.txt", out_name = "integration_report.html")
