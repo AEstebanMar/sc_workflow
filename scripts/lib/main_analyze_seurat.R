@@ -30,30 +30,42 @@
 #' `main_analyze_seurat` is the main seurat analysis function. Can be used
 #' for integrative or non-integrative analysis.
 #'
-#' @param seu Merged seurat object
-#' @param minqcfeats
-#' @param percentmt
-#' @param query
-#' @param sigfig
-#' @param resolution
-#' @param dimreds_to_do
-#' @param p_adj_cutoff
-#' @param integrate
-#' @param cluster_annotation
-#' @param cell_annotation
-#' @param DEG_columns
-#' @param scalefactor
-#' @param hvgs
-#' @param int_columns
-#' @param normalmethod
-#' @param ndims
-#' @param verbose
-#' @param output
-#' @param save_RDS
-#' @param reduce
+#' @param seu A seurat object.
+#' @param minqcfeats An integer. Minimum features to consider a cell valid
+#' @param percentmt A float. Maximun MT percentage to consider a cell valid
+#' @param query A string vector. List of genes to explore in dataset
+#' @param sigfig An integer. Significant figures to output
+#' @param resolution An integer. Controls clustering granularity
+#' @param p_adj_cutoff A float. Adjusted p-value cutoff by which to consider a maker
+#' valid for cell type annotation
+#' @param integrate A boolean.
+#'   * `TRUE`: Integrate seurat object using the `harmony` package.
+#'   * `FALSE` (the default): Do not perform integration.
+#' @param cluster_annotation A data frame. Table to use to rename clusters.
+#' @param cell_annotation A data frame. Table of markers to use for cell type
+#' annotation
+#' @param DEG_columns A string vector. Categories by which DEG analysis will be
+#' performed
+#' @param scalefactor An integer. Factor by which to scale data in normalisation
+#' @param hvgs An integer. Number of highly-variable features to select
+#' @param int_columns A string vector. Categories to consider in integrative
+#' analysis.
+#' @param normalmethod A string. Method to use in normalisation. Default is
+#' "LogNormalize", the Seurat default.
+#' @param ndims An integer. Target dimensions in dimensionality reduction.
+#' @param verbose. A boolean.
+#'   * `TRUE`: Prints progress bars and messages to closely monitor progress.
+#'   * `FALSE` (the default): Print minimal progress messages.
+#' @param output A string. Path to output directory.
+#' @param save_RDS A boolean.
+#'   * `TRUE`: Save output as an rds file.
+#'   * `FALSE` (the default): Do not save output as an rds file.
+#' @param reduce A boolean.
+#'   * `TRUE`: Skip QC filtering. Intended for development and testing.
+#'   * `FALSE` (the default): QC filtering will be performed.
 
 main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
-                           		  resolution, dimreds_to_do, p_adj_cutoff = 5e-3,
+                           		  resolution, p_adj_cutoff = 5e-3,
                            		  integrate = FALSE, cluster_annotation = NULL,
                            		  cell_annotation = NULL, DEG_columns = NULL,
                            		  scalefactor = 10000, hvgs, int_columns = NULL,
