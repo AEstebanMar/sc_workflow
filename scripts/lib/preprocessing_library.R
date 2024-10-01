@@ -656,43 +656,6 @@ downsample_seurat <- function(seu, cells = NULL, features = NULL, keep = "",
   return(seu)
 }
 
-#' write_sergio_report
-#' Write sergio's seurat HTML report
-#' 
-#' @param name sample name
-#' @param expermient experiment name
-#' @param template Rmd template
-#' @param outdir output directory
-#' @param intermediate_files directory for saving intermediate files in case pandoc fails
-#' @param minqcfeats min number of features for which a cell is selected
-#' @param percentmt max percentage of reads mapped to mitochondrial genes for which a cell is selected
-#' @param hvgs Number of HVGs to be selected
-#' @param resolution Granularity of the downstream clustering (higher values -> greater number of clusters)
-#' @param all_seu NULL if creating an individual report (daemon 3a). A list of 2 Seurat objects and a matrix of markers if creating a general report (daemon 3b)
-#' 
-#' @keywords preprocessing, write, report
-#' 
-#' @return nothing
-
-write_sergio_report <- function(all_seu = NULL, template, out_path,
-                                intermediate_files, minqcfeats,
-                                percentmt, hvgs, resolution){
-  int_files <- file.path(out_path, intermediate_files)
-  if (!file.exists(int_files)) dir.create(int_files)
-  if (is.null(all_seu)){
-    seu <- readRDS(paste0(out_path, ".seu.RDS"))
-    before.seu <- readRDS(paste0(out_path, ".before.seu.RDS"))
-    markers <- readRDS(paste0(out_path, ".markers.RDS"))
-  } else {
-    seu <- all_seu[[1]]
-    before.seu <- all_seu[[2]]
-    markers <- all_seu[[3]]
-  }  
-  rmarkdown::render(template, clean = TRUE, intermediates_dir = int_files,
-                    output_file = paste0(out_path,
-                                      "_preprocessing_report.html"))
-}
-
 #' read_and_format_targets
 #' `read_and_format_targets` formats a marker-celltype table into a list
 #' 
