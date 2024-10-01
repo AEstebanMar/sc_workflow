@@ -1,31 +1,4 @@
 
-#' analyze_seurat
-#' `analyze_seurat` performs all the analyses (individually or combining all
-#' samples with and without integration)
-#'
-#' @param name sample name, or condition if integrate is TRUE
-#' @param expermient experiment name
-#' @param input directory with the single-cell data
-#' @param output output directory (used when integrate is TRUE)
-#' @param filter TRUE for using only detected cell-associated barcodes, FALSE
-#' for using all detected barcodes
-#' @param mincells min number of cells for which a feature is recorded
-#' @param minfeats min number of features for which a cell is recorded
-#' @param minqcfeats min number of features for which a cell is selected
-#' @param percentmt max percentage of reads mapped to mitochondrial genes for 
-#' which a cell is selected
-#' @param normalmethod Normalization method
-#' @param scalefactor Scale factor for cell-level normalization
-#' @param hvgs Number of HVGs to be selected
-#' @param ndims Number of PC to be used for clustering / UMAP / tSNE
-#' @param resolution Granularity of the downstream clustering (higher values 
-#' -> greater number of clusters)
-#' @param integrate FALSE if we don't run integrative analysis, TRUE otherwise
-#'
-#' @keywords preprocessing, main
-#' 
-#' @return Seurat object
-
 #' main_analyze_seurat
 #' `main_analyze_seurat` is the main seurat analysis function. Can be used
 #' for integrative or non-integrative analysis.
@@ -142,10 +115,9 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   }
   if(!is.null(DEG_columns)) {
     message('Performing DEG analysis.')
-    if(DEG_columns == "") {
+    DEG_conditions <- unlist(strsplit(DEG_columns, split = ","))
+    if(length(DEG_conditions) == 0) {
       DEG_conditions <- int_columns
-    } else {
-      DEG_conditions <- unlist(strsplit(DEG_columns, split = ","))
     }
     DEG_list <- vector(mode = "list", length = length(DEG_conditions))
     names(DEG_list) <- DEG_conditions
@@ -154,6 +126,20 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
       condition_DEGs <- get_sc_markers(seu = seu, cond = condition, DEG = TRUE,
                                        verbose = verbose)
       DEG_list[[condition]] <- condition_DEGs
+    }
+    if(length(int_columns) == 2) {
+      message(paste0("Analysing DEGs by subgroups. Subsetting by condition: ",
+              DEG_conditions[1], " , analyzing effects of ", DEG_conditions[2]))
+      subset_DEGs <- vector(mode = "list", length = 2)
+      condition_values <- unique(seu@meta.data[[DEG_conditions[1]]])
+      names(subset_DEGs) <- condition_values
+      subset_seu <- subset_DEGs
+      for(value in condition_values) {
+        subset_seu[[value]] <- subset_seurat(seu, DEG_conditions[1], value)
+        subset_DEGs[[value]] <- get_sc_markers(seu = subset_seu[[value]],
+                                  cond = DEG_conditions[2], DEG = TRUE,
+                                  verbose = verbose)
+      }
     }
   } else {
     DEG_list <- NULL
@@ -168,6 +154,8 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   final_results$query_cluster_pct <- query_data$query_cluster_pct
   final_results$markers <- markers
   final_results$DEG_list <- DEG_list
+  final_results$subset_seu <- subset_seu
+  final_results$subset_DEGs <- subset_DEGs
   if(save_RDS){
     message('Writing results to disk.')
     saveRDS(final_results, file.path(output, paste0(seu@project.name, ".final_results.rds")))
@@ -213,9 +201,10 @@ write_seurat_report <- function(final_results, output = getwd(), name = NULL,
   }
   tmp_folder <- "tmp_lib"
   out_file <- file.path(output, paste0(name, "_", out_name))
-  
   container <- list(seu = final_results$seu, int_columns = int_columns,
                     DEG_list = final_results$DEG_list,
+                    subset_seu = final_results$subset_seu,
+                    subset_DEGs = final_results$subset_DEGs,
                     target_genes = target_genes,
                     sample_qc_pct = final_results$sample_qc_pct,
                     clusters_pct = final_results$clusters_pct,
