@@ -116,7 +116,6 @@ if(opt$target_genes == ""){
 
 exp_design <- read.table(opt$exp_design, sep = "\t", header = TRUE)
 
-
 if(opt$int_columns == "") {
   warning("No conditions specified for integration. Analysing every condition")
   int_columns <- colnames(exp_design)[!colnames(exp_design)=="sample"]
@@ -161,7 +160,7 @@ message("Analyzing seurat object")
 
 final_results <- main_analyze_seurat(seu = merged_seu, cluster_annotation = cluster_annotation,
                                      ndims = opt$ndims, resolution = opt$resolution, int_columns = int_columns,
-                                     cell_annotation = cell_annotation, DEG_columns = opt$DEG_columns,
+                                     cell_annotation = cell_annotation, DEG_columns = DEG_columns,
                                      minqcfeats = opt$minqcfeats, percentmt = opt$percentmt, hvgs = opt$hvgs,
                                      scalefactor = opt$scalefactor, normalmethod = opt$normalmethod,
                                      p_adj_cutoff = opt$p_adj_cutoff, verbose = opt$verbose, sigfig = 2,
