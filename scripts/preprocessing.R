@@ -112,6 +112,22 @@ all_seu <- main_analyze_seurat(seu = seu, output = opt$report_folder,
                                resolution = opt$resolution,
                                integrate = FALSE, query = unlist(target_genes))
 
-write_seurat_report(final_results = all_seu, template_folder = template_path,
+qc_seu <- list(qc = all_seu$qc, seu = all_seu$seu)
+
+message("-----------------------------------")
+message("---------Writing QC report---------")
+message("-----------------------------------")
+
+write_seurat_report(final_results = qc_seu, template_folder = template_path,
+                    template = "qc_template.txt", output = file.path(opt$output, "report"),
+                    source_folder = source_folder, target_genes = target_genes, name = opt$name,
+                    out_name = "qc_report.html")
+
+
+message("-----------------------------------")
+message("------Writing analysis report------")
+message("-----------------------------------")
+
+write_seurat_report(final_results = all_seu, template_folder = template_path, template = "analysis_template.txt",
                     output = file.path(opt$output, "report"), source_folder = source_folder,
-                    target_genes = target_genes, name = opt$name)
+                    target_genes = target_genes, name = opt$name, out_name = "sample_report.html")
