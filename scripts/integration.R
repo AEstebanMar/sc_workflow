@@ -17,7 +17,7 @@ library(future)
 options(future.globals.maxSize = 18 * 1024^6)
 
 sc_source_folder <- file.path(root_path, 'lib')
-source(file.path(sc_source_folder, "preprocessing_library.R"))
+source(file.path(sc_source_folder, "sc_library.R"))
 source(file.path(sc_source_folder, "main_analyze_seurat.R"))
 
 # Temporary path until we have htmlreportR installed
