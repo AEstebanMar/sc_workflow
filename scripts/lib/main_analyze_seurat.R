@@ -82,7 +82,7 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
                                                         cond = int_columns))
   if(run_conserved) {
     markers <- get_sc_markers(seu = seu, cond = int_columns, DEG = FALSE)
-    markers <- collapse_markers(markers)
+    markers <- collapse_markers(markers$markers)
   }else{
     markers <- Seurat::FindAllMarkers(seu, only.pos = TRUE, min.pct = 0.25,
                                       logfc.threshold = 0.25, verbose = verbose)
@@ -121,15 +121,18 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
     }
     DEG_list <- vector(mode = "list", length = length(DEG_conditions))
     names(DEG_list) <- DEG_conditions
+    DEG_meta <- DEG_conditions
     for(condition in DEG_conditions) {
       message(paste0("Calculating DEGs for condition ", condition, "."))
       condition_DEGs <- get_sc_markers(seu = seu, cond = condition, DEG = TRUE,
                                        verbose = verbose)
       DEG_list[[condition]] <- condition_DEGs
     }
+    subset_DEGs <- NULL
+    subset_seu <- NULL
     if(length(int_columns) == 2) {
       message(paste0("Analysing DEGs by subgroups. Subsetting by condition: ",
-              DEG_conditions[1], " , analyzing effects of ", DEG_conditions[2]))
+              DEG_conditions[1], ", analyzing effects of ", DEG_conditions[2]))
       subset_DEGs <- vector(mode = "list", length = 2)
       condition_values <- unique(seu@meta.data[[DEG_conditions[1]]])
       names(subset_DEGs) <- condition_values
@@ -203,6 +206,7 @@ write_seurat_report <- function(final_results, output = getwd(), name = NULL,
   out_file <- file.path(output, paste0(name, "_", out_name))
   container <- list(seu = final_results$seu, int_columns = int_columns,
                     DEG_list = final_results$DEG_list,
+                    marker_meta = final_results$marker_meta,
                     subset_seu = final_results$subset_seu,
                     subset_DEGs = final_results$subset_DEGs,
                     target_genes = target_genes,
