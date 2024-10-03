@@ -12,6 +12,6 @@ test_that("get_sc_markers skips exclusive clusters in DEG analysis", {
   				 cond = "groups", DEG = TRUE, verbose = FALSE)), expected_warning)
   expect_false(suppressWarnings(
                 suppressMessages(get_sc_markers(seu = pbmc_smaller,
-  				      cond = "groups", DEG = TRUE, verbose = FALSE)[[2]][[1]])
+  				      cond = "groups", DEG = TRUE, verbose = FALSE)$markers[[2]][[1]])
                 ))
 })
