@@ -235,11 +235,16 @@ end.rcode-->
 
 <!--begin.rcode subset_titles, eval = !is.null(plotter$hash_vars$subset_seu)
     cat(plotter$create_title(paste0("Responses of different ", int_columns[1], "s to ", int_columns[2], " variation"),
-                             "subsets title", hlevel = 1, indexable = TRUE, clickable = FALSE, t_id = "subset_title",
+                             "subsets_title", hlevel = 1, indexable = TRUE, clickable = FALSE, t_id = "subsets_title",
                              clickable_text = ""))
+    cat(paste0("<p>In this next section of the report, clustering and DEG analysis is shown for each group in the 
+                \"", int_columns[1], "\" experimental category. This will allow the analysis of the \"", int_columns[2],
+               "\"\n factor on each subgroup independently.</p>"))
 end.rcode-->
 
 <!--begin.rcode subset_Complete_UMAP, eval = !is.null(plotter$hash_vars$subset_seu)
+    cat(paste0("<p>These UMAPs are subsets of the original UMAP, showing only each group in the
+                \"", int_columns[1], "\" experimental category. Similar to the global UMAP splits</p>"))
     for(i in seq(length(plotter$hash_vars$subset_seu))) {
         plotter$hash_vars$current_subset <- plotter$hash_vars$subset_seu[[i]]
         value <- unique(plotter$hash_vars$current_subset@meta.data[[int_columns[1]]])
@@ -288,6 +293,8 @@ end.rcode-->
         subset <- names(plotter$hash_vars$subset_DEGs)[i]
         cat(plotter$create_title(paste0(subset, " differential expression analysis"), paste0(subset, " DEG"), hlevel = 1, indexable = FALSE,
                                  clickable = FALSE, t_id = paste0(subset, "_DEG"), clickable_text = ""))
+        cat(paste0("<p>These DEGs have been calculated independently for the \"", subset, "\"
+            value of the \"", int_columns[1], "\" factor. </p>"))
         subset_meta <- plotter$hash_vars$subset_DEGs[[subset]]$meta
         subset_DEG <- plotter$hash_vars$subset_DEGs[[subset]]$markers
         idents <- unique(plotter$hash_vars$subset_seu[[i]]@meta.data[[int_columns[2]]])
@@ -337,13 +344,13 @@ end.rcode-->
 end.rcode-->
 
 <!--begin.rcode query_title, eval = !is.null(plotter$hash_vars$target_genes)
-    cat(plotter$create_title("Query gene analysis", "query title", hlevel = 1,
+    cat(plotter$create_title("Query gene analysis", "query_title", hlevel = 1,
                               indexable = TRUE, clickable = FALSE, t_id = "query_title",
                               clickable_text = ""))
 end.rcode-->
 
 <!--begin.rcode query_exp, eval = !is.null(plotter$hash_vars$query_exp)
-    cat(plotter$create_title("Query gene expression heatmap", "query heatmap", hlevel = 2,
+    cat(plotter$create_title("Query gene expression heatmap", "query_heatmap", hlevel = 2,
                               indexable = FALSE, clickable = FALSE, t_id = "query_heatmap",
                               clickable_text = ""))
     cat("<p>This plot represents gene expression profile across samples of query genes.
@@ -356,7 +363,7 @@ end.rcode-->
 end.rcode-->
 
 <!--begin.rcode query_pct, eval = !is.null(plotter$hash_vars$query_pct)
-    cat(plotter$create_title("Query gene cell percentages", "query samples", hlevel = 2,
+    cat(plotter$create_title("Query gene cell percentages", "query_samples", hlevel = 2,
                               indexable = FALSE, clickable = FALSE, t_id = "query_samples",
                               clickable_text = ""))
     cat(paste0("This plot represents the percentage of cells that express the query genes in each sample."))
