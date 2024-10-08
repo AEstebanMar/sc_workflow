@@ -18,7 +18,7 @@ template_path <- file.path(root_path, "..", "templates")
 # Load custom libraries
 
 sc_source_folder <- file.path(root_path, 'lib')
-source(file.path(sc_source_folder, "preprocessing_library.R"))
+source(file.path(sc_source_folder, "sc_library.R"))
 source(file.path(sc_source_folder, "main_analyze_seurat.R"))
 
 # Temporary path until we have htmlreportR installed
@@ -32,8 +32,6 @@ source_folder <- file.path(find.package("htmlreportR"), "inst")
 option_list <- list(
   optparse::make_option(c("-i", "--input"), type = "character",
               help="Input folder with 10X data"),
-  optparse::make_option(c("-o", "--output"), type = "character",
-              help="Output folder"),
   optparse::make_option(c("-n", "--name"), type = "character",
               help="Sample name"),
   optparse::make_option(c("--filter"), type = "character",
@@ -112,22 +110,21 @@ all_seu <- main_analyze_seurat(seu = seu, output = opt$report_folder,
                                resolution = opt$resolution,
                                integrate = FALSE, query = unlist(target_genes))
 
-qc_seu <- list(qc = all_seu$qc, seu = all_seu$seu)
+qc_seu <- list(seu = all_seu$seu, qc = all_seu$qc)
 
 message("-----------------------------------")
 message("---------Writing QC report---------")
 message("-----------------------------------")
 
 write_seurat_report(final_results = qc_seu, template_folder = template_path,
-                    template = "qc_template.txt", output = file.path(opt$output, "report"),
-                    source_folder = source_folder, target_genes = target_genes, name = opt$name,
-                    out_name = "qc_report.html")
-
+                    template = "qc_template.txt", output = opt$report_folder,
+                    source_folder = source_folder, target_genes = target_genes,
+                    name = opt$name, out_name = "qc_report.html", use_canvas = TRUE)
 
 message("-----------------------------------")
 message("------Writing analysis report------")
 message("-----------------------------------")
 
 write_seurat_report(final_results = all_seu, template_folder = template_path, template = "analysis_template.txt",
-                    output = file.path(opt$output, "report"), source_folder = source_folder,
+                    output = opt$report_folder, source_folder = source_folder,
                     target_genes = target_genes, name = opt$name, out_name = "sample_report.html")
