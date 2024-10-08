@@ -66,12 +66,6 @@ end.rcode-->
 
 <h1><strong>Single Cell RNA-Seq Integration analysis</strong></h1>
 
-<p>Seurat clusters are defined mathematically. Unless a manual cluster annotation file is provided,
-our workflow finds cluster markers and compares them to the cell types annotation file. It then
-analyses matches and determines the most likely cell type for the cluster. These markers are
-plotted in the following graphs.</p>
-
-
 <!--begin.rcode intro
 cat(plotter$create_title("Quality Control", "QC", hlevel = 1, indexable = TRUE, clickable = FALSE,
                           t_id = "QC", clickable_text = ""))
@@ -88,15 +82,19 @@ end.rcode-->
 
 <!--begin.rcode cell_markers, eval = !is.null(plotter$hash_vars$cell_annotation)
     elements <- unique(plotter$hash_vars$cell_annotation$type)
-    collapse_list <- vector(mode = "character", length = length(elements) + 1)
-    names(collapse_list) <- c("subtitle", elements)
+    collapse_list <- vector(mode = "character", length = length(elements) + 2)
+    names(collapse_list) <- c("paragraph", "subtitle", elements)
+    collapse_list["paragraph"] <- paste0("<p>Seurat clusters are defined mathematically. Unless a manual cluster annotation file is provided,\n",
+                                         "our workflow finds cluster markers and compares them to the cell types annotation file. It then\n",
+                                         "analyses matches and determines the most likely cell type for the cluster. These markers are\n",
+                                         "plotted in the following graphs.</p>")
+    collapse_list["subtitle"] <- "<h2>Expression of cell type markers across experiment clusters</h2>"
     for(element_name in elements) {
         features <- plotter$hash_vars$cell_annotation[plotter$hash_vars$cell_annotation$type == element_name, ]$marker
         collapse_list[element_name] <- paste(paste0("<h2>", element_name, " markers</h2>"),
                                        plotter$prettify_div(plotter$static_plot_main("seu", custom_format = TRUE,
                                                                  plotting_function = Custom_DotPlot), preset = "magic"), sep = "\n")
     }
-    collapse_list["subtitle"] <- "<h2>Expression of cell type markers across experiment clusters</h2>"
     markers_html <- paste0(paste(collapse_list, collapse = "\n"), "\n")
     cat(plotter$create_title("Markers distribution", "markers", hlevel = 2, indexable = FALSE, clickable = TRUE,
                              t_id = "markers_distribution", clickable_text = ""))
