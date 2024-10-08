@@ -113,6 +113,8 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   } else {
     query_data <- NULL
   }
+  subset_DEGs <- NULL
+  subset_seu <- NULL
   if(!is.null(DEG_columns)) {
     message('Performing DEG analysis.')
     DEG_conditions <- unlist(strsplit(DEG_columns, split = ","))
@@ -128,8 +130,6 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
                                        verbose = verbose)
       DEG_list[[condition]] <- condition_DEGs
     }
-    subset_DEGs <- NULL
-    subset_seu <- NULL
     if(length(int_columns) == 2) {
       message(paste0("Analysing DEGs by subgroups. Subsetting by condition: ",
               DEG_conditions[1], ", analyzing effects of ", DEG_conditions[2]))
@@ -175,6 +175,10 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
 #' @param template_folder directory where template is located
 #' @param source_folder htmlreportR source folder
 #' @param int_columns factors present in experiment design
+#' @param use_canvas Parameter to select whether or not CanvasXpress plots will be
+#' triggered in templates where this control parameter has been implemented.
+#' Setting it to FALSE can be useful for big datasets, as CanvasXpress might
+#' have trouble in certain plots.
 #'
 #' @keywords preprocessing, write, report
 #' 
@@ -184,7 +188,8 @@ write_seurat_report <- function(final_results, output = getwd(), name = NULL,
                                 template_folder, source_folder = "none",
                                 target_genes = NULL, int_columns = NULL,
                                 DEG_list = NULL, cell_annotation = NULL,
-                                template = NULL, out_name = NULL){
+                                template = NULL, out_name = NULL,
+                                use_canvas = TRUE){
   if(is.null(template_folder)) {
     stop("No template folder was provided.")
   }
@@ -204,7 +209,8 @@ write_seurat_report <- function(final_results, output = getwd(), name = NULL,
   }
   tmp_folder <- "tmp_lib"
   out_file <- file.path(output, paste0(name, "_", out_name))
-  container <- list(seu = final_results$seu, int_columns = int_columns,
+  container <- list(seu = final_results$seu, qc = final_results$qc,
+                    int_columns = int_columns, use_canvas = use_canvas,
                     DEG_list = final_results$DEG_list,
                     marker_meta = final_results$marker_meta,
                     subset_seu = final_results$subset_seu,
@@ -215,7 +221,7 @@ write_seurat_report <- function(final_results, output = getwd(), name = NULL,
                     query_exp = final_results$query_exp,
                     query_pct = final_results$query_pct,
                     query_cluster_pct = final_results$query_cluster_pct,
-                    markers = final_results$markers,
+                    markers = final_results$markers, use_canvas = use_canvas,
                     cell_annotation = cell_annotation)
   plotter <- htmlreportR:::htmlReport$new(title_doc = paste0("Single-Cell ", name, " report"), 
                             container = container, tmp_folder = tmp_folder,
