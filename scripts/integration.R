@@ -167,6 +167,15 @@ final_results <- main_analyze_seurat(seu = merged_seu, cluster_annotation = clus
                                      output = opt$output, integrate = TRUE, query = unlist(target_genes),
                                      reduce = opt$reduce, save_RDS = TRUE)
 
+message("-----------------------------------")
+message("---------Writing QC report---------")
+message("-----------------------------------")
+
+write_seurat_report(final_results = final_results, template_folder = template_path,
+                    template = "qc_template.txt", output = file.path(opt$output, "report"),
+                    source_folder = source_folder, target_genes = target_genes,
+                    name = opt$project_name, out_name = "qc_report.html", use_canvas = TRUE)
+
 message("--------------------------------------------")
 message("---------Writing integrative report---------")
 message("--------------------------------------------")
