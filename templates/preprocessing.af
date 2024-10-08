@@ -7,7 +7,6 @@ sc_preprocessing){
        echo [cpu]
        ?
        preprocessing.R --input run_count)/"$sample"/outs \
-                       --output $output \
                        --name $sample \
                        --filter $preproc_filter \
                        --mincells $preproc_init_min_cells \
@@ -28,7 +27,7 @@ sc_preprocessing){
 
        retVal=$?
        if [ $retVal -ne 0 ]; then
-           echo ERROR: Last command exited with $retVal status
+           echo ERROR: Last command exited with code $retVal
            exit $retVal
        fi
        
