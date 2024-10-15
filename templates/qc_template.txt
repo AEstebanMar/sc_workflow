@@ -61,7 +61,7 @@ end.rcode-->
 <h2> Legend </h2>
 
 <ul>
-	<li> nFeature_RNA: expressed features per cell. Empty droplets will present low values. </li>
+	<li> nFeature_RNA: unique expressed features per cell. Empty droplets will present low values. </li>
 	<li> nCount_RNA: reads per cell. Doublets might present high values. </li>
 	<li> percent.mt: mitochondrial counts per cell (%). Contaminated or dying cells might present high values. </li>
 	<li> percent.rb: ribosomal counts per cell (%) </li>
