@@ -303,7 +303,7 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
   Seurat::Idents(seu) <- "seurat_clusters"
   conds <- unique(seu@meta.data[[cond]])
   marker_meta <- list(high = paste0(cond, ": ", conds[1]),
-                      low = paste0(cond, ": ", conds[1]))
+                      low = paste0(cond, ": ", conds[2]))
   clusters <- sort(unique(Seurat::Idents(seu)))
   cluster_markers <- list()
   for (i in seq(length(clusters))) {
