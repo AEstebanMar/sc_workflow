@@ -17,9 +17,12 @@
     }
 
     Custom_DimPlot <- function(seu) {
-        Seurat::DimPlot(seu, reduction = reduction, label = label, repel = TRUE, split.by = split.by,
-                        group.by = group.by) +
-        ggplot2::theme(legend.position="none")
+        res <- Seurat::DimPlot(seu, reduction = reduction, label = label, repel = TRUE, split.by = split.by,
+                        group.by = group.by) 
+        if(label) {
+          res <- res + ggplot2::theme(legend.position="none")
+        }
+        return(res)
     }
 
     top_table <- function(df) {
@@ -154,7 +157,7 @@ end.rcode-->
 end.rcode-->
 
 <!--begin.rcode umap_groups
-    label <- TRUE
+    label <- FALSE
     for(condition in int_columns) {
         split.by <- NULL
         group.by <- condition
@@ -182,7 +185,6 @@ end.rcode-->
                               clickable = FALSE, t_id = "DEG", clickable_text = ""))
     for(i in seq(length(DEG_list))) {
         condition <- names(DEG_list)[i]
-        idents <- unique(plotter$hash_vars$seu@meta.data[[condition]])
         condition_DEGs <- DEG_list[[condition]]
         cat(plotter$create_title(paste0("DEGs by ", condition), paste0(condition, "_DEGs"), hlevel = 2,
                              indexable = TRUE, clickable = FALSE, t_id = paste0(condition, "_DEGs"),
@@ -190,7 +192,9 @@ end.rcode-->
         level <- "global"
         title <- "Global"
         plotter$hash_vars$condition_DEGs <- condition_DEGs$markers[["global"]]
-        cat(paste0("<p>Positive log2 fold change means higher expression levels in ", condition_DEGs$meta$high, "</p>"))
+        DEG_legend <- paste0("<p>", condition_DEGs$meta$high, " (positive log2FC) vs ",
+                             condition_DEGs$meta$low, " (negative log2FC). </p>")
+        cat(DEG_legend)
         cat(plotter$prettify_div(plotter$static_plot_main("condition_DEGs", custom_format = TRUE,
                                  plotting_function = DEGs_volcano), preset = "magic"))
         html_code <- plotter$prettify_div(plotter$table("condition_DEGs", header = NULL, row_names = NULL,
@@ -208,7 +212,6 @@ end.rcode-->
                 main <- plotter$prettify_div(paste0("<p>Cluster ", j, "contained exclusive clusters,
                                          DEG analysis was not possible."), preset = "magic")
             }else{
-                legend <- paste0("<p>Positive log2 fold change means higher expression levels in ", condition_DEGs$meta$high, "</p>")
                 main <- plotter$prettify_div(plotter$static_plot_main("condition_DEGs", custom_format = TRUE,
                                  plotting_function = DEGs_volcano), preset = "magic")
                 table_code <- plotter$prettify_div(plotter$table("condition_DEGs", header = NULL,
@@ -221,7 +224,7 @@ end.rcode-->
                 table_container <- plotter$create_collapsable_container(id = paste0(title, "_DEG_table"),
                                                                         html_code = table_code)
             }
-            samples_html[[j]] <- paste(legend, main, table_title, table_container, collapse = "\n")
+            samples_html[[j]] <- paste(DEG_legend, main, table_title, table_container, collapse = "\n")
         }
         samples_html <- paste(samples_html, collapse = "\n")
         cat(plotter$create_title(paste0(condition, " DEG analysis by cluster"), paste0(condition, " DEG clusters"),
@@ -295,16 +298,18 @@ end.rcode-->
             value of the \"", int_columns[1], "\" factor. </p>"))
         subset_meta <- plotter$hash_vars$subset_DEGs[[subset]]$meta
         subset_DEG <- plotter$hash_vars$subset_DEGs[[subset]]$markers
-        idents <- unique(plotter$hash_vars$subset_seu[[i]]@meta.data[[int_columns[2]]])
         level <- "global"
         title <- "Global"
         plotter$hash_vars$condition_DEGs <- subset_DEG[["global"]]
-        cat(paste0("<p>Positive log2 fold change means higher expression levels in ", subset_meta$high, "</p>"))
+        subset_legend <- paste0("<p>", subset_meta$high, " (positive log2FC) vs ",
+                                 subset_meta$low, " (negative log2FC). </p>")
+        cat(subset_legend)
         cat(plotter$prettify_div(plotter$static_plot_main("condition_DEGs", custom_format = TRUE,
                                                           plotting_function = DEGs_volcano), preset = "magic"))
         html_code <- plotter$prettify_div(plotter$table("condition_DEGs", header = NULL, row_names = NULL,
                                                             table_rownames = FALSE, styled = "dt",
                                                             func = get_top_DEGs), preset = "magic")
+        html_code <- paste(subset_legend, html_code, sep = "\n")
         cat(plotter$create_title(paste0(subset, " global DEGenes table"), paste0(subset, " global DEG table"), hlevel = 3, indexable = FALSE,
                                       clickable = TRUE, t_id = paste0(subset, "_global_DEG_table"), clickable_text = ""))
         cat(plotter$create_collapsable_container(id = paste0(subset, "_global_DEG_table"), html_code = html_code))
@@ -317,7 +322,6 @@ end.rcode-->
                     main <- plotter$prettify_div(paste0("<p>Cluster ", j, "contained exclusive clusters,
                                              DEG analysis was not possible."), preset = "magic")
             }else{
-                legend <- paste0("<p>Positive log2 fold change means higher expression levels in ", subset_meta$high, "</p>")
                 main <- plotter$prettify_div(plotter$static_plot_main("condition_DEGs", custom_format = TRUE,
                                  plotting_function = DEGs_volcano), preset = "magic")
                 table_code <- plotter$prettify_div(plotter$table("condition_DEGs", header = NULL,
@@ -330,7 +334,7 @@ end.rcode-->
                 table_container <- plotter$create_collapsable_container(id = paste0(subset, title, "_DEG_table"),
                                                                         html_code = table_code)
             }
-            subset_html[[j]] <- paste(legend, main, table_title, table_container, collapse = "\n")
+            subset_html[[j]] <- paste(subset_legend, main, table_title, table_container, collapse = "\n")
         }
         subset_html <- paste(subset_html, collapse = "\n")
         cat(plotter$create_title(paste0(subset, " DEG analysis by cluster"), paste0(subset, " DEG clusters"),
