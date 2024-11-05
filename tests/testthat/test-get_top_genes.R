@@ -3,7 +3,7 @@ pbmc_smaller <- pbmc_small[, 1:15]
 pbmc_smaller@meta.data$sample <- c(rep("A", 5), rep("B", 5), rep("C", 5))
 pbmc_smaller@meta.data$seurat_clusters <- rep(0:4, 3)
 cell_types <- c("0. typeA", "1. typeB", "2. typeC", "3. typeD", "4. typeE")
-pbmc_smaller@meta.data$named_clusters <- rep(cell_types, 3)
+pbmc_smaller@meta.data$cell_type <- rep(cell_types, 3)
 query <- c("MS4A1", "CD79A", "HLA-DRB5")
 counts <- GetAssayData(pbmc_smaller)
 gene_list <- c("MS4A1", "CD79B", "CD79A", "LTB", "TCL1A")

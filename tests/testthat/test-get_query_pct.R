@@ -3,7 +3,7 @@ pbmc_smaller <- pbmc_small[, 1:15]
 pbmc_smaller@meta.data$sample <- c(rep("A", 5), rep("B", 5), rep("C", 5))
 pbmc_smaller@meta.data$seurat_clusters <- rep(0:4, 3)
 cell_types <- c("0. typeA", "1. typeB", "2. typeC", "3. typeD", "4. typeE")
-pbmc_smaller@meta.data$named_clusters <- rep(cell_types, 3)
+pbmc_smaller@meta.data$cell_type <- rep(cell_types, 3)
 query <- c("MS4A1", "CD79A", "HLA-DRB5")
 
 test_that("get_query_pct works in simple case", {
@@ -47,7 +47,7 @@ test_that("get_query_pct works with alternate 'by' arguments", {
   rownames(expected_df) <- c(paste0(0:4, ". type", toupper(letters[1:5])))
   expected_df[, 1] <- c(33, 67, 33, 0, 33)
   colnames(expected_df) <- single_query
-  output_df <- get_query_pct(pbmc_smaller, single_query, "named_clusters")
+  output_df <- get_query_pct(pbmc_smaller, single_query, "cell_type")
   testthat::expect_equal(output_df, expected_df)
 })
 

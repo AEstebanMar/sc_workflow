@@ -162,7 +162,7 @@ merge_seurat <- function(project_name, exp_design, count_path,
 annotate_clusters <- function(seu, new_clusters = NULL ) {
   names(new_clusters) <- levels(seu)
   seu <- Seurat::RenameIdents(seu, new_clusters)
-  seu@meta.data$named_clusters <- Seurat::Idents(seu)
+  seu@meta.data$cell_type <- Seurat::Idents(seu)
   return(seu)
 }
 
@@ -344,10 +344,10 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
     global_markers[nums] <- lapply(global_markers[nums], signif, 2)
     cluster_markers[["global"]] <- global_markers
   }
-  if(!is.null(seu@meta.data$named_clusters)) {
-    metadata <- unique(seu@meta.data[, c("seurat_clusters", "named_clusters")])
-    named_clusters <- metadata[order(metadata$seurat_clusters), ]$named_clusters
-    names(cluster_markers) <- c(as.character(named_clusters), "global")
+  if(!is.null(seu@meta.data$cell_type)) {
+    metadata <- unique(seu@meta.data[, c("seurat_clusters", "cell_type")])
+    cell_type <- metadata[order(metadata$seurat_clusters), ]$cell_type
+    names(cluster_markers) <- c(as.character(cell_type), "global")
   }
   res <- list(meta = marker_meta, markers = cluster_markers)
   return(res)
@@ -370,8 +370,8 @@ analyze_query <- function(seu, query, sigfig) {
     query_exp <- get_query_distribution(seu = seu, query = query, sigfig = sigfig)
     query_pct <- get_query_pct(seu = seu, query = query, by = "sample",
                            sigfig = sigfig)
-    if("named_clusters" %in% colnames(seu@meta.data)) {
-      get_by <- c("sample", "named_clusters")
+    if("cell_type" %in% colnames(seu@meta.data)) {
+      get_by <- c("sample", "cell_type")
     } else {
       get_by <- c("sample", "seurat_clusters")
     }
@@ -395,8 +395,8 @@ analyze_query <- function(seu, query, sigfig) {
 #' @returns A data frame with cell type distribution in each sample.
 
 get_clusters_distribution <- function(seu, sigfig = 3) {
-  clusters_column <- ifelse("named_clusters" %in% colnames(seu@meta.data), 
-                            "named_clusters", "seurat_clusters")
+  clusters_column <- ifelse("cell_type" %in% colnames(seu@meta.data), 
+                            "cell_type", "seurat_clusters")
   clusters_table <- table(seu@meta.data[, c("sample", clusters_column)])
   percent_table <- signif(clusters_table/rowSums(clusters_table)*100, sigfig)
   percent_table <- as.data.frame.matrix(percent_table)
@@ -470,7 +470,7 @@ get_query_pct <- function(seu, query, by, sigfig = 2, assay = "RNA",
                                     assay = assay, layer = layer)
       pct_list[[element]] <- do.call(rbind, pct_list[[element]]) * 100
       pct_list[[element]] <- signif(pct_list[[element]], sigfig)
-      if("named_clusters" %in% by) {
+      if("cell_type" %in% by) {
         rows <- strsplit(rownames(pct_list[[element]]), "\\.")
         rows <- unlist(lapply(rows, `[[`, 1))
         pct_list[[element]] <- pct_list[[element]][order(unlist(

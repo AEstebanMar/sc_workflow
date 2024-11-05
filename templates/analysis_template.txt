@@ -105,13 +105,13 @@ end.rcode-->
 end.rcode-->
 
 <!--begin.rcode top_markers
-    names <- plotter$hash_vars$seu@meta.data[["named_clusters"]]
+    names <- plotter$hash_vars$seu@meta.data[["cell_types"]]
     seurat_clusters <- plotter$hash_vars$seu@meta.data[["seurat_clusters"]]
     unique_clusters <- sort(unique(seurat_clusters))
     collapse_list <- vector(mode = "character", length = length(unique_clusters))
     for(cluster in as.numeric(unique_clusters)) {
         if(!is.null(names)) {
-            name <- unique(plotter$hash_vars$seu@meta.data[seurat_clusters == cluster - 1, ]$named_clusters)
+            name <- unique(plotter$hash_vars$seu@meta.data[seurat_clusters == cluster - 1, ]$cell_types)
             title <- name
         } else {
             title <- cluster
