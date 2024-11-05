@@ -84,7 +84,13 @@ option_list <- list(
   optparse::make_option("--verbose", type = "logical", default = FALSE, action = "store_true",
             help = "Verbosity of base Seurat and harmony function calls."),
   optparse::make_option("--reduce", type = "logical", default = FALSE, action = "store_true",
-            help = "Randomly subset seurat object to 3000 cells, for quick testing.")
+            help = "Randomly subset seurat object to 3000 cells, for quick testing."),
+  optparse::make_option("--celldex_ref", type = "character", default = "",
+            help = "Celldex reference to use."),
+  optparse::make_option("--celldex_version", type = "character", default = "2024-02-26",
+            help = "Celldex version of reference."),
+  optparse::make_option("--celldex_label", type = "character", default = "main",
+            help = "Label of celldex reference to use for annotation.")
 )  
 
 opt <- optparse::parse_args(optparse::OptionParser(option_list = option_list))
@@ -103,6 +109,12 @@ if(opt$cell_annotation != "") {
   cell_annotation <- read.table(opt$cell_annotation, sep = "\t", header = TRUE)
 } else {
   cell_annotation <- NULL
+}
+
+if(opt$celldex_ref != "") {
+  celldex_ref <- celldex::fetchReference(opt$celldex_ref, opt$celldex_version)
+} else {
+  celldex_ref <- NULL
 }
 
 if(opt$target_genes == ""){
@@ -165,7 +177,8 @@ final_results <- main_analyze_seurat(seu = merged_seu, cluster_annotation = clus
                                      scalefactor = opt$scalefactor, normalmethod = opt$normalmethod,
                                      p_adj_cutoff = opt$p_adj_cutoff, verbose = opt$verbose, sigfig = 2,
                                      output = opt$output, integrate = TRUE, query = unlist(target_genes),
-                                     reduce = opt$reduce, save_RDS = TRUE)
+                                     reduce = opt$reduce, save_RDS = TRUE, SingleR_ref = celldex_ref,
+                                     celldex_label = paste0("label.", opt$celldex_label))
 
 message("-----------------------------------")
 message("---------Writing QC report---------")

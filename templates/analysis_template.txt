@@ -17,6 +17,7 @@
     }
 
     Custom_DimPlot <- function(seu) {
+        Seurat::Idents(seu) <- <- "cell_type"
         res <- Seurat::DimPlot(seu, reduction = reduction, label = label, repel = TRUE, split.by = split.by,
                         group.by = group.by) 
         if(label) {

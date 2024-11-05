@@ -18,6 +18,10 @@ export cluster_annotation="" 		 #	  Cluster annotation file. If empty (""), cell
 export cell_annotation="$exp_data_folder/canon.tsv"
 export imported_counts=""	# Imported counts directory containing cellranger output files. If not empty, daemon 2 will load these files instead of output of daemon 1.
 export reduce=FALSE # If TRUE, dataset seurat object will be randomly downsampled to 3000 cells. Useful in testing.
+export celldex_ref=""		#-------#    celldex reference to use. Will not be used if empty ("")
+export celldex_version="2024-02-26" #-------#    celldex version to consult.
+export celldex_label="main" #------#	celldex label type to use. Valid values: "main", "fine", "ont".
+export target_genes="path/to/targets/file" # Path to target genes file, or list of semicolon-separated target genes ("target_1;target_2").
 
 
 ######  EXECUTION VARIABLES #######
@@ -51,4 +55,3 @@ export preproc_pca_n_cells=500                        #-------#    Heatmap plots
 export p_adj_cutoff=5e-3	#-------#	Adjusted p-value cutoff for marker selection when annotating cell types
 export int_columns=colA,colB                             #-------#    Columns by which to integrate data
 export DEG_columns=""	#-------#	Columns contaning factors by which DEG analysis will be performed. If empty, int_columns will be analysed.
-export target_genes="path/to/targets/file" # Path to target genes file, or list of semicolon-separated target genes ("target_1;target_2").

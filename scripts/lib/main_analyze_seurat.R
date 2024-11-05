@@ -36,6 +36,11 @@
 #' @param reduce A boolean.
 #'   * `TRUE`: Skip QC filtering. Intended for development and testing.
 #'   * `FALSE` (the default): QC filtering will be performed.
+#' @param SingleR_ref SummarizedExperiment object to use as reference
+#' for SingleR cell type annotation. If NULL (default value),
+#' SingleR will not be used.
+#' @param celldex_label Celldex label to use in annotation. Possible values:
+#' "main" (the default), "fine", "ont".
 
 main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
                            		  resolution, p_adj_cutoff = 5e-3,
@@ -44,7 +49,8 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
                            		  scalefactor = 10000, hvgs, int_columns = NULL,
                            		  normalmethod = "LogNormalize", ndims,
                                 verbose = FALSE, output = getwd(),
-                                save_RDS = FALSE, reduce = FALSE){
+                                save_RDS = FALSE, reduce = FALSE,
+                                SingleR_ref = NULL, celldex_label = "main"){
   qc <- tag_qc(seu = seu, minqcfeats = minqcfeats, percentmt = percentmt)
   colnames(qc@meta.data) <- tolower(colnames(qc@meta.data))
   if(!reduce) {
@@ -90,11 +96,29 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   }
   markers <- cbind(markers$gene, markers[, -grep("gene", colnames(markers))])
   colnames(markers)[1] <- "gene"
-  if(!is.null(cluster_annotation)) {
+  if(!is.null(SingleR_ref)) {
+    message("SingleR reference provided. Annotating cells. This option overrides
+      all other annotation methods.")
+    counts_matrix <- Seurat::GetAssayData(seu)
+    SingleR_annotation <- SingleR::SingleR(test = counts_matrix,
+                                           ref = SingleR_ref,
+                                           labels = SingleR_ref$label.fine,
+                                           assay.type.test = "scale.data")
+    seu@meta.data$named_clusters <- SingleR_annotation$labels
+    # Save annotation results and quick plot saving.
+    # Temporary to check diagnostics, will be gone in the future.
+    saveRDS(SingleR_annotation, "SingleR_annotation.rds")
+    pdf(file.path(output, "ScoreHeatmap.pdf"), width = 20, height = 10)
+    print(SingleR::plotScoreHeatmap(SingleR_annotation))
+    dev.off()
+    pdf(file.path(output, "DeltaDistribution.pdf"), width = 20, height = 10)
+    print(SingleR::plotDeltaDistribution(SingleR_annotation))
+    dev.off()
+  } else if(!is.null(cluster_annotation)) {
   	message("Clusters annotation file provided. Annotating clusters.")
   	seu <- annotate_clusters(seu = seu, new_clusters = cluster_annotation$name)
   } else if(!is.null(cell_annotation)){
-	  message(paste0("Clusters annotation file not provided. Dynamically ",
+	  message(paste0("No reference provided for cell type annotation. Dynamically ",
                    "annotating clusters."))
 	  annotated_clusters <- match_cell_types(markers_df = markers,
                                            cell_annotation = cell_annotation,
@@ -156,6 +180,7 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   final_results$query_pct <- query_data$query_pct
   final_results$query_cluster_pct <- query_data$query_cluster_pct
   final_results$markers <- markers
+  final_results$SingleR_annotation <- SingleR_annotation
   final_results$DEG_list <- DEG_list
   final_results$subset_seu <- subset_seu
   final_results$subset_DEGs <- subset_DEGs
