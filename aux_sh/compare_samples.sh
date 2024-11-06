@@ -61,9 +61,8 @@ integration.R --output $output \
               --imported_counts "$imported_counts" \
               --DEG_columns "$DEG_columns" \
               --cell_annotation "$cell_annotation" \
-              --celldex_ref $celldex_ref \
-              --celldex_version $celldex_version \
-              --celldex_label $celldex_label \
+              --SingleR_ref $SingleR_ref \
+              --ref_label $ref_label \
               --p_adj_cutoff $p_adj_cutoff \
               --verbose $verbose \
               --reduce $reduce \

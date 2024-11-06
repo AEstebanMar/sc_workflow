@@ -18,9 +18,8 @@ export cluster_annotation="" 		 #	  Cluster annotation file. If empty (""), cell
 export cell_annotation="$exp_data_folder/canon.tsv"
 export imported_counts=""	# Imported counts directory containing cellranger output files. If not empty, daemon 2 will load these files instead of output of daemon 1.
 export reduce=FALSE # If TRUE, dataset seurat object will be randomly downsampled to 3000 cells. Useful in testing.
-export celldex_ref=""		#-------#    celldex reference to use. Will not be used if empty ("")
-export celldex_version="2024-02-26" #-------#    celldex version to consult.
-export celldex_label="main" #------#	celldex label type to use. Valid values: "main", "fine", "ont".
+export SingleR_ref="path/to/reference/directory"		#-------#    Path to reference to use, will be loaded as a SummarizedExperiment object. If empty (""), no SingleR annotation will be performed.
+export ref_label="" #------#	Column of reference metadata to use in annotation. For celldex references: "label.main", "label.fine", "label.ont".
 export target_genes="path/to/targets/file" # Path to target genes file, or list of semicolon-separated target genes ("target_1;target_2").
 
 
