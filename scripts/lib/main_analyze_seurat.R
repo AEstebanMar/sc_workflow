@@ -39,8 +39,7 @@
 #' @param SingleR_ref SummarizedExperiment object to use as reference
 #' for SingleR cell type annotation. If NULL (default value),
 #' SingleR will not be used.
-#' @param celldex_label Celldex label to use in annotation. Possible values:
-#' "main" (the default), "fine", "ont".
+#' @param ref_label Reference column to use in annotation.
 
 main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
                            		  resolution, p_adj_cutoff = 5e-3,
@@ -50,7 +49,7 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
                            		  normalmethod = "LogNormalize", ndims,
                                 verbose = FALSE, output = getwd(),
                                 save_RDS = FALSE, reduce = FALSE,
-                                SingleR_ref = NULL, celldex_label = "main"){
+                                SingleR_ref = NULL, ref_label){
   qc <- tag_qc(seu = seu, minqcfeats = minqcfeats, percentmt = percentmt)
   colnames(qc@meta.data) <- tolower(colnames(qc@meta.data))
   if(!reduce) {
@@ -102,9 +101,9 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
     counts_matrix <- Seurat::GetAssayData(seu)
     SingleR_annotation <- SingleR::SingleR(test = counts_matrix,
                                            ref = SingleR_ref,
-                                           labels = SingleR_ref$label.fine,
+                                           labels =  SingleR_ref[[ref_label]],
                                            assay.type.test = "scale.data")
-    seu@meta.data$named_clusters <- SingleR_annotation$labels
+    seu@meta.data$cell_type <- SingleR_annotation$labels
     # Save annotation results and quick plot saving.
     # Temporary to check diagnostics, will be gone in the future.
     saveRDS(SingleR_annotation, "SingleR_annotation.rds")
