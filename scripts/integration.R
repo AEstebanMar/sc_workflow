@@ -85,12 +85,10 @@ option_list <- list(
             help = "Verbosity of base Seurat and harmony function calls."),
   optparse::make_option("--reduce", type = "logical", default = FALSE, action = "store_true",
             help = "Randomly subset seurat object to 3000 cells, for quick testing."),
-  optparse::make_option("--celldex_ref", type = "character", default = "",
-            help = "Celldex reference to use."),
-  optparse::make_option("--celldex_version", type = "character", default = "2024-02-26",
-            help = "Celldex version of reference."),
-  optparse::make_option("--celldex_label", type = "character", default = "main",
-            help = "Label of celldex reference to use for annotation.")
+  optparse::make_option("--SingleR_ref", type = "character", default = "",
+            help = "Path to reference to use in SingleR annotation."),
+  optparse::make_option("--ref_label", type = "character", default = "main",
+            help = "Column of reference metadata to use for annotation.")
 )  
 
 opt <- optparse::parse_args(optparse::OptionParser(option_list = option_list))
@@ -111,8 +109,8 @@ if(opt$cell_annotation != "") {
   cell_annotation <- NULL
 }
 
-if(opt$celldex_ref != "") {
-  celldex_ref <- celldex::fetchReference(opt$celldex_ref, opt$celldex_version)
+if(opt$SingleR_ref != "") {
+  celldex_ref <- HDF5Array::loadHDF5SummarizedExperiment(dir = opt$SingleR_ref, prefix = "")
 } else {
   celldex_ref <- NULL
 }
@@ -178,7 +176,7 @@ final_results <- main_analyze_seurat(seu = merged_seu, cluster_annotation = clus
                                      p_adj_cutoff = opt$p_adj_cutoff, verbose = opt$verbose, sigfig = 2,
                                      output = opt$output, integrate = TRUE, query = unlist(target_genes),
                                      reduce = opt$reduce, save_RDS = TRUE, SingleR_ref = celldex_ref,
-                                     celldex_label = paste0("label.", opt$celldex_label))
+                                     ref_label = opt$ref_label)
 
 message("-----------------------------------")
 message("---------Writing QC report---------")
