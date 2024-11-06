@@ -347,7 +347,13 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
   if(!is.null(seu@meta.data$cell_type)) {
     metadata <- unique(seu@meta.data[, c("seurat_clusters", "cell_type")])
     cell_type <- metadata[order(metadata$seurat_clusters), ]$cell_type
-    names(cluster_markers) <- c(as.character(cell_type), "global")
+    if(length(cluster_markers) == length(cell_type) + 1){
+      names(cluster_markers) <- c(as.character(cell_type), "global")
+    } else {
+      message("Cell types have not been annotated by cluster. Clusters cannot
+        be renamed.")
+      }
+    
   }
   res <- list(meta = marker_meta, markers = cluster_markers)
   return(res)
