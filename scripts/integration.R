@@ -88,7 +88,13 @@ option_list <- list(
   optparse::make_option("--SingleR_ref", type = "character", default = "",
             help = "Path to reference to use in SingleR annotation."),
   optparse::make_option("--ref_label", type = "character", default = "main",
-            help = "Column of reference metadata to use for annotation.")
+            help = "Column of reference metadata to use for annotation."),
+  optparse::make_option("--ref_de_method", type = "character", default = NULL,
+            help = "Method to use for markercalculation in single-cell reference."),
+  optparse::make_option("--ref_n", type = "integer", default = 25,
+            help = "Top N reference markers to consider in annotation. Higher values provide a more
+                    accurate annotation, but increase noise and computational time. Will not be used
+                    if ref_de_method is empty.")
 )  
 
 opt <- optparse::parse_args(optparse::OptionParser(option_list = option_list))
@@ -110,9 +116,17 @@ if(opt$cell_annotation != "") {
 }
 
 if(opt$SingleR_ref != "") {
-  celldex_ref <- HDF5Array::loadHDF5SummarizedExperiment(dir = opt$SingleR_ref, prefix = "")
+  SingleR_ref <- HDF5Array::loadHDF5SummarizedExperiment(dir = opt$SingleR_ref, prefix = "")
 } else {
-  celldex_ref <- NULL
+  SingleR_ref <- NULL
+}
+
+if(opt$ref_de_method == "") {
+  ref_de_method <- NULL
+  ref_n <- NULL
+} else {
+  ref_de_method <- opt$ref_de_method
+  ref_n <- opt$ref_n
 }
 
 if(opt$target_genes == ""){
@@ -175,8 +189,9 @@ final_results <- main_analyze_seurat(seu = merged_seu, cluster_annotation = clus
                                      scalefactor = opt$scalefactor, normalmethod = opt$normalmethod,
                                      p_adj_cutoff = opt$p_adj_cutoff, verbose = opt$verbose, sigfig = 2,
                                      output = opt$output, integrate = TRUE, query = unlist(target_genes),
-                                     reduce = opt$reduce, save_RDS = TRUE, SingleR_ref = celldex_ref,
-                                     ref_label = opt$ref_label)
+                                     reduce = opt$reduce, save_RDS = TRUE, SingleR_ref = SingleR_ref,
+                                     ref_label = opt$ref_label, ref_de_method = ref_de_method,
+                                     ref_n = ref_n)
 
 message("-----------------------------------")
 message("---------Writing QC report---------")
