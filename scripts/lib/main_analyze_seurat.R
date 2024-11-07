@@ -40,6 +40,11 @@
 #' for SingleR cell type annotation. If NULL (default value),
 #' SingleR will not be used.
 #' @param ref_label Reference column to use in annotation.
+#' @param ref_de_method Method to use for marker calculation in single-cell
+#' reference.
+#' @param ref_n Top N reference markers to consider in annotation. Higher values
+#' provide a more accurate annotation, but increase noise and computational 
+#' time. Will not be used if ref_de_method is empty.
 
 main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
                            		  resolution, p_adj_cutoff = 5e-3,
@@ -48,8 +53,9 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
                            		  scalefactor = 10000, hvgs, int_columns = NULL,
                            		  normalmethod = "LogNormalize", ndims,
                                 verbose = FALSE, output = getwd(),
-                                save_RDS = FALSE, reduce = FALSE,
-                                SingleR_ref = NULL, ref_label){
+                                save_RDS = FALSE, reduce = FALSE, ref_label,
+                                SingleR_ref = NULL, ref_de_method = NULL,
+                                ref_n = NULL){
   qc <- tag_qc(seu = seu, minqcfeats = minqcfeats, percentmt = percentmt)
   colnames(qc@meta.data) <- tolower(colnames(qc@meta.data))
   if(!reduce) {
@@ -99,10 +105,15 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
     message("SingleR reference provided. Annotating cells. This option overrides
       all other annotation methods.")
     counts_matrix <- Seurat::GetAssayData(seu)
+    ## Esto admite BiocParallel, pero también tengo future en otras secciones.
+    ## Pedir ayuda a Pedro, no sé si es seguro tener los dos frameworks de
+    ## paralelización simultáneamente.
     SingleR_annotation <- SingleR::SingleR(test = counts_matrix,
                                            ref = SingleR_ref,
                                            labels =  SingleR_ref[[ref_label]],
-                                           assay.type.test = "scale.data")
+                                           assay.type.test = "scale.data",
+                                           de.method = ref_de_method,
+                                           de.n = ref_n)
     seu@meta.data$cell_type <- SingleR_annotation$labels
     # Save annotation results and quick plot saving.
     # Temporary to check diagnostics, will be gone in the future.

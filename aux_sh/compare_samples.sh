@@ -63,6 +63,8 @@ integration.R --output $output \
               --cell_annotation "$cell_annotation" \
               --SingleR_ref $SingleR_ref \
               --ref_label $ref_label \
+              --ref_de_method $ref_de_method \
+              --ref_n $ref_n \
               --p_adj_cutoff $p_adj_cutoff \
               --verbose $verbose \
               --reduce $reduce \
