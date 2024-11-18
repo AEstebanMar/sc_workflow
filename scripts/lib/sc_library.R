@@ -177,7 +177,7 @@ annotate_clusters <- function(seu, new_clusters = NULL ) {
 
 collapse_markers <- function(markers_list) {
   df_list <- vector(mode = "list", length = length(markers_list))
-  for(i in seq(1, length(markers_list))) {
+  for(i in seq(length(markers_list))) {
     df_list[[i]] <- as.data.frame(markers_list[[i]])
     df_list[[i]]$cluster <- i - 1
     df_list[[i]]$gene <- rownames(df_list[[i]])
@@ -185,6 +185,8 @@ collapse_markers <- function(markers_list) {
   }
   merged_df <- do.call(plyr::rbind.fill, df_list)
   merged_df <- cbind(merged_df$gene, merged_df[, colnames(merged_df) != "gene"])
+  fcols <- grep("log2FC", colnames(merged_df))
+  merged_df$avg_log2FC <- rowMeans(merged_df[, fcols])
   colnames(merged_df)[1] <- "gene"
   return(merged_df)
 }
