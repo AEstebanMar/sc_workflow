@@ -1,6 +1,5 @@
 
 <!--begin.rcode setup
-
     colGEX <- c("grey85", "#FEE5D9", "#FCBBA1", "#FC9272", "#FB6A4A", "#EF3B2C", "#CB181D", "#99000D")
     int_columns <- plotter$hash_vars$int_columns
     target_genes <- plotter$hash_vars$target_genes
@@ -78,10 +77,9 @@ end.rcode-->
 <!--begin.rcode sample_qc_pct
     cat(plotter$create_title("Top genes expression heatmap", "sample QC", hlevel = 2, indexable = FALSE,
                               clickable = FALSE, t_id = "sample_qc_pct", clickable_text = ""))
-    cat(plotter$prettify_div(plotter$heatmap(list(id = "sample_qc_pct",
-                                                  title = "Top gene expression across samples", header = NULL,
-                                                  text = FALSE, row_names = NULL, transpose = TRUE)),
-                             preset = "magic"))
+    cat(plotter$prettify_div(plotter$heatmap(list(id = "sample_qc_pct",  title = "Top gene expression across
+                                                  samples", header = NULL, text = FALSE, row_names = NULL,
+                                                  transpose = TRUE)), preset = "magic"))
 end.rcode-->
 
 <!--begin.rcode cell_markers, eval = !is.null(plotter$hash_vars$cell_annotation)
