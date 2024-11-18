@@ -19,6 +19,8 @@ export PATH=$CODE_PATH'/scripts:'$PATH
 export PATH=$CODE_PATH'/aux_sh:'$PATH
 export TEMPLATE_PATH=$CODE_PATH'/templates'
 
+aux_opt=$3
+
 if [ "$imported_counts" != "" ]; then
     TEMPLATES=$TEMPLATE_PATH/divide_counts.af
 else
@@ -32,15 +34,16 @@ TEMPLATES="$TEMPLATES,$TEMPLATE_PATH/preprocessing.af"
 ## STAGE EXECUTION
 #######################################################################
 
-# if [ "$module" == "0" ] ; then
-#     # STAGE 0 CONVERTING BCL FILES INTO FASTQ
-#     echo "Launching stage 0: Converting BCL files into FASTQ"
-#     if [ $launch_login == TRUE ]; then  
-#         cellranger_mkfastq.sh
-#     else
-#         sbatch aux_sh/cellranger_mkfastq.sh
-#     fi
-# el
+if [ "$module" == "0" ] ; then
+    # STAGE 0: REFERENCE PREPARATION
+    echo "Generating reference from specified database"
+    if [ -d "$ref_origin" ]; then
+        sbatch $CODE_PATH/aux_sh/get_SingleR_ref.sh $aux_opt
+    else
+        get_SingleR_ref.sh $aux_opt
+    fi
+fi
+
 if [ "$module" == "1" ] ; then
     mkdir -p $FULL_RESULTS
     echo Launching workflow
@@ -114,6 +117,6 @@ elif [ "$module" == "2" ] ; then
     if [ $launch_login == TRUE ]; then  
         compare_samples.sh
     else
-        sbatch aux_sh/compare_samples.sh --cpus-per-task $CPU --mem $mem
+        sbatch $CODE_PATH/aux_sh/compare_samples.sh --cpus-per-task $CPU --mem $mem
     fi
 fi
