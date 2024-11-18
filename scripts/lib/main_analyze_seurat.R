@@ -101,6 +101,7 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   }
   markers <- cbind(markers$gene, markers[, -grep("gene", colnames(markers))])
   colnames(markers)[1] <- "gene"
+  SingleR_annotation <- NULL
   if(!is.null(SingleR_ref)) {
     message("SingleR reference provided. Annotating cells. This option overrides
       all other annotation methods.")
