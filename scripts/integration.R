@@ -87,9 +87,11 @@ option_list <- list(
             help = "Randomly subset seurat object to 3000 cells, for quick testing."),
   optparse::make_option("--SingleR_ref", type = "character", default = "",
             help = "Path to reference to use in SingleR annotation."),
+    optparse::make_option("--ref_version", type = "character", default = "",
+            help = "SingleR reference version."),
   optparse::make_option("--ref_label", type = "character", default = "main",
             help = "Column of reference metadata to use for annotation."),
-  optparse::make_option("--ref_de_method", type = "character", default = NULL,
+  optparse::make_option("--ref_de_method", type = "character", default = "",
             help = "Method to use for markercalculation in single-cell reference."),
   optparse::make_option("--ref_n", type = "integer", default = 25,
             help = "Top N reference markers to consider in annotation. Higher values provide a more
@@ -100,6 +102,7 @@ option_list <- list(
 opt <- optparse::parse_args(optparse::OptionParser(option_list = option_list))
 
 plan("multicore", workers = opt$cpu)
+BiocParallel::register(BiocParallel::MulticoreParam(opt$cpu))
 
 ##########################################
 ## MAIN
@@ -115,8 +118,13 @@ if(opt$cell_annotation != "") {
   cell_annotation <- NULL
 }
 
-if(opt$SingleR_ref != "") {
-  SingleR_ref <- HDF5Array::loadHDF5SummarizedExperiment(dir = opt$SingleR_ref, prefix = "")
+split_path <- strsplit(opt$SingleR_ref, "/")[[1]]
+if(split_path[length(split_path)] != "") {
+  path_to_ref <- opt$SingleR_ref
+  if(opt$ref_version != "") {
+    path_to_ref <- paste(path_to_rev, opt$ref_version, sep = "_")
+  }
+  SingleR_ref <- HDF5Array::loadHDF5SummarizedExperiment(dir = path_to_ref, prefix = "")
 } else {
   SingleR_ref <- NULL
 }
