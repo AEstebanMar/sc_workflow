@@ -4,8 +4,8 @@
 # STAGE 0: SET LOCAL REFERENCE
 
 #SBATCH -J get_SingleR_ref.sh
-#SBATCH --cpus-per-task=24
-#SBATCH --mem='1000gb'
+#SBATCH --cpus-per-task=12
+#SBATCH --mem='400gb'
 #SBATCH --constraint=cal
 #SBATCH --time=0-23:59:59
 #SBATCH --error=job.comp.%J.err
