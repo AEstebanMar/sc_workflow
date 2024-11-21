@@ -37,7 +37,7 @@ if [ "$imported_counts" == "" ]; then
                       --cellranger_long_metrics $experiment_folder'/cellranger_metrics'
 fi
 
-integration.R --output $output \
+sc_analysis.R --output $output \
               --project_name $experiment_name \
               --filter $preproc_filter \
               --mincells $preproc_init_min_cells \
