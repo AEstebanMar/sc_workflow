@@ -44,7 +44,7 @@ tag_qc <- function(seu, minqcfeats, percentmt){
   seu[['qc']] <- ifelse(seu@meta.data$nFeature_RNA < minqcfeats &
                         seu@meta.data$qc != 'Pass' &
                         seu@meta.data$qc != 'High_MT',
-                        paste('High_MT', seu@meta.data$qc ,sep = ','),
+                        paste('High_MT', seu@meta.data$qc, sep = ','),
                               seu@meta.data$qc)
   return(seu)
 }
