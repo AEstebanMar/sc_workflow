@@ -55,7 +55,7 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
                                 verbose = FALSE, output = getwd(),
                                 save_RDS = FALSE, reduce = FALSE, ref_label,
                                 SingleR_ref = NULL, ref_de_method = NULL,
-                                ref_n = NULL){
+                                ref_n = NULL, BPPARAM = NULL){
   qc <- tag_qc(seu = seu, minqcfeats = minqcfeats, percentmt = percentmt)
   colnames(qc@meta.data) <- tolower(colnames(qc@meta.data))
   if(!reduce) {
@@ -85,12 +85,16 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   }
   seu <- Seurat::RunUMAP(object = seu, dims = seq(ndims),
                          reduction = reduction, verbose = verbose)
-  seu <- Seurat::FindNeighbors(object = seu, dims = seq(1, ndims),
+  seu <- Seurat::FindNeighbors(object = seu, dims = seq(ndims),
                                reduction = reduction, verbose = verbose)
+  # This should be controlled by annotation type. It is not used if annotated
+  # by cell types. Report should then depend not on clusters, but on unique
+  # cell type detected. That will ensure both modes work and clusters are not
+  # calculated if not needed.
   seu <- Seurat::FindClusters(seu, resolution = resolution, verbose = verbose)
-  run_conserved <- ifelse(test = length(int_columns) == 1, no = FALSE,
+  run_conserved <- ifelse(test = length(int_columns) == 1 & integrate, no = FALSE,
                           yes = !has_exclusive_clusters(seu = seu,
-                                                        cond = int_columns))
+                                                        cond = tolower(int_columns)))
   if(run_conserved) {
     markers <- get_sc_markers(seu = seu, cond = int_columns, DEG = FALSE)
     markers <- collapse_markers(markers$markers)
@@ -106,19 +110,16 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
     message("SingleR reference provided. Annotating cells. This option overrides
       all other annotation methods.")
     counts_matrix <- Seurat::GetAssayData(seu)
-    ## Esto admite BiocParallel, pero también tengo future en otras secciones.
-    ## Pedir ayuda a Pedro, no sé si es seguro tener los dos frameworks de
-    ## paralelización simultáneamente.
     SingleR_annotation <- SingleR::SingleR(test = counts_matrix,
                                            ref = SingleR_ref,
                                            labels =  SingleR_ref[[ref_label]],
                                            assay.type.test = "scale.data",
                                            de.method = ref_de_method,
-                                           de.n = ref_n)
+                                           de.n = ref_n, BPPARAM = BPPARAM,
+                                           aggr.ref = TRUE, fine.tune = FALSE)
     seu@meta.data$cell_type <- SingleR_annotation$labels
     # Save annotation results and quick plot saving.
     # Temporary to check diagnostics, will be gone in the future.
-    saveRDS(SingleR_annotation, "SingleR_annotation.rds")
     pdf(file.path(output, "ScoreHeatmap.pdf"), width = 20, height = 10)
     print(SingleR::plotScoreHeatmap(SingleR_annotation))
     dev.off()
@@ -150,7 +151,7 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   }
   subset_DEGs <- NULL
   subset_seu <- NULL
-  if(!is.null(DEG_columns)) {
+  if(!is.null(DEG_columns) & integrate) {
     message('Performing DEG analysis.')
     DEG_conditions <- unlist(strsplit(DEG_columns, split = ","))
     if(length(DEG_conditions) == 0) {
@@ -158,7 +159,6 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
     }
     DEG_list <- vector(mode = "list", length = length(DEG_conditions))
     names(DEG_list) <- DEG_conditions
-    DEG_meta <- DEG_conditions
     for(condition in DEG_conditions) {
       message(paste0("Calculating DEGs for condition ", condition, "."))
       condition_DEGs <- get_sc_markers(seu = seu, cond = condition, DEG = TRUE,
