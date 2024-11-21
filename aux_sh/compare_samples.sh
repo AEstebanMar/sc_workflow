@@ -4,10 +4,10 @@
 # STAGE 2 SAMPLES COMPARISON
 
 #SBATCH -J compare_samples.sh
-#SBATCH --cpus-per-task=12
-#SBATCH --mem='1000gb'
+#SBATCH --cpus-per-task=48
+#SBATCH --mem='600gb'
 #SBATCH --constraint=cal
-#SBATCH --time=2-23:59:59
+#SBATCH --time=6-23:59:59
 #SBATCH --error=job.comp.%J.err
 #SBATCH --output=job.comp.%J.out
 
@@ -35,7 +35,6 @@ if [ "$imported_counts" == "" ]; then
                       -e $experiment_name \
                       --cellranger_metrics $experiment_folder'/cellranger_metric_table' \
                       --cellranger_long_metrics $experiment_folder'/cellranger_metrics'
-
 fi
 
 integration.R --output $output \
@@ -61,9 +60,10 @@ integration.R --output $output \
               --imported_counts "$imported_counts" \
               --DEG_columns "$DEG_columns" \
               --cell_annotation "$cell_annotation" \
-              --SingleR_ref $SingleR_ref \
+              --SingleR_ref "$refs_path/$SingleR_ref" \
+              --ref_version "$ref_version" \
               --ref_label $ref_label \
-              --ref_de_method $ref_de_method \
+              --ref_de_method "$ref_de_method" \
               --ref_n $ref_n \
               --p_adj_cutoff $p_adj_cutoff \
               --verbose $verbose \
