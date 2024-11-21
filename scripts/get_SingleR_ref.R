@@ -3,13 +3,13 @@
 
 option_list <- list(
   optparse::make_option(c("-r", "--reference"), type = "character",
-            help = "Celldex reference to use."),
+    help = "Celldex reference to use."),
   optparse::make_option(c("-v", "--version"), type = "character",
-            help = "Celldex version of reference."),
+    help = "Celldex version of reference."),
   optparse::make_option(c("-o", "--output"), type = "character",
-            help = "Output directory."),
+    help = "Output directory."),
   optparse::make_option("--replace", type = "logical", default = FALSE, action = "store_true",
-  			help = "Replace existing directory"),
+  	help = "Replace existing directory"),
   optparse::make_option("--verbose", type = "logical", default = TRUE, action = "store_true",
   	help = "Display progress"),
   optparse::make_option("--quiet", type = "logical", default = FALSE, action = "store_false",
@@ -35,7 +35,12 @@ if(is.null(opt$output)) {
 	stop('No output path provided. Please see get_celldex_ref.R --help')
 }
 if(file.exists(opt$database)) {
-  metadata <- read.table(file.path(opt$database, "metadata/meta*.txt"), sep = '\t')
+  meta_file <- Sys.glob(file.path(opt$database, "metadata/meta*.txt"))
+  if(length(meta_file) > 1) {
+    stop('More than one match for metadata file. Please ensure only one metadata
+      file matches the expression "meta*.txt"')
+  }
+  metadata <- read.table(meta_file, sep = '\t', header = TRUE)
   expr_files <- Sys.glob(paste0(opt$database, "/expression/*txt*"))
   if(length(expr_files) > 0) {
     data.table::setDTthreads(threads = opt$CPU)
@@ -57,7 +62,7 @@ if(file.exists(opt$database)) {
   } else {
     read_sparse_matrix <- NULL
   }
-  tenX_dirs <- dirname(Sys.glob("./expression/*/*mtx*"))
+  tenX_dirs <- dirname(Sys.glob(paste0(opt$database, "/expression/*/*mtx*")))
   if(length(tenX_dirs) > 0) {
     tenX_matrices <- vector(mode = "list", length = length(tenX_dirs))
     for(tenX_dir in seq(tenX_dirs)) {
@@ -70,7 +75,6 @@ if(file.exists(opt$database)) {
   } else {
     read_sparse_matrix <- NULL
   }
-  save_image('ref_testing.RData')
   if(!is.null(read_sparse_matrix) & !is.null(merged_tenX_matrix)) {
    final_sparse_matrix <- SeuratObject::RowMergeSparseMatrices(read_sparse_matrix, merged_tenX_matrix)  
   } else {
@@ -86,7 +90,6 @@ if(file.exists(opt$database)) {
   rownames(metadata) <- metadata$NAME
   metadata <- metadata[, -1]
   ref <- SummarizedExperiment::SummarizedExperiment(assays=list(counts = final_sparse_matrix), colData = metadata)
-  ref <- ref[, !is.na(ref[[opt$ref_label]]) & ref[[opt$ref_label]] != "unclear"]
   ref <- scater::logNormCounts(ref)
 }
 if(opt$database == "scRNAseq") {
