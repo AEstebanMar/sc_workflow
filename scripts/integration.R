@@ -29,8 +29,8 @@ source_folder <- file.path(find.package("htmlreportR"), "inst")
 ##########################################
 
 option_list <- list(
-  optparse::make_option(c("-p", "--project_name"), type = "character", default = NULL,
-              help = "Project name."),
+  optparse::make_option(c("-n", "--name"), type = "character", default = NULL,
+              help = "Name of analysis."),
   optparse::make_option(c("-o", "--output"), type = "character", default = NULL,
               help = "Output folder."),
   optparse::make_option("--filter", type = "character", default = NULL,
@@ -58,8 +58,8 @@ option_list <- list(
               help = "Granularity of the clustering."),
   optparse::make_option(c("-d", "--exp_design"), type = "character", default = NULL,
               help = "Input file with the experiment design."),
-  optparse::make_option("--count_path", type = "character", default = NULL,
-            help = "Count results folder."),
+  optparse::make_option("--input", type = "character", default = NULL,
+            help = "Count results folder. Input will be read from here."),
   optparse::make_option("--suffix", type = "character", help = "Suffix to specific file"),
   optparse::make_option("--samples_to_integrate", type = "character", default = "",
             help = "Path to file containing samples to be processed."),
@@ -96,13 +96,21 @@ option_list <- list(
   optparse::make_option("--ref_n", type = "integer", default = 25,
             help = "Top N reference markers to consider in annotation. Higher values provide a more
                     accurate annotation, but increase noise and computational time. Will not be used
-                    if ref_de_method is empty.")
+                    if ref_de_method is empty."),
+  optparse::make_option("--integrate", type = "logical", default = FALSE, action = "store_true",
+            help = "Activate integrative analysis. If FALSE (the default), script will assume
+                    only one sample.")
 )  
 
 opt <- optparse::parse_args(optparse::OptionParser(option_list = option_list))
 
 plan("multicore", workers = opt$cpu)
-BiocParallel::register(BiocParallel::MulticoreParam(opt$cpu))
+if(opt$cpu > 1) {
+  BiocParallel::register(BiocParallel::MulticoreParam(opt$cpu))
+  BPPARAM <- BiocParallel::MulticoreParam(opt$cpu)
+} else {
+  BPPARAM <- NULL
+}
 
 ##########################################
 ## MAIN
@@ -122,9 +130,16 @@ split_path <- strsplit(opt$SingleR_ref, "/")[[1]]
 if(split_path[length(split_path)] != "") {
   path_to_ref <- opt$SingleR_ref
   if(opt$ref_version != "") {
-    path_to_ref <- paste(path_to_rev, opt$ref_version, sep = "_")
+    path_to_ref <- paste(path_to_ref, opt$ref_version, sep = "_")
   }
-  SingleR_ref <- HDF5Array::loadHDF5SummarizedExperiment(dir = path_to_ref, prefix = "")
+  trained_object <- file.path(path_to_ref, "trained.rds")
+  if(file.exists(trained_object)) {
+    message("Trained SingleR object found")
+    SingleR_ref <- readRDS(trained_object)
+  } else {
+    message("Training provided SingleR reference")
+    SingleR_ref <- HDF5Array::loadHDF5SummarizedExperiment(dir = path_to_ref, prefix = "")
+  }
 } else {
   SingleR_ref <- NULL
 }
@@ -148,11 +163,12 @@ if(opt$target_genes == ""){
 
 exp_design <- read.table(opt$exp_design, sep = "\t", header = TRUE)
 
+
 if(opt$int_columns == "") {
-  warning("No conditions specified for integration. Analysing every condition")
-  int_columns <- colnames(exp_design)[!colnames(exp_design)=="sample"]
+  warning("No conditions specified for analysis. Analysing every condition")
+  int_columns <- tolower(colnames(exp_design)[!colnames(exp_design)=="sample"]
 } else {
-  int_columns <- unlist(strsplit(opt$int_columns, ","))
+  int_columns <- tolower(unlist(strsplit(opt$int_columns, ","))
 }
 
 if(opt$DEG_columns == "") {
@@ -172,34 +188,44 @@ if(opt$samples_to_integrate == "") {
 
 exp_design <- exp_design[exp_design$sample %in% samples, ]
 
-if(opt$imported_counts == "") {
-  merged_seu <- merge_seurat(project = opt$project_name, exp_design = exp_design,
-                             suffix = opt$suffix, count_path = opt$count_path)  
+save.image('Testing.RData')
+stop('test')
+
+if(opt$integrate) {
+    if(opt$imported_counts == "") {
+    seu <- merge_seurat(project = opt$name, exp_design = exp_design,
+                        suffix = opt$suffix, count_path = opt$input)  
+  } else {
+    seu <- Seurat::CreateSeuratObject(counts = Seurat::Read10X(opt$imported_counts, gene.column = 1),
+                                             project = opt$name, min.cells = 1, min.features = 1)
+    seu_meta <- read.table(file.path(opt$imported_counts, "meta.tsv"), sep = "\t", header = TRUE)
+    rownames(merged_seu_meta) <- colnames(merged_seu)
+    seu <- Seurat::AddMetaData(merged_seu, merged_seu_meta, row.names("Cell_ID"))
+  }
 } else {
-  merged_seu <- Seurat::CreateSeuratObject(counts = Seurat::Read10X(opt$imported_counts, gene.column = 1),
-                                           project = opt$project_name, min.cells = 1, min.features = 1)
-  merged_seu_meta <- read.table(file.path(opt$imported_counts, "meta.tsv"), sep = "\t", header = TRUE)
-  rownames(merged_seu_meta) <- colnames(merged_seu)
-  merged_seu <- Seurat::AddMetaData(merged_seu, merged_seu_meta, row.names("Cell_ID"))
+  input <- file.path(opt$input, ifelse(opt$filter, "filtered_feature_bc_matrix",
+                                                 "raw_feature_bc_matrix"))
+  seu <- read_input(name = opt$name, input = input, mincells = opt$mincells,
+                    minfeats = opt$minfeats, exp_design = exp_design)
 }
 
 if(opt$reduce) {
   message('Downsampling seurat object')
-  merged_seu <- downsample_seurat(merged_seu, cells = 500, features = 5000, keep = unlist(target_genes))
+  seu <- downsample_seurat(seu, cells = 500, features = 5000, keep = unlist(target_genes))
 }
 
 message("Analyzing seurat object")
 
-final_results <- main_analyze_seurat(seu = merged_seu, cluster_annotation = cluster_annotation,
+final_results <- main_analyze_seurat(seu = seu, cluster_annotation = cluster_annotation,
                                      ndims = opt$ndims, resolution = opt$resolution, int_columns = int_columns,
                                      cell_annotation = cell_annotation, DEG_columns = DEG_columns,
                                      minqcfeats = opt$minqcfeats, percentmt = opt$percentmt, hvgs = opt$hvgs,
                                      scalefactor = opt$scalefactor, normalmethod = opt$normalmethod,
                                      p_adj_cutoff = opt$p_adj_cutoff, verbose = opt$verbose, sigfig = 2,
-                                     output = opt$output, integrate = TRUE, query = unlist(target_genes),
+                                     output = opt$output, integrate = opt$integrate, query = unlist(target_genes),
                                      reduce = opt$reduce, save_RDS = TRUE, SingleR_ref = SingleR_ref,
                                      ref_label = opt$ref_label, ref_de_method = ref_de_method,
-                                     ref_n = ref_n)
+                                     ref_n = ref_n, BPPARAM = BPPARAM)
 
 message("-----------------------------------")
 message("---------Writing QC report---------")
@@ -208,7 +234,7 @@ message("-----------------------------------")
 write_seurat_report(final_results = final_results, template_folder = template_path,
                     template = "qc_template.txt", output = file.path(opt$output, "report"),
                     source_folder = source_folder, target_genes = target_genes,
-                    name = opt$project_name, out_name = "qc_report.html", use_canvas = TRUE)
+                    name = opt$name, out_name = "qc_report.html", use_canvas = TRUE)
 
 message("--------------------------------------------")
 message("---------Writing integrative report---------")
@@ -216,6 +242,6 @@ message("--------------------------------------------")
 
 write_seurat_report(final_results = final_results, template_folder = template_path,
                     output = file.path(opt$output, "report"), source_folder = source_folder,
-                    target_genes = target_genes, name = opt$project_name,
+                    target_genes = target_genes, name = opt$name,
                     int_columns = int_columns, cell_annotation = cell_annotation,
                     template = "analysis_template.txt", out_name = "integration_report.html")
