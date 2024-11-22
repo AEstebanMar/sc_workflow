@@ -6,6 +6,9 @@ test_that("get_sc_markers skips exclusive clusters in DEG analysis", {
   pbmc_smaller@meta.data$seurat_clusters <- 0
   pbmc_smaller@meta.data$seurat_clusters[3:5] <- 1
   pbmc_smaller@meta.data$seurat_clusters[15] <- 1
+  pbmc_smaller@meta.data$cell_type <- pbmc_smaller@meta.data$seurat_clusters
+  test <- get_sc_markers(seu = pbmc_smaller,
+                cond = "groups", DEG = TRUE, verbose = FALSE)
   expected_warning <- paste0("Cluster 2 contains less than three cells for ",
   							"condition 'g2'")
   expect_warning(suppressMessages(get_sc_markers(seu = pbmc_smaller,
