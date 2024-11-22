@@ -1,5 +1,4 @@
 sc_preprocessing){
-       resources: -c 2 -t 2-00:00:00 -m '150gb'
        source ~soft_bio_267/initializes/init_R 
        export PATH=$aux_sh_dir:$PATH
        export PATH=$script_dir:$PATH
@@ -23,14 +22,15 @@ sc_preprocessing){
                      --exp_design $exp_design \
                      --target_genes "$target_genes" \
                      --cell_annotation "$cell_annotation" \
-                     --SingleR_ref "$refs_path/$SingleR_ref" \
+                     --SingleR_ref "$SingleR_ref" \
                      --ref_version "$ref_version" \
                      --ref_label "$ref_label" \
                      --ref_de_method "$ref_de_method" \
                      --ref_n "$ref_n" \
                      --p_adj_cutoff $p_adj_cutoff \
                      --verbose $verbose \
-                     --reduce $reduce
+                     --reduce $reduce \
+                     --cpu [cpu]
 
        retVal=$?
        if [ $retVal -ne 0 ]; then
