@@ -109,7 +109,7 @@ if(opt$cpu > 1) {
   BiocParallel::register(BiocParallel::MulticoreParam(opt$cpu))
   BPPARAM <- BiocParallel::MulticoreParam(opt$cpu)
 } else {
-  BPPARAM <- NULL
+  BPPARAM <- BiocParallel::SerialParam()
 }
 
 ##########################################
@@ -132,14 +132,8 @@ if(split_path[length(split_path)] != "") {
   if(opt$ref_version != "") {
     path_to_ref <- paste(path_to_ref, opt$ref_version, sep = "_")
   }
-  trained_object <- file.path(path_to_ref, "trained.rds")
-  if(file.exists(trained_object)) {
-    message("Trained SingleR object found")
-    SingleR_ref <- readRDS(trained_object)
-  } else {
-    message("Training provided SingleR reference")
-    SingleR_ref <- HDF5Array::loadHDF5SummarizedExperiment(dir = path_to_ref, prefix = "")
-  }
+  message("Loading provided SingleR reference")
+  SingleR_ref <- HDF5Array::loadHDF5SummarizedExperiment(dir = path_to_ref, prefix = "")
 } else {
   SingleR_ref <- NULL
 }
@@ -163,21 +157,25 @@ if(opt$target_genes == ""){
 
 exp_design <- read.table(opt$exp_design, sep = "\t", header = TRUE)
 
-
-if(opt$int_columns == "") {
+if(opt$integrate) {
+  if(opt$int_columns == "") {
   warning("No conditions specified for analysis. Analysing every condition")
-  int_columns <- tolower(colnames(exp_design)[!colnames(exp_design)=="sample"]
+  int_columns <- tolower(colnames(exp_design)[!colnames(exp_design)=="sample"])
+  } else {
+    int_columns <- tolower(unlist(strsplit(opt$int_columns, ",")))
+  }
+  message(paste0("Selected ", length(int_columns), " condition(s) for analysis: ", paste0(int_columns, collapse = ", ")))
 } else {
-  int_columns <- tolower(unlist(strsplit(opt$int_columns, ","))
+  message("Starting non-integrative analysis")
+  int_columns <- NULL
 }
+
 
 if(opt$DEG_columns == "") {
   DEG_columns <- int_columns
 } else {
   DEG_columns <- opt$DEG_columns
 }
-
-message(paste0("Selected ", length(int_columns), " condition(s) for analysis: ", paste0(int_columns, collapse = ", ")))
 
 # Input reading and integration variables setup
 if(opt$samples_to_integrate == "") {
@@ -187,9 +185,6 @@ if(opt$samples_to_integrate == "") {
 }
 
 exp_design <- exp_design[exp_design$sample %in% samples, ]
-
-save.image('Testing.RData')
-stop('test')
 
 if(opt$integrate) {
     if(opt$imported_counts == "") {
@@ -202,11 +197,13 @@ if(opt$integrate) {
     rownames(merged_seu_meta) <- colnames(merged_seu)
     seu <- Seurat::AddMetaData(merged_seu, merged_seu_meta, row.names("Cell_ID"))
   }
+  out_suffix <- "integration_report.html"
 } else {
   input <- file.path(opt$input, ifelse(opt$filter, "filtered_feature_bc_matrix",
                                                  "raw_feature_bc_matrix"))
   seu <- read_input(name = opt$name, input = input, mincells = opt$mincells,
                     minfeats = opt$minfeats, exp_design = exp_design)
+  out_suffix <- "sample_report.html"
 }
 
 if(opt$reduce) {
@@ -227,6 +224,8 @@ final_results <- main_analyze_seurat(seu = seu, cluster_annotation = cluster_ann
                                      ref_label = opt$ref_label, ref_de_method = ref_de_method,
                                      ref_n = ref_n, BPPARAM = BPPARAM)
 
+final_results <- readRDS('/mnt2/fscratch/users/bio_267_uma/aestebanm/NGS_projects/NEURORG/results/48DTAOK1A.final_results.rds')
+
 message("-----------------------------------")
 message("---------Writing QC report---------")
 message("-----------------------------------")
@@ -244,4 +243,4 @@ write_seurat_report(final_results = final_results, template_folder = template_pa
                     output = file.path(opt$output, "report"), source_folder = source_folder,
                     target_genes = target_genes, name = opt$name,
                     int_columns = int_columns, cell_annotation = cell_annotation,
-                    template = "analysis_template.txt", out_name = "integration_report.html")
+                    template = "analysis_template.txt", out_name = out_suffix)
