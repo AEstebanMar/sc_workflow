@@ -302,14 +302,14 @@ match_cell_types <- function(markers_df, cell_annotation, p_adj_cutoff = 1e-5) {
 #' an additional one for global DEGs if performing differential analysis.
 
 get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
-  Seurat::Idents(seu) <- "cell_type"
   conds <- unique(seu@meta.data[[cond]])
   marker_meta <- list(high = paste0(cond, ": ", conds[1]),
                       low = paste0(cond, ": ", conds[2]))
   cell_types <- sort(unique(Seurat::Idents(seu)))
   cell_type_markers <- vector(mode = "list", length = length(cell_types))
-  for (i in seq(length(clusters))) {
-    message(paste0("Analysing cluster ", i, "/", length(clusters)))
+  names(cell_type_markers) <- as.character(cell_types)
+  for (i in seq(length(cell_types))) {
+    message(paste0("Analysing cluster ", i, "/", length(cell_types)))
     if(DEG) {
       # off-by-one correction because Seurat counts clusters from 0
       subset_seu <- subset_seurat(seu, "seurat_clusters", i - 1)
@@ -327,14 +327,14 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
                                        ident.2 = conds[2], verbose = verbose)
         markers$gene <- rownames(markers)
       }
-      } else {
-      markers <- Seurat::FindConservedMarkers(seu, ident.1 = clusters[i],
+    } else {
+      markers <- Seurat::FindConservedMarkers(seu, ident.1 = cell_types[i],
                                               grouping.var = cond,
                                               verbose = verbose)
     }
     nums <- sapply(markers, is.numeric)
     markers[nums] <- lapply(markers[nums], signif, 2)
-    cell_type_markers[[as.character(clusters[i])]] <- markers
+    cell_type_markers[[as.character(cell_types[i])]] <- markers
   }
   if(DEG) {
     message("Calculating global DEGs")
@@ -358,6 +358,32 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
   }
   res <- list(meta = marker_meta, markers = cell_type_markers)
   return(res)
+}
+
+#' calculate_markers
+#'
+#' @inheritParams get_sc_markers
+#' @param verbose A boolean. Will be passed to Seurat function calls.
+#' @param idents Identity class to which to set seurat object before calculating
+#' markers in case conserved mode cannot be triggered.
+
+calculate_markers <- function(seu, int_columns, verbose = FALSE, idents = NULL,
+                              DEG = FALSE) {
+  run_conserved <- ifelse(test = length(int_columns) == 1 & integrate,
+                          no = FALSE, yes = !has_exclusive_clusters(seu = seu,
+                                                   cond = tolower(int_columns)))
+  if(run_conserved) {
+    markers <- get_sc_markers(seu = seu, cond = int_columns, DEG = FALSE)
+    markers <- collapse_markers(markers$markers)
+  }else{
+    Seurat::Idents(seu) <- idents
+    markers <- Seurat::FindAllMarkers(seu, only.pos = TRUE, min.pct = 0.25,
+                                      logfc.threshold = 0.25, verbose = verbose)
+    rownames(markers) <- NULL
+  }
+  markers <- cbind(markers$gene, markers[, -grep("gene", colnames(markers))])
+  colnames(markers)[1] <- "gene"
+  return(markers)
 }
 
 #' analyze_query

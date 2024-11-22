@@ -96,8 +96,10 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
     seu <- Seurat::FindClusters(seu, resolution = resolution, verbose = verbose)
     # Seurat starts counting clusters from 0, which is the source of many
     # headaches when working in R, which starts counting from 1. Therefore,
-    # we introduce this correction.
-    seu@meta.data$seurat_clusters <- seu@meta.data$seurat_clusters + 1
+    # we introduce this correction. Weirdly enough, coercing it to numeric
+    # already adds 1.
+    seu@meta.data$seurat_clusters <- as.numeric(seu@meta.data$seurat_clusters)
+    Seurat::Idents(seu) <- "seurat_clusters"
   } else {
     message("Annotation by clusters not active. Skipping clustering step")
   }
@@ -122,12 +124,20 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
     pdf(file.path(output, "DeltaDistribution.pdf"), width = 20, height = 10)
     print(SingleR::plotDeltaDistribution(SingleR_annotation))
     dev.off()
+    message("Calculating cell type markers")
+    markers <- calculate_markers(seu = seu, int_columns = int_columns,
+                               integrate = integrate, verbose = verbose,
+                               idents = "cell_type")
   } else if(!is.null(cluster_annotation)) {
   	message("Clusters annotation file provided. Annotating clusters.")
   	seu <- annotate_clusters(seu = seu, new_clusters = cluster_annotation$name)
   } else if(!is.null(cell_annotation)){
 	  message(paste0("No reference provided for cell type annotation.",
                    " Dynamically annotating clusters."))
+    message("Calculating cluster markers")
+    markers <- calculate_markers(seu = seu, int_columns = int_columns,
+                               integrate = integrate, verbose = verbose,
+                               idents = "seurat_clusters")
 	  annotated_clusters <- match_cell_types(markers_df = markers,
                                            cell_annotation = cell_annotation,
                                            p_adj_cutoff = p_adj_cutoff)
@@ -137,21 +147,6 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   	warning("No data provided for cluster annotation.")
     seu@meta.data$cell_types <- seu@meta.data$seurat_clusters
   }
-  message("Calculating markers")
-  run_conserved <- ifelse(test = length(int_columns) == 1 & integrate,
-                          no = FALSE, yes = !has_exclusive_clusters(seu = seu,
-                                                   cond = tolower(int_columns)))
-  if(run_conserved) {
-    markers <- get_sc_markers(seu = seu, cond = int_columns, DEG = FALSE)
-    markers <- collapse_markers(markers$markers)
-  }else{
-    Seurat::Idents(seu) <- "cell_type"
-    markers <- Seurat::FindAllMarkers(seu, only.pos = TRUE, min.pct = 0.25,
-                                      logfc.threshold = 0.25, verbose = verbose)
-    rownames(markers) <- NULL
-  }
-  markers <- cbind(markers$gene, markers[, -grep("gene", colnames(markers))])
-  colnames(markers)[1] <- "gene"
   SingleR_annotation <- NULL
   message("Extracting expression quality metrics.")
   sample_qc_pct <- get_qc_pct(seu, by = "sample")

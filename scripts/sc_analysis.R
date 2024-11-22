@@ -213,6 +213,8 @@ if(opt$reduce) {
 
 message("Analyzing seurat object")
 
+save.image('Testing.RData')
+
 final_results <- main_analyze_seurat(seu = seu, cluster_annotation = cluster_annotation,
                                      ndims = opt$ndims, resolution = opt$resolution, int_columns = int_columns,
                                      cell_annotation = cell_annotation, DEG_columns = DEG_columns,
@@ -223,8 +225,6 @@ final_results <- main_analyze_seurat(seu = seu, cluster_annotation = cluster_ann
                                      reduce = opt$reduce, save_RDS = TRUE, SingleR_ref = SingleR_ref,
                                      ref_label = opt$ref_label, ref_de_method = ref_de_method,
                                      ref_n = ref_n, BPPARAM = BPPARAM)
-
-final_results <- readRDS('/mnt2/fscratch/users/bio_267_uma/aestebanm/NGS_projects/NEURORG/results/48DTAOK1A.final_results.rds')
 
 message("-----------------------------------")
 message("---------Writing QC report---------")
