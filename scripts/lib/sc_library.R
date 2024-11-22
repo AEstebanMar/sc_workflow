@@ -302,12 +302,12 @@ match_cell_types <- function(markers_df, cell_annotation, p_adj_cutoff = 1e-5) {
 #' an additional one for global DEGs if performing differential analysis.
 
 get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
-  Seurat::Idents(seu) <- "seurat_clusters"
+  Seurat::Idents(seu) <- "cell_type"
   conds <- unique(seu@meta.data[[cond]])
   marker_meta <- list(high = paste0(cond, ": ", conds[1]),
                       low = paste0(cond, ": ", conds[2]))
-  clusters <- sort(unique(Seurat::Idents(seu)))
-  cluster_markers <- list()
+  cell_types <- sort(unique(Seurat::Idents(seu)))
+  cell_type_markers <- vector(mode = "list", length = length(cell_types))
   for (i in seq(length(clusters))) {
     message(paste0("Analysing cluster ", i, "/", length(clusters)))
     if(DEG) {
@@ -334,7 +334,7 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
     }
     nums <- sapply(markers, is.numeric)
     markers[nums] <- lapply(markers[nums], signif, 2)
-    cluster_markers[[as.character(clusters[i])]] <- markers
+    cell_type_markers[[as.character(clusters[i])]] <- markers
   }
   if(DEG) {
     message("Calculating global DEGs")
@@ -344,20 +344,19 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
     global_markers$gene <- rownames(global_markers)
     nums <- sapply(global_markers, is.numeric)
     global_markers[nums] <- lapply(global_markers[nums], signif, 2)
-    cluster_markers[["global"]] <- global_markers
+    cell_type_markers[["global"]] <- global_markers
   }
   if(!is.null(seu@meta.data$cell_type)) {
     metadata <- unique(seu@meta.data[, c("seurat_clusters", "cell_type")])
     cell_type <- metadata[order(metadata$seurat_clusters), ]$cell_type
-    if(length(cluster_markers) == length(cell_type) + 1){
-      names(cluster_markers) <- c(as.character(cell_type), "global")
+    if(length(cell_type_markers) == length(cell_type) + 1){
+      names(cell_type_markers) <- c(as.character(cell_type), "global")
     } else {
       message("Cell types have not been annotated by cluster. Clusters cannot
         be renamed.")
-      }
-    
+      } 
   }
-  res <- list(meta = marker_meta, markers = cluster_markers)
+  res <- list(meta = marker_meta, markers = cell_type_markers)
   return(res)
 }
 
