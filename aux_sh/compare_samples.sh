@@ -28,7 +28,6 @@ if [ "$imported_counts" == "" ]; then
     cat $FULL_RESULTS/*/cellranger_metrics > $experiment_folder'/cellranger_metrics'
     create_metric_table.rb $experiment_folder'/metrics' sample $experiment_folder'/metric_table'
     create_metric_table.rb $experiment_folder'/cellranger_metrics' sample $experiment_folder'/cellranger_metric_table'
-
     compare_samples.R -o $output"/report" \
                       -m $experiment_folder'/metric_table' \
                       -l $experiment_folder'/metrics' \
@@ -38,7 +37,7 @@ if [ "$imported_counts" == "" ]; then
 fi
 
 sc_analysis.R --output $output \
-              --project_name $experiment_name \
+              --name $experiment_name \
               --filter $preproc_filter \
               --mincells $preproc_init_min_cells \
               --minfeats $preproc_init_min_feats \
@@ -52,7 +51,7 @@ sc_analysis.R --output $output \
               --resolution $preproc_resolution \
               --exp_design $exp_design \
               --int_columns "$int_columns" \
-              --count_path $FULL_RESULTS"/*/cellranger_0000/*" \
+              --input $FULL_RESULTS"/*/cellranger_0000/*" \
               --suffix "outs/filtered_feature_bc_matrix" \
               --cluster_annotation "$cluster_annotation" \
               --target_genes $target_genes \
@@ -68,4 +67,5 @@ sc_analysis.R --output $output \
               --p_adj_cutoff $p_adj_cutoff \
               --verbose $verbose \
               --reduce $reduce \
-              --samples_to_integrate $samples_to_process
+              --samples_to_integrate $samples_to_process \
+              --integrate TRUE
