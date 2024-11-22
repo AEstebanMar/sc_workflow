@@ -60,9 +60,14 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   colnames(qc@meta.data) <- tolower(colnames(qc@meta.data))
   if(!reduce) {
     seu <- subset(qc, subset = qc != 'High_MT,Low_nFeature')
+    aggr.ref <- FALSE
+    fine.tune <- TRUE
   } else {
-    message("Reduce argument is set to TRUE. Skipping QC subsetting")
+    message("Reduce argument is set to TRUE. Skipping QC subsetting and updating
+      configuration")
     seu <- qc
+    aggr.ref <- TRUE
+    fine.tune <- FALSE
   }
   message('Normalizing data')
   seu <- SeuratObject::JoinLayers(seu)
@@ -87,25 +92,15 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
                          reduction = reduction, verbose = verbose)
   seu <- Seurat::FindNeighbors(object = seu, dims = seq(ndims),
                                reduction = reduction, verbose = verbose)
-  # This should be controlled by annotation type. It is not used if annotated
-  # by cell types. Report should then depend not on clusters, but on unique
-  # cell type detected. That will ensure both modes work and clusters are not
-  # calculated if not needed.
-  seu <- Seurat::FindClusters(seu, resolution = resolution, verbose = verbose)
-  run_conserved <- ifelse(test = length(int_columns) == 1 & integrate, no = FALSE,
-                          yes = !has_exclusive_clusters(seu = seu,
-                                                        cond = tolower(int_columns)))
-  if(run_conserved) {
-    markers <- get_sc_markers(seu = seu, cond = int_columns, DEG = FALSE)
-    markers <- collapse_markers(markers$markers)
-  }else{
-    markers <- Seurat::FindAllMarkers(seu, only.pos = TRUE, min.pct = 0.25,
-                                      logfc.threshold = 0.25, verbose = verbose)
-    rownames(markers) <- NULL
+  if(is.null(SingleR_ref)) {
+    seu <- Seurat::FindClusters(seu, resolution = resolution, verbose = verbose)
+    # Seurat starts counting clusters from 0, which is the source of many
+    # headaches when working in R, which starts counting from 1. Therefore,
+    # we introduce this correction.
+    seu@meta.data$seurat_clusters <- seu@meta.data$seurat_clusters + 1
+  } else {
+    message("Annotation by clusters not active. Skipping clustering step")
   }
-  markers <- cbind(markers$gene, markers[, -grep("gene", colnames(markers))])
-  colnames(markers)[1] <- "gene"
-  SingleR_annotation <- NULL
   if(!is.null(SingleR_ref)) {
     message("SingleR reference provided. Annotating cells. This option overrides
       all other annotation methods.")
@@ -116,7 +111,8 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
                                            assay.type.test = "scale.data",
                                            de.method = ref_de_method,
                                            de.n = ref_n, BPPARAM = BPPARAM,
-                                           aggr.ref = TRUE, fine.tune = FALSE)
+                                           aggr.ref = aggr.ref,
+                                           fine.tune = fine.tune)
     seu@meta.data$cell_type <- SingleR_annotation$labels
     # Save annotation results and quick plot saving.
     # Temporary to check diagnostics, will be gone in the future.
@@ -130,8 +126,8 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   	message("Clusters annotation file provided. Annotating clusters.")
   	seu <- annotate_clusters(seu = seu, new_clusters = cluster_annotation$name)
   } else if(!is.null(cell_annotation)){
-	  message(paste0("No reference provided for cell type annotation. Dynamically ",
-                   "annotating clusters."))
+	  message(paste0("No reference provided for cell type annotation.",
+                   " Dynamically annotating clusters."))
 	  annotated_clusters <- match_cell_types(markers_df = markers,
                                            cell_annotation = cell_annotation,
                                            p_adj_cutoff = p_adj_cutoff)
@@ -139,7 +135,24 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
 	  seu <- annotate_clusters(seu, annotated_clusters$cell_types)
   } else {
   	warning("No data provided for cluster annotation.")
+    seu@meta.data$cell_types <- seu@meta.data$seurat_clusters
   }
+  message("Calculating markers")
+  run_conserved <- ifelse(test = length(int_columns) == 1 & integrate,
+                          no = FALSE, yes = !has_exclusive_clusters(seu = seu,
+                                                   cond = tolower(int_columns)))
+  if(run_conserved) {
+    markers <- get_sc_markers(seu = seu, cond = int_columns, DEG = FALSE)
+    markers <- collapse_markers(markers$markers)
+  }else{
+    Seurat::Idents(seu) <- "cell_type"
+    markers <- Seurat::FindAllMarkers(seu, only.pos = TRUE, min.pct = 0.25,
+                                      logfc.threshold = 0.25, verbose = verbose)
+    rownames(markers) <- NULL
+  }
+  markers <- cbind(markers$gene, markers[, -grep("gene", colnames(markers))])
+  colnames(markers)[1] <- "gene"
+  SingleR_annotation <- NULL
   message("Extracting expression quality metrics.")
   sample_qc_pct <- get_qc_pct(seu, by = "sample")
   message("Extracting query expression metrics. This might take a while.")
@@ -195,9 +208,11 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   final_results$DEG_list <- DEG_list
   final_results$subset_seu <- subset_seu
   final_results$subset_DEGs <- subset_DEGs
+  final_results$integrate <- integrate
   if(save_RDS){
     message('Writing results to disk.')
-    saveRDS(final_results, file.path(output, paste0(seu@project.name, ".final_results.rds")))
+    saveRDS(final_results, file.path(output,
+                           paste0(seu@project.name, ".final_results.rds")))
   }
   return(final_results)
 }
@@ -258,7 +273,8 @@ write_seurat_report <- function(final_results, output = getwd(), name = NULL,
                     query_pct = final_results$query_pct,
                     query_cluster_pct = final_results$query_cluster_pct,
                     markers = final_results$markers, use_canvas = use_canvas,
-                    cell_annotation = cell_annotation)
+                    cell_annotation = cell_annotation,
+                    integrate = final_results$integrate)
   plotter <- htmlreportR:::htmlReport$new(title_doc = paste0("Single-Cell ", name, " report"), 
                             container = container, tmp_folder = tmp_folder,
                             src = source_folder)
