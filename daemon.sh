@@ -69,9 +69,19 @@ if [ "$module" == "1" ] ; then
         \\$experiment_name=$experiment_name,
         \\$preproc_resolution=$preproc_resolution,
         \\$target_genes=$target_genes,
-        \\$imported_counts=$imported_counts
+        \\$imported_counts=$imported_counts,
+        \\$output=$output,
+        \\$cell_annotation=$cell_annotation,
+        \\$SingleR_ref=$refs_path/$SingleR_ref,
+        \\$ref_version=$ref_version,
+        \\$ref_label=$ref_label,
+        \\$ref_de_method=$ref_de_method,
+        \\$ref_n=$ref_n,
+        \\$p_adj_cutoff=$p_adj_cutoff,
+        \\$verbose=$verbose,
+        \\$reduce=$reduce
         " | tr -d [:space:]`
-        AutoFlow -w $TEMPLATES -V "$AF_VARS" $3 -o $FULL_RESULTS/$sample
+        AutoFlow -w $TEMPLATES -V "$AF_VARS" $aux_opt -o $FULL_RESULTS/$sample $RESOURCES
     done < $samples_to_process
 
 elif [ "$module" == "1b" ] ; then
@@ -104,9 +114,19 @@ elif [ "$module" == "1c" ] ; then
         \\$experiment_name=$experiment_name,
         \\$preproc_resolution=$preproc_resolution,
         \\$target_genes=$target_genes,
-        \\$imported_counts=$imported_counts
+        \\$imported_counts=$imported_counts,
+        \\$output=$output,
+        \\$cell_annotation=$cell_annotation,
+        \\$SingleR_ref=$refs_path/$SingleR_ref,
+        \\$ref_version=$ref_version,
+        \\$ref_label=$ref_label,
+        \\$ref_de_method=$ref_de_method,
+        \\$ref_n=$ref_n,
+        \\$p_adj_cutoff=$p_adj_cutoff,
+        \\$verbose=$verbose,
+        \\$reduce=$reduce
         " | tr -d [:space:]`
-        AutoFlow -w $TEMPLATES -V "$AF_VARS" $3 -o $FULL_RESULTS/$sample -v $resources
+        AutoFlow -w $TEMPLATES -V "$AF_VARS" $3 -o $FULL_RESULTS/$sample -v $RESOURCES
         echo Launching pending and failed jobs for $sample
         flow_logger -e $FULL_RESULTS/$sample -w -l -p
     done < $samples_to_process
