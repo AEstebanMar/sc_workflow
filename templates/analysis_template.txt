@@ -112,9 +112,9 @@ end.rcode-->
     for(type in seq(types)) {
         plotter$hash_vars$type_markers <- plotter$hash_vars$markers[plotter$hash_vars$markers[slot] == types[type], ]
         collapse_list[type] <- paste(paste0("<h2>Top markers for identity ", types[type]),
-                                            plotter$prettify_div(plotter$table("type_markers", header = NULL,
+                                            plotter$prettify_div(plotter$table(list(id = "type_markers", header = NULL,
                                                     row_names = NULL, table_rownames = FALSE, styled = "dt",
-                                                    func = top_table)), sep = "\n")
+                                                    func = top_table))), sep = "\n")
     }
     top_markers_html <- paste0(paste(collapse_list, collapse = "\n"), "\n")
     if(is.null(plotter$hash_vars$seu@meta.data$cell_type)) {
@@ -196,9 +196,9 @@ end.rcode-->
         cat(DEG_legend)
         cat(plotter$prettify_div(plotter$static_plot_main("condition_DEGs", custom_format = TRUE,
                                  plotting_function = DEGs_volcano), preset = "magic"))
-        html_code <- plotter$prettify_div(plotter$table("condition_DEGs", header = NULL, row_names = NULL,
+        html_code <- plotter$prettify_div(plotter$table(list(id = "condition_DEGs", header = NULL, row_names = NULL,
                                                         table_rownames = FALSE, styled = "dt",
-                                                        func = get_top_DEGs), preset = "magic")
+                                                        func = get_top_DEGs)), preset = "magic")
         cat(plotter$create_title("Global DEGenes table", "global DEG table", hlevel = 3, indexable = FALSE,
                                   clickable = TRUE, t_id = "global_DEG_table", clickable_text = ""))
         cat(plotter$create_collapsable_container(id = "global_DEG_table", html_code = html_code))
@@ -213,9 +213,9 @@ end.rcode-->
             }else{
                 main <- plotter$prettify_div(plotter$static_plot_main("condition_DEGs", custom_format = TRUE,
                                  plotting_function = DEGs_volcano), preset = "magic")
-                table_code <- plotter$prettify_div(plotter$table("condition_DEGs", header = NULL,
+                table_code <- plotter$prettify_div(plotter$table(list(id = "condition_DEGs", header = NULL,
                                                                  row_names = NULL, table_rownames = FALSE,
-                                                                 styled = "dt", func = get_top_DEGs),
+                                                                 styled = "dt", func = get_top_DEGs)),
                                                   preset = "magic")
                 table_title <- plotter$create_title(paste0(title, " DEGenes table"), paste0(title," DEG table"), hlevel = 3,
                                          indexable = FALSE, clickable = TRUE, t_id = paste0(title, "_DEG_table"),
@@ -305,9 +305,9 @@ end.rcode-->
         cat(subset_legend)
         cat(plotter$prettify_div(plotter$static_plot_main("condition_DEGs", custom_format = TRUE,
                                                           plotting_function = DEGs_volcano), preset = "magic"))
-        html_code <- plotter$prettify_div(plotter$table("condition_DEGs", header = NULL, row_names = NULL,
+        html_code <- plotter$prettify_div(plotter$table(list(id = "condition_DEGs", header = NULL, row_names = NULL,
                                                             table_rownames = FALSE, styled = "dt",
-                                                            func = get_top_DEGs), preset = "magic")
+                                                            func = get_top_DEGs)), preset = "magic")
         html_code <- paste(subset_legend, html_code, sep = "\n")
         cat(plotter$create_title(paste0(subset, " global DEGenes table"), paste0(subset, " global DEG table"), hlevel = 3, indexable = FALSE,
                                       clickable = TRUE, t_id = paste0(subset, "_global_DEG_table"), clickable_text = ""))
@@ -323,9 +323,9 @@ end.rcode-->
             }else{
                 main <- plotter$prettify_div(plotter$static_plot_main("condition_DEGs", custom_format = TRUE,
                                  plotting_function = DEGs_volcano), preset = "magic")
-                table_code <- plotter$prettify_div(plotter$table("condition_DEGs", header = NULL,
+                table_code <- plotter$prettify_div(plotter$table(list(id = "condition_DEGs", header = NULL,
                                                                  row_names = NULL, table_rownames = FALSE,
-                                                                 styled = "dt", func = get_top_DEGs),
+                                                                 styled = "dt", func = get_top_DEGs)),
                                                   preset = "magic")
                 table_title <- plotter$create_title(paste0(title, " DEGenes table"), paste0(subset, title," DEG table"), hlevel = 3,
                                          indexable = FALSE, clickable = TRUE, t_id = paste0(subset, title, "_DEG_table"),
@@ -404,7 +404,7 @@ end.rcode-->
                                     hlevel = 2, indexable = FALSE, clickable = FALSE,
                                     t_id = paste0(element_name, "_distr"), clickable_text = "")
       if(!any(features %in% rownames(SeuratObject::GetAssayData(plotter$hash_vars$seu)))) {
-          element_code <- "<p>Object contains none of the specified features</p>"
+          element_code <- "<p>None of the features in this group have been detected in dataset</p>"
       } else {
           code <- plotter$prettify_div(plotter$static_plot_main("seu", custom_format = TRUE,
                                        plotting_function = Custom_DotPlot), preset = "magic")
@@ -412,8 +412,8 @@ end.rcode-->
                                               paste0(element_name, " Query Table"),
                                               hlevel = 3, indexable = FALSE, clickable = TRUE,
                                               t_id = paste0(element_name, "_query_table"), clickable_text = "")
-          table <- plotter$prettify_div(plotter$table("markers", header = NULL, row_names = NULL,
-                                                      table_rownames = FALSE, styled = "dt", func = subset_table),
+          table <- plotter$prettify_div(plotter$table(list(id = "markers", header = NULL, row_names = NULL,
+                                                      table_rownames = FALSE, styled = "dt", func = subset_table)),
                                                       preset = "magic")
           table <- plotter$create_collapsable_container(id = paste0(element_name, "_query_table"),
                                                         html_code = table)
