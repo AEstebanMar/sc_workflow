@@ -213,8 +213,6 @@ if(opt$reduce) {
 
 message("Analyzing seurat object")
 
-save.image('Testing.RData')
-
 final_results <- main_analyze_seurat(seu = seu, cluster_annotation = cluster_annotation,
                                      ndims = opt$ndims, resolution = opt$resolution, int_columns = int_columns,
                                      cell_annotation = cell_annotation, DEG_columns = DEG_columns,
