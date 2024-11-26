@@ -297,23 +297,25 @@ match_cell_types <- function(markers_df, cell_annotation, p_adj_cutoff = 1e-5) {
 #'   * `FALSE` (the default): Function will calculate cluster markers.
 #' @param cond A string. Condition by which to perform DEG analysis, or by which
 #' to group data to find conserved markers.
+#' @param idents Identity class to which to set seurat object before calculating
+#' markers in case conserved mode cannot be triggered.
 #' @param verbose A boolean. Will be passed to Seurat function calls.
 #' @returns A list containing one marker or DEG data frame per cluster, plus
 #' an additional one for global DEGs if performing differential analysis.
 
-get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
+get_sc_markers <- function(seu, cond = NULL, subset_by = NULL,
+                           DEG = FALSE, verbose = FALSE) {
   conds <- unique(seu@meta.data[[cond]])
   marker_meta <- list(high = paste0(cond, ": ", conds[1]),
                       low = paste0(cond, ": ", conds[2]))
-  cell_types <- sort(unique(Seurat::Idents(seu)))
-  cell_type_markers <- vector(mode = "list", length = length(cell_types))
-  names(cell_type_markers) <- as.character(cell_types)
-  for (i in seq(length(cell_types))) {
-    message(paste0("Analysing cluster ", i, "/", length(cell_types)))
+  sub_values <- as.character(sort(unique(seu@meta.data[[subset_by]])))
+  sub_markers <- vector(mode = "list", length = length(sub_values))
+  names(sub_markers) <- as.character(sub_values)
+  for (i in seq(length(sub_values))) {
+    message(paste0("Analysing cluster ", i, "/", length(sub_values)))
     if(DEG) {
-      # off-by-one correction because Seurat counts clusters from 0
-      subset_seu <- subset_seurat(seu, "seurat_clusters", i - 1)
-      meta <- subset_seu@meta.data[[cond]]
+      subset_seu <- subset_seurat(seu, subset_by, sub_values[i])
+      meta <- as.character(subset_seu@meta.data[[cond]])
       ncells <- c(sum(meta==conds[1]), sum(meta==conds[2]))
       if(any(ncells < 3)) {
         warning(paste0('Cluster ', i, ' contains less than three cells for',
@@ -328,13 +330,13 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
         markers$gene <- rownames(markers)
       }
     } else {
-      markers <- Seurat::FindConservedMarkers(seu, ident.1 = cell_types[i],
+      markers <- Seurat::FindConservedMarkers(seu, ident.1 = sub_values[i],
                                               grouping.var = cond,
                                               verbose = verbose)
     }
     nums <- sapply(markers, is.numeric)
     markers[nums] <- lapply(markers[nums], signif, 2)
-    cell_type_markers[[as.character(cell_types[i])]] <- markers
+    sub_markers[[as.character(sub_values[i])]] <- markers
   }
   if(DEG) {
     message("Calculating global DEGs")
@@ -344,19 +346,19 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
     global_markers$gene <- rownames(global_markers)
     nums <- sapply(global_markers, is.numeric)
     global_markers[nums] <- lapply(global_markers[nums], signif, 2)
-    cell_type_markers[["global"]] <- global_markers
+    sub_markers[["global"]] <- global_markers
   }
   if(!is.null(seu@meta.data$cell_type)) {
     metadata <- unique(seu@meta.data[, c("seurat_clusters", "cell_type")])
     cell_type <- metadata[order(metadata$seurat_clusters), ]$cell_type
-    if(length(cell_type_markers) == length(cell_type) + 1){
-      names(cell_type_markers) <- c(as.character(cell_type), "global")
+    if(length(sub_markers) == length(cell_type) + 1){
+      names(sub_markers) <- c(as.character(cell_type), "global")
     } else {
       message("Cell types have not been annotated by cluster. Clusters cannot
         be renamed.")
       } 
   }
-  res <- list(meta = marker_meta, markers = cell_type_markers)
+  res <- list(meta = marker_meta, markers = sub_markers)
   return(res)
 }
 
@@ -368,12 +370,13 @@ get_sc_markers <- function(seu, cond = NULL, DEG = FALSE, verbose = FALSE) {
 #' markers in case conserved mode cannot be triggered.
 
 calculate_markers <- function(seu, int_columns, verbose = FALSE, idents = NULL,
-                              DEG = FALSE) {
+                              DEG = FALSE, integrate = FALSE) {
   run_conserved <- ifelse(test = length(int_columns) == 1 & integrate,
                           no = FALSE, yes = !has_exclusive_clusters(seu = seu,
                                                    cond = tolower(int_columns)))
   if(run_conserved) {
-    markers <- get_sc_markers(seu = seu, cond = int_columns, DEG = FALSE)
+    markers <- get_sc_markers(seu = seu, cond = int_columns, DEG = FALSE,
+                              subset_by = idents, verbose = verbose)
     markers <- collapse_markers(markers$markers)
   }else{
     Seurat::Idents(seu) <- idents
