@@ -126,8 +126,8 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
     dev.off()
     message("Calculating cell type markers")
     markers <- calculate_markers(seu = seu, int_columns = int_columns,
-                               integrate = integrate, verbose = verbose,
-                               idents = "cell_type")
+                                 integrate = integrate, verbose = verbose,
+                                 idents = "cell_type")
   } else if(!is.null(cluster_annotation)) {
   	message("Clusters annotation file provided. Annotating clusters.")
   	seu <- annotate_clusters(seu = seu, new_clusters = cluster_annotation$name)
@@ -138,6 +138,7 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
     markers <- calculate_markers(seu = seu, int_columns = int_columns,
                                integrate = integrate, verbose = verbose,
                                idents = "seurat_clusters")
+    message("Annotating clusters")
 	  annotated_clusters <- match_cell_types(markers_df = markers,
                                            cell_annotation = cell_annotation,
                                            p_adj_cutoff = p_adj_cutoff)
@@ -167,10 +168,12 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
     }
     DEG_list <- vector(mode = "list", length = length(DEG_conditions))
     names(DEG_list) <- DEG_conditions
+    subset_by <- ifelse("cell_type" %in% colnames(seu@meta.data),
+                        yes = "cell_type", no = "seurat_clusters")
     for(condition in DEG_conditions) {
       message(paste0("Calculating DEGs for condition ", condition, "."))
       condition_DEGs <- get_sc_markers(seu = seu, cond = condition, DEG = TRUE,
-                                       verbose = verbose)
+                                       subset_by = subset_by, verbose = verbose)
       DEG_list[[condition]] <- condition_DEGs
     }
     if(length(int_columns) == 2) {
