@@ -1,4 +1,4 @@
-sc_preprocessing){
+sc_sample_analysis){
        source ~soft_bio_267/initializes/init_R 
        export PATH=$aux_sh_dir:$PATH
        export PATH=$script_dir:$PATH

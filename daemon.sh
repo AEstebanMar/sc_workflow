@@ -13,7 +13,7 @@ export CODE_PATH=$(readlink -f $framework_dir )
 CONFIG_DAEMON=$1
 export module=$2 # For setting global vars from config_daemon according to the stage
 source $CONFIG_DAEMON
-mkdir -p $output
+mkdir -p $output/report
 export PATH=$LAB_SCRIPTS:$PATH
 export PATH=$CODE_PATH'/scripts:'$PATH
 export PATH=$CODE_PATH'/aux_sh:'$PATH
@@ -27,7 +27,7 @@ else
     TEMPLATES=$TEMPLATE_PATH/count_sc.af
 fi
 
-TEMPLATES="$TEMPLATES,$TEMPLATE_PATH/preprocessing.af"
+TEMPLATES="$TEMPLATES,$TEMPLATE_PATH/sc_sample_analysis.af"
 
 . ~soft_bio_267/initializes/init_autoflow
 
