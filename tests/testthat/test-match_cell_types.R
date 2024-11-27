@@ -1,3 +1,4 @@
+
 test_that("Cell type matching sorted simple case", {
 	markers_df <- data.frame(samples = seq(1, 4),
 							 cluster = seq(1, 4),
