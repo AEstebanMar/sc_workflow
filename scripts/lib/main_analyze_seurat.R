@@ -163,9 +163,6 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   if(!is.null(DEG_columns) & integrate) {
     message('Performing DEG analysis.')
     DEG_conditions <- unlist(strsplit(DEG_columns, split = ","))
-    if(length(DEG_conditions) == 0) {
-      DEG_conditions <- int_columns
-    }
     DEG_list <- vector(mode = "list", length = length(DEG_conditions))
     names(DEG_list) <- DEG_conditions
     subset_by <- ifelse("cell_type" %in% colnames(seu@meta.data),
