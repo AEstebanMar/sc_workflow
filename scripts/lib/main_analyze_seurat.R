@@ -63,8 +63,8 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
     aggr.ref <- FALSE
     fine.tune <- TRUE
   } else {
-    message("Reduce argument is set to TRUE. Skipping QC subsetting and updating
-      configuration")
+    message("Reduce argument is set to TRUE. Skipping QC subsetting. Updating
+             SingleR configuration")
     seu <- qc
     aggr.ref <- TRUE
     fine.tune <- FALSE
@@ -184,7 +184,7 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
         subset_seu[[value]] <- subset_seurat(seu, DEG_conditions[1], value)
         subset_DEGs[[value]] <- get_sc_markers(seu = subset_seu[[value]],
                                   cond = DEG_conditions[2], DEG = TRUE,
-                                  verbose = verbose)
+                                  subset_by = subset_by, verbose = verbose)
       }
     }
   } else {
