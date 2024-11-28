@@ -297,14 +297,14 @@ match_cell_types <- function(markers_df, cell_annotation, p_adj_cutoff = 1e-5) {
 #'   * `FALSE` (the default): Function will calculate cluster markers.
 #' @param cond A string. Condition by which to perform DEG analysis, or by which
 #' to group data to find conserved markers.
-#' @param idents Identity class to which to set seurat object before calculating
-#' markers in case conserved mode cannot be triggered.
+#' @param subset_by Metadata column by which seurat object will be subset for
+#' marker calculation.
 #' @param verbose A boolean. Will be passed to Seurat function calls.
 #' @returns A list containing one marker or DEG data frame per cluster, plus
 #' an additional one for global DEGs if performing differential analysis.
 
-get_sc_markers <- function(seu, cond = NULL, subset_by = NULL,
-                           DEG = FALSE, verbose = FALSE) {
+get_sc_markers <- function(seu, cond = NULL, subset_by, DEG = FALSE,
+                           verbose = FALSE) {
   conds <- unique(seu@meta.data[[cond]])
   marker_meta <- list(high = paste0(cond, ": ", conds[1]),
                       low = paste0(cond, ": ", conds[2]))
@@ -348,7 +348,7 @@ get_sc_markers <- function(seu, cond = NULL, subset_by = NULL,
     global_markers[nums] <- lapply(global_markers[nums], signif, 2)
     sub_markers[["global"]] <- global_markers
   }
-  if(!is.null(seu@meta.data$cell_type)) {
+  if(all(c("cell_type", "seurat_clusters") %in% colnames(seu@meta.data))) {
     metadata <- unique(seu@meta.data[, c("seurat_clusters", "cell_type")])
     cell_type <- metadata[order(metadata$seurat_clusters), ]$cell_type
     if(length(sub_markers) == length(cell_type) + 1){
@@ -372,8 +372,9 @@ get_sc_markers <- function(seu, cond = NULL, subset_by = NULL,
 calculate_markers <- function(seu, int_columns, verbose = FALSE, idents = NULL,
                               DEG = FALSE, integrate = FALSE) {
   run_conserved <- ifelse(test = length(int_columns) == 1 & integrate,
-                          no = FALSE, yes = !has_exclusive_clusters(seu = seu,
-                                                   cond = tolower(int_columns)))
+                          no = FALSE,
+                          yes = !has_exclusive_idents(seu = seu,
+                                  idents = idents, cond = tolower(int_columns)))
   if(run_conserved) {
     markers <- get_sc_markers(seu = seu, cond = int_columns, DEG = FALSE,
                               subset_by = idents, verbose = verbose)
@@ -609,20 +610,22 @@ breakdown_query <- function(seu, query, assay = "RNA", layer = "counts") {
   return(pct)   
 }
 
-#' has_exclusive_clusters
-#' `has_exclusive_clusters` checks whether any condition-cluster pairs in
+#' has_exclusive_idents
+#' `has_exclusive_idents` checks whether any condition-identity pairs in
 #' seurat object has less than three occurrences, which makes certain analyses
 #' impossible.
 #'
 #' @param seu Seurat object
 #' @param cond Condition to check
+#' @param idents Identity class to which to set seurat object before calculating
+#' markers in case conserved mode cannot be triggered.
 #'
 #' @returns A boolean. `TRUE` if it contains exclusive pairs, `FALSE` otherwise.
 
-has_exclusive_clusters <- function(seu, cond) {
-  meta <- seu@meta.data[, c(cond, "seurat_clusters")]
+has_exclusive_idents <- function(seu, cond, idents) {
+  meta <- seu@meta.data[, c(cond, idents)]
   groups <- unique(meta[[cond]])
-  clusters <- unique(meta[["seurat_clusters"]])
+  clusters <- unique(meta[[idents]])
   pairs <- expand.grid(groups, clusters)
   sum_matches <- vector(mode = "integer", length = nrow(pairs))
   for(pair in seq(nrow(pairs))) {
@@ -631,7 +634,7 @@ has_exclusive_clusters <- function(seu, cond) {
   }
   if(any(sum_matches < 3)) {
     mismatch <- pairs[which(sum_matches < 3), ]
-    warning('One or more clusters contain less than three cells for one or ',
+    warning('One or more identities contain less than three cells for one or ',
             'more categories. Affected pair(s): ',
             paste(apply(mismatch, 1, paste, collapse = "-"), collapse = ", "),
             ". \nDefaulting to general marker analysis.")
