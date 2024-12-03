@@ -104,8 +104,8 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
     message("Annotation by clusters not active. Skipping clustering step")
   }
   if(!is.null(SingleR_ref)) {
-    message("SingleR reference provided. Annotating cells. This option overrides
-      all other annotation methods.")
+    message(paste0("SingleR reference provided. Annotating cells. This option",
+    " overrides all other annotation methods."))
     counts_matrix <- Seurat::GetAssayData(seu)
     SingleR_annotation <- SingleR::SingleR(test = counts_matrix,
                                            ref = SingleR_ref,
@@ -253,8 +253,9 @@ write_seurat_report <- function(final_results, output = getwd(), name = NULL,
   if(!file.exists(template)) {
     stop("Specified template does not exist in template folder.")
   }
-  tmp_folder <- "tmp_lib"
   out_file <- file.path(output, paste0(name, "_", out_name))
+  tmp_folder <- file.path(output, "tmp_lib")
+  dir.create(tmp_folder)
   container <- list(seu = final_results$seu, qc = final_results$qc,
                     int_columns = int_columns, use_canvas = use_canvas,
                     DEG_list = final_results$DEG_list,
