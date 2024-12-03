@@ -203,12 +203,12 @@ end.rcode-->
                                   clickable = TRUE, t_id = "global_DEG_table", clickable_text = ""))
         cat(plotter$create_collapsable_container(id = "global_DEG_table", html_code = html_code))
         samples_html <- vector(mode = "character", length = length(condition_DEGs) - 1)
-        for (j in seq(length(condition_DEGs) - 1)) {
-            level <- names(condition_DEGs)[j]
+        for (j in seq(length(condition_DEGs$markers) - 1)) {
+            level <- names(condition_DEGs$markers)[j]
             title <- paste0("Cluster ", level)
             plotter$hash_vars$condition_DEGs <- condition_DEGs$markers[[j]]
             if(FALSE %in% condition_DEGs$markers[[j]]) {
-                main <- plotter$prettify_div(paste0("<p>Identity ", level, "contained exclusive pairs,
+                main <- plotter$prettify_div(paste0("<p>Identity ", level, " contained exclusive pairs,
                                          DEG analysis was not possible."), preset = "magic")
                 samples_html[[j]] <- main
             }else{
@@ -225,12 +225,12 @@ end.rcode-->
                                                                         html_code = table_code)
                 samples_html[[j]] <- paste(DEG_legend, main, table_title, table_container, collapse = "\n")
             }
-            samples_html <- paste(samples_html, collapse = "\n")
-            cat(plotter$create_title(paste0(condition, " DEG analysis by cluster"), paste0(condition, " DEG clusters"),
-                                     hlevel = 2, indexable = FALSE, clickable = TRUE,
-                                     t_id = paste0(condition, "_cluster_DEG"), clickable_text = ""))
-            cat(plotter$create_collapsable_container(id = paste0(condition, "_cluster_DEG"), html_code = samples_html))
         }
+        samples_html <- paste(samples_html, collapse = "\n")
+        cat(plotter$create_title(paste0(condition, " DEG analysis by cluster"), paste0(condition, " DEG clusters"),
+                                 hlevel = 2, indexable = FALSE, clickable = TRUE,
+                                 t_id = paste0(condition, "_cluster_DEG"), clickable_text = ""))
+        cat(plotter$create_collapsable_container(id = paste0(condition, "_cluster_DEG"), html_code = samples_html))
     }
 end.rcode-->
 
