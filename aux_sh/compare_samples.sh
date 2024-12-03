@@ -68,4 +68,6 @@ sc_analysis.R --output $output \
               --verbose $verbose \
               --reduce $reduce \
               --samples_to_integrate $samples_to_process \
-              --integrate TRUE
+              --integrate TRUE \
+              --saveRDS $saveRDS \
+              --loadRDS $loadRDS

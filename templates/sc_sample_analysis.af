@@ -30,7 +30,9 @@ sc_sample_analysis){
                      --p_adj_cutoff $p_adj_cutoff \
                      --verbose $verbose \
                      --reduce $reduce \
-                     --cpu [cpu]
+                     --cpu [cpu] \
+                     --saveRDS $saveRDS \
+                     --loadRDS $loadRDS
 
        retVal=$?
        if [ $retVal -ne 0 ]; then
