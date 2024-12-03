@@ -35,6 +35,8 @@ export INTEGRATE_RESULTS_FOLDER=$experiment_folder"/integrate_results"      #---
 export LAB_SCRIPTS="/mnt/home/soft/soft_bio_267/programs/x86_64/scripts"    #-------#    Folder with the lab scripts in Picasso (bio_267)
 export transcriptome=$CODE_PATH"/references/refdata-gex-$genome-2020-A"    #-------#    Transcriptome for reference (MOUSE -> mm10, HUMAN -> GRCh38)
 export verbose=FALSE	#-------# Set to TRUE to set "verbose" argument of base Seurat functions to TRUE. Only recommended for debugging, as it bloats the error logs with progress bars. However, it is also the only way to monitor how many clusters have been found by the FindClusters function.
+export saveRDS=FALSE #------# Whether or not to save final seurat object as an RDS file.
+export loadRDS=FALSE #------# If TRUE, processing will be skipped. Processed object will instead be loaded from location where pipeline saves when saveRDS is set to TRUE.
 
 ##################################
 ###### EXECUTION VARIABLES #######

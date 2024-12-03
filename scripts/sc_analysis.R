@@ -99,7 +99,12 @@ option_list <- list(
                     if ref_de_method is empty."),
   optparse::make_option("--integrate", type = "logical", default = FALSE, action = "store_true",
             help = "Activate integrative analysis. If FALSE (the default), script will assume
-                    only one sample.")
+                    only one sample."),
+  optparse::make_option("--saveRDS", type = "logical", default = FALSE, action = "store_true",
+            help = "Save final RDS object."),
+  optparse::make_option("--loadRDS", type = "logical", default = FALSE, action = "store_true",
+            help = "Load RDS object instead of re-processing the entire experiment.
+            Loads it from default pipeline saving location.")
 )  
 
 opt <- optparse::parse_args(optparse::OptionParser(option_list = option_list))
@@ -126,24 +131,10 @@ if(opt$cell_annotation != "") {
   cell_annotation <- NULL
 }
 
-split_path <- strsplit(opt$SingleR_ref, "/")[[1]]
-if(split_path[length(split_path)] != "") {
-  path_to_ref <- opt$SingleR_ref
-  if(opt$ref_version != "") {
-    path_to_ref <- paste(path_to_ref, opt$ref_version, sep = "_")
-  }
-  message("Loading provided SingleR reference")
-  SingleR_ref <- HDF5Array::loadHDF5SummarizedExperiment(dir = path_to_ref, prefix = "")
+if(opt$integrate) {
+  out_suffix <- "integration_report.html"
 } else {
-  SingleR_ref <- NULL
-}
-
-if(opt$ref_de_method == "") {
-  ref_de_method <- NULL
-  ref_n <- NULL
-} else {
-  ref_de_method <- opt$ref_de_method
-  ref_n <- opt$ref_n
+  out_suffix <- "sample_report.html"
 }
 
 if(opt$target_genes == ""){
@@ -170,7 +161,6 @@ if(opt$integrate) {
   int_columns <- NULL
 }
 
-
 if(opt$DEG_columns == "") {
   DEG_columns <- int_columns
 } else {
@@ -186,43 +176,65 @@ if(opt$samples_to_integrate == "") {
 
 exp_design <- exp_design[exp_design$sample %in% samples, ]
 
-if(opt$integrate) {
-    if(opt$imported_counts == "") {
-    seu <- merge_seurat(project = opt$name, exp_design = exp_design,
-                        suffix = opt$suffix, count_path = opt$input)  
+if(!opt$loadRDS) {
+  split_path <- strsplit(opt$SingleR_ref, "/")[[1]]
+  if(split_path[length(split_path)] != "") {
+    path_to_ref <- opt$SingleR_ref
+    if(opt$ref_version != "") {
+      path_to_ref <- paste(path_to_ref, opt$ref_version, sep = "_")
+    }
+    message("Loading provided SingleR reference")
+    SingleR_ref <- HDF5Array::loadHDF5SummarizedExperiment(dir = path_to_ref, prefix = "")
   } else {
-    seu <- Seurat::CreateSeuratObject(counts = Seurat::Read10X(opt$imported_counts, gene.column = 1),
-                                             project = opt$name, min.cells = 1, min.features = 1)
-    seu_meta <- read.table(file.path(opt$imported_counts, "meta.tsv"), sep = "\t", header = TRUE)
-    rownames(merged_seu_meta) <- colnames(merged_seu)
-    seu <- Seurat::AddMetaData(merged_seu, merged_seu_meta, row.names("Cell_ID"))
+    SingleR_ref <- NULL
   }
-  out_suffix <- "integration_report.html"
+  if(opt$ref_de_method == "") {
+  ref_de_method <- NULL
+  ref_n <- NULL
+  } else {
+    ref_de_method <- opt$ref_de_method
+    ref_n <- opt$ref_n
+  }
+  if(opt$integrate) {
+    if(opt$imported_counts == "") {
+      seu <- merge_seurat(project = opt$name, exp_design = exp_design,
+                          suffix = opt$suffix, count_path = opt$input)  
+    } else {
+      seu <- Seurat::CreateSeuratObject(counts = Seurat::Read10X(opt$imported_counts, gene.column = 1),
+                                               project = opt$name, min.cells = 1, min.features = 1)
+      seu_meta <- read.table(file.path(opt$imported_counts, "meta.tsv"), sep = "\t", header = TRUE)
+      rownames(merged_seu_meta) <- colnames(merged_seu)
+      seu <- Seurat::AddMetaData(merged_seu, merged_seu_meta, row.names("Cell_ID"))
+    }
+  } else {
+    input <- file.path(opt$input, ifelse(opt$filter, "filtered_feature_bc_matrix",
+                                                   "raw_feature_bc_matrix"))
+    seu <- read_input(name = opt$name, input = input, mincells = opt$mincells,
+                      minfeats = opt$minfeats, exp_design = exp_design)
+  }
+  if(opt$reduce) {
+    message('Downsampling seurat object')
+    seu <- downsample_seurat(seu, cells = 500, features = 5000, keep = unlist(target_genes))
+  }
+}
+
+if(opt$loadRDS) {
+  file <- file.path(opt$output, paste0(opt$name, ".final_results.rds"))
+  message(paste0("Loading processed object from ", file))
+  final_results <- readRDS(file)
 } else {
-  input <- file.path(opt$input, ifelse(opt$filter, "filtered_feature_bc_matrix",
-                                                 "raw_feature_bc_matrix"))
-  seu <- read_input(name = opt$name, input = input, mincells = opt$mincells,
-                    minfeats = opt$minfeats, exp_design = exp_design)
-  out_suffix <- "sample_report.html"
+  message("Analyzing seurat object")
+  final_results <- main_analyze_seurat(seu = seu, cluster_annotation = cluster_annotation,
+                                      ndims = opt$ndims, resolution = opt$resolution, int_columns = int_columns,
+                                      cell_annotation = cell_annotation, DEG_columns = DEG_columns,
+                                      minqcfeats = opt$minqcfeats, percentmt = opt$percentmt, hvgs = opt$hvgs,
+                                      scalefactor = opt$scalefactor, normalmethod = opt$normalmethod,
+                                      p_adj_cutoff = opt$p_adj_cutoff, verbose = opt$verbose, sigfig = 2,
+                                      output = opt$output, integrate = opt$integrate, query = unlist(target_genes),
+                                      reduce = opt$reduce, save_RDS = opt$saveRDS, SingleR_ref = SingleR_ref,
+                                      ref_label = opt$ref_label, ref_de_method = ref_de_method, ref_n = ref_n,
+                                      BPPARAM = BPPARAM)
 }
-
-if(opt$reduce) {
-  message('Downsampling seurat object')
-  seu <- downsample_seurat(seu, cells = 500, features = 5000, keep = unlist(target_genes))
-}
-
-message("Analyzing seurat object")
-
-final_results <- main_analyze_seurat(seu = seu, cluster_annotation = cluster_annotation,
-                                     ndims = opt$ndims, resolution = opt$resolution, int_columns = int_columns,
-                                     cell_annotation = cell_annotation, DEG_columns = DEG_columns,
-                                     minqcfeats = opt$minqcfeats, percentmt = opt$percentmt, hvgs = opt$hvgs,
-                                     scalefactor = opt$scalefactor, normalmethod = opt$normalmethod,
-                                     p_adj_cutoff = opt$p_adj_cutoff, verbose = opt$verbose, sigfig = 2,
-                                     output = opt$output, integrate = opt$integrate, query = unlist(target_genes),
-                                     reduce = opt$reduce, save_RDS = TRUE, SingleR_ref = SingleR_ref,
-                                     ref_label = opt$ref_label, ref_de_method = ref_de_method,
-                                     ref_n = ref_n, BPPARAM = BPPARAM)
 
 message("-----------------------------------")
 message("---------Writing QC report---------")
