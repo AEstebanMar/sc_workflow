@@ -254,7 +254,7 @@ write_seurat_report <- function(final_results, output = getwd(), name = NULL,
     stop("Specified template does not exist in template folder.")
   }
   out_file <- file.path(output, paste0(name, "_", out_name))
-  tmp_folder <- file.path(output, "tmp_lib")
+  tmp_folder <- file.path(output, paste0(name, "_tmp_lib"))
   dir.create(tmp_folder)
   container <- list(seu = final_results$seu, qc = final_results$qc,
                     int_columns = int_columns, use_canvas = use_canvas,
