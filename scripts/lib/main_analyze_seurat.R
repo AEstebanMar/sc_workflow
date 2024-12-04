@@ -128,25 +128,30 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
     markers <- calculate_markers(seu = seu, int_columns = int_columns,
                                  integrate = integrate, verbose = verbose,
                                  idents = "cell_type")
-  } else if(!is.null(cluster_annotation)) {
-  	message("Clusters annotation file provided. Annotating clusters.")
-  	seu <- annotate_clusters(seu = seu, new_clusters = cluster_annotation$name)
-  } else if(!is.null(cell_annotation)){
-	  message(paste0("No reference provided for cell type annotation.",
-                   " Dynamically annotating clusters."))
-    message("Calculating cluster markers")
-    markers <- calculate_markers(seu = seu, int_columns = int_columns,
-                               integrate = integrate, verbose = verbose,
-                               idents = "seurat_clusters")
-    message("Annotating clusters")
-	  annotated_clusters <- match_cell_types(markers_df = markers,
-                                           cell_annotation = cell_annotation,
-                                           p_adj_cutoff = p_adj_cutoff)
-	  markers <- annotated_clusters$summary
-	  seu <- annotate_clusters(seu, annotated_clusters$cell_types)
   } else {
-  	warning("No data provided for cluster annotation.")
-    seu@meta.data$cell_types <- seu@meta.data$seurat_clusters
+    if(!is.null(cell_annotation)) {
+      message(paste0("No reference provided for cell type annotation.",
+                     " Dynamically annotating clusters."))
+      message("Calculating cluster markers")
+      markers <- calculate_markers(seu = seu, int_columns = int_columns,
+                                   integrate = integrate, verbose = verbose,
+                                   idents = "seurat_clusters")
+      message("Annotating clusters")
+      annotated_clusters <- match_cell_types(markers_df = markers,
+                                             cell_annotation = cell_annotation,
+                                             p_adj_cutoff = p_adj_cutoff)
+      markers <- annotated_clusters$summary
+      seu <- annotate_clusters(seu, annotated_clusters$cell_types)
+    } else if(!is.null(cluster_annotation)){
+      message("Clusters annotation file provided. Annotating clusters.")
+      seu <- annotate_clusters(seu = seu,
+                               new_clusters = cluster_annotation$name)
+      markers <- calculate_markers(seu = seu, int_columns = int_columns,
+                                   integrate = integrate, verbose = verbose,
+                                   idents = "cell_type")
+    } else {
+      warning("No data provided for cluster annotation.", immediate. = TRUE)
+    }
   }
   SingleR_annotation <- NULL
   message("Extracting expression quality metrics.")
@@ -162,6 +167,7 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
   subset_seu <- NULL
   if(!is.null(DEG_columns) & integrate) {
     message('Performing DEG analysis.')
+    save(list = ls(), file = "env.RData")
     DEG_conditions <- unlist(strsplit(DEG_columns, split = ","))
     DEG_list <- vector(mode = "list", length = length(DEG_conditions))
     names(DEG_list) <- DEG_conditions
