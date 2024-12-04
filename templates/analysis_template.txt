@@ -17,7 +17,9 @@
     }
 
     Custom_DimPlot <- function(seu) {
-        Seurat::Idents(seu) <- seu@meta.data$cell_type
+        ident <- ifelse("cell_type" %in% colnames(seu@meta.data),
+                        yes = "cell_type", no = "seurat_clusters")
+        Seurat::Idents(seu) <- seu@meta.data[[ident]]
         res <- Seurat::DimPlot(seu, reduction = reduction, label = label, repel = TRUE, split.by = split.by,
                         group.by = group.by) 
         if(label) {

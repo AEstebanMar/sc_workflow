@@ -151,6 +151,9 @@ main_analyze_seurat <- function(seu, minqcfeats, percentmt, query, sigfig = 2,
                                    idents = "cell_type")
     } else {
       warning("No data provided for cluster annotation.", immediate. = TRUE)
+      markers <- calculate_markers(seu = seu, int_columns = int_columns,
+                                   integrate = integrate, verbose = verbose,
+                                   idents = "seurat_clusters")
     }
   }
   SingleR_annotation <- NULL
