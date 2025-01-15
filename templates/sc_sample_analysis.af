@@ -1,11 +1,9 @@
 sc_sample_analysis){
-       source ~soft_bio_267/initializes/init_R 
-       export PATH=$aux_sh_dir:$PATH
-       export PATH=$script_dir:$PATH
+       source ~aestebanm/initializes/init_Hunter_dev
        mkdir -p results
        echo [cpu]
        ?
-       sc_analysis.R --input run_count)/"$sample"/outs \
+       sc_Hunter.R --input run_count)/"$sample"/outs \
                      --name $sample \
                      --filter $preproc_filter \
                      --mincells $preproc_init_min_cells \

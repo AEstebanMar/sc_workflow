@@ -18,7 +18,7 @@ if [ -z $SLURM_CPUS_PER_TASK ]; then
 fi
 
 . ~soft_bio_267/initializes/init_ruby
-. ~soft_bio_267/initializes/init_R
+. ~aestebanm/initializes/init_Hunter_dev
 hostname
 
 mkdir -p $output"/report"
@@ -36,7 +36,7 @@ if [ "$imported_counts" == "" ]; then
                       --cellranger_long_metrics $experiment_folder'/cellranger_metrics'
 fi
 
-sc_analysis.R --output $output \
+sc_Hunter.R --output $output \
               --name $experiment_name \
               --filter $preproc_filter \
               --mincells $preproc_init_min_cells \
