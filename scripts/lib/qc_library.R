@@ -98,3 +98,55 @@ make_hplot <- function(metric_df, features){
 
 ##########################################################################
 
+#' make_vln
+#' Make Violin plot
+#' 
+#' @param seu Seurat object / list of Seurat objects
+#' @param feature metadata feature to plot
+#' 
+#' @keywords preprocessing, report, plot, violin
+#' 
+#' @return nothing
+make_vln <- function(seu, feature){
+  seu <- extract_metadata(seu)
+  seu <- seu[, c("orig.ident", feature)]
+  colnames(seu)[2] <- "values"
+  ggplot() + 
+    geom_point(seu,
+               mapping = aes(orig.ident, values, fill = orig.ident),
+               shape = 21,
+               colour = "white",
+               size = 2,
+               stroke = 0.5,
+               position = "jitter",
+               alpha = 0.3) +
+    geom_violin(seu,
+                mapping = aes(orig.ident, values, fill = orig.ident),
+                width = 0.5,
+                color = "black") +
+    xlab(NULL) +
+    ylab(feature) +
+    labs(fill = NULL) +
+    theme_bw()
+}
+
+##########################################################################
+
+
+#' ensure_list
+#' Makes sure you have list of Seurat objects (even if you have only one)
+#' 
+#' @param seu Seurat object / list of Seurat objects
+#' 
+#' @keywords preprocessing, report, list
+#' 
+#' @return List of Seurat objects
+ensure_list <- function(seu){
+  if (!is.list(seu)){
+    seu <- list(seu)
+  }
+  return(seu)
+}
+
+##########################################################################
+
