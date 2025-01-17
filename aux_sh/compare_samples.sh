@@ -36,8 +36,17 @@ if [ "$imported_counts" == "" ]; then
                       --cellranger_long_metrics $experiment_folder'/cellranger_metrics'
 fi
 
+doublet_files=`find $FULL_RESULTS/*/sc_Hunter.R_0000/ -name doublet_list.txt`
+exp_doublet_file=$experiment_folder/$experiment_name"_doublets.txt"
+touch $exp_doublet_file
+truncate -s 0 $exp_doublet_file
+for doublet_file in $doublet_files; do
+    cat $doublet_file >> $exp_doublet_file
+done
+
 sc_Hunter.R --output $output \
             --name $experiment_name \
+            --doublet_file $exp_doublet_file \
             --filter $preproc_filter \
             --mincells $preproc_init_min_cells \
             --minfeats $preproc_init_min_feats \
