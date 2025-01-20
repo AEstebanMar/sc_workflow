@@ -70,9 +70,9 @@ sc_Hunter.R --output $output \
             --cell_annotation "$cell_annotation" \
             --SingleR_ref "$refs_path/$SingleR_ref" \
             --ref_version "$ref_version" \
-            --ref_label $ref_label \
+            --ref_label "$ref_label" \
             --ref_de_method "$ref_de_method" \
-            --ref_n $ref_n \
+            --ref_n "$ref_n" \
             --p_adj_cutoff $p_adj_cutoff \
             --verbose $verbose \
             --reduce $reduce \
