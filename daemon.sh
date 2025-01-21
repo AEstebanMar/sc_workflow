@@ -126,7 +126,9 @@ elif [ "$module" == "1c" ] ; then
         \\$ref_n=$ref_n,
         \\$p_adj_cutoff=$p_adj_cutoff,
         \\$verbose=$verbose,
-        \\$reduce=$reduce
+        \\$reduce=$reduce,
+        \\$saveRDS=$saveRDS,
+        \\$loadRDS=$loadRDS
         " | tr -d [:space:]`
         AutoFlow -w $TEMPLATES -V "$AF_VARS" $3 -o $FULL_RESULTS/$sample -v $RESOURCES
         echo Launching pending and failed jobs for $sample
