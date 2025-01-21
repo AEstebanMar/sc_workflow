@@ -4,7 +4,5 @@
 
 library(testthat)
 library(Seurat)
-source("../scripts/lib/sc_library.R")
-source("../scripts/lib/main_analyze_seurat.R")
-
+devtools::load_all("~/dev_R/ExpHunterSuite")
 test_dir("./testthat/")
