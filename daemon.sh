@@ -143,4 +143,9 @@ elif [ "$module" == "2" ] ; then
     else
         sbatch $CODE_PATH/aux_sh/compare_samples.sh --cpus-per-task $CPU --mem $mem
     fi
+    
+elif [ "$module" == "3" ] ; then
+    # RESULTS PACKAGING
+    echo "Creating Single-Cell results pack"
+    create_sc_pack.sh
 fi
