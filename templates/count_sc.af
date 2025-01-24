@@ -39,7 +39,6 @@ run_count){
 	rm -rf ./*/SC_RNA_COUNTER_CS
 }
 
-
 bam_quality_control){
 	source ~soft_bio_267/initializes/init_qualimap
 	unset DISPLAY # This line disable $DISPLAY definition to avoid errors in Qualimap html report rendering.
