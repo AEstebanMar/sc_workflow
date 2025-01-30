@@ -1,0 +1,38 @@
+sc_sample_analysis){
+       source ~aestebanm/initializes/init_Hunter_dev
+       mkdir -p results
+       ?
+       sc_Hunter.R --input run_count)/"$sample"/outs \
+                   --name $sample \
+                   --filter $preproc_filter \
+                   --mincells $preproc_init_min_cells \
+                   --minfeats $preproc_init_min_feats \
+                   --minqcfeats $preproc_qc_min_feats \
+                   --percentmt $preproc_max_percent_mt \
+                   --normalmethod $preproc_norm_method \
+                   --scalefactor $preproc_scale_factor \
+                   --hvgs $preproc_select_hvgs \
+                   --ndims $preproc_pca_n_dims \
+                   --dimheatmapcells $preproc_pca_n_cells \
+                   --output $output \
+                   --resolution $preproc_resolution \
+                   --exp_design $exp_design \
+                   --target_genes "$target_genes" \
+                   --cell_annotation "$cell_annotation" \
+                   --SingleR_ref "$SingleR_ref" \
+                   --ref_version "$ref_version" \
+                   --ref_label "$ref_label" \
+                   --ref_de_method "$ref_de_method" \
+                   --ref_n "$ref_n" \
+                   --p_adj_cutoff $p_adj_cutoff \
+                   --verbose $verbose \
+                   --reduce $reduce \
+                   --cpu [cpu] \
+                   --saveRDS $saveRDS \
+                   --loadRDS $loadRDS
+       retVal=$?
+       if [ $retVal -ne 0 ]; then
+           echo ERROR: Last command exited with code $retVal
+           exit $retVal
+       fi      
+}
