@@ -81,7 +81,9 @@ if [ "$module" == "1" ] ; then
         \\$verbose=$verbose,
         \\$reduce=$reduce,
         \\$saveRDS=$saveRDS,
-        \\$loadRDS=$loadRDS
+        \\$loadRDS=$loadRDS,
+        \\$filter_dataset=$filter_dataset,
+        \\$ref_filter=$ref_filter
         " | tr -d [:space:]`
         AutoFlow -w $TEMPLATES -V "$AF_VARS" $aux_opt -o $FULL_RESULTS/$sample $RESOURCES
     done < $samples_to_process
@@ -124,13 +126,15 @@ elif [ "$module" == "1c" ] ; then
         \\$ref_label=$ref_label,
         \\$ref_de_method=$ref_de_method,
         \\$ref_n=$ref_n,
+        \\$ref_filter=$ref_filter,
         \\$p_adj_cutoff=$p_adj_cutoff,
         \\$verbose=$verbose,
         \\$reduce=$reduce,
         \\$saveRDS=$saveRDS,
-        \\$loadRDS=$loadRDS
+        \\$loadRDS=$loadRDS,
+        \\$filter_dataset=$filter_dataset
         " | tr -d [:space:]`
-        AutoFlow -w $TEMPLATES -V "$AF_VARS" $3 -o $FULL_RESULTS/$sample -v $RESOURCES
+        AutoFlow -w $TEMPLATES -V "$AF_VARS" $aux_opt -o $FULL_RESULTS/$sample -v $RESOURCES
         echo Launching pending and failed jobs for $sample
         flow_logger -e $FULL_RESULTS/$sample -w -l -p
     done < $samples_to_process
