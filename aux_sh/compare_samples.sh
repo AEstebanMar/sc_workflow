@@ -23,6 +23,8 @@ hostname
 
 mkdir -p $output"/report"
 
+exp_doublet_file=""
+
 if [ "$imported_counts" == "" ]; then
     cat $FULL_RESULTS/*/metrics > $experiment_folder'/metrics'
     cat $FULL_RESULTS/*/cellranger_metrics > $experiment_folder'/cellranger_metrics'
@@ -34,19 +36,18 @@ if [ "$imported_counts" == "" ]; then
                       -e $experiment_name \
                       --cellranger_metrics $experiment_folder'/cellranger_metric_table' \
                       --cellranger_long_metrics $experiment_folder'/cellranger_metrics'
+    doublet_files=`find $FULL_RESULTS/*/sc_Hunter.R_0000/ -name doublet_list.txt`
+    exp_doublet_file=$experiment_folder/$experiment_name"_doublets.txt"
+    touch $exp_doublet_file
+    truncate -s 0 $exp_doublet_file
+    for doublet_file in $doublet_files; do
+        cat $doublet_file >> $exp_doublet_file
+    done
 fi
-
-doublet_files=`find $FULL_RESULTS/*/sc_Hunter.R_0000/ -name doublet_list.txt`
-exp_doublet_file=$experiment_folder/$experiment_name"_doublets.txt"
-touch $exp_doublet_file
-truncate -s 0 $exp_doublet_file
-for doublet_file in $doublet_files; do
-    cat $doublet_file >> $exp_doublet_file
-done
 
 sc_Hunter.R --output $output \
             --name $experiment_name \
-            --doublet_file $exp_doublet_file \
+            --doublet_file "$exp_doublet_file" \
             --filter $preproc_filter \
             --mincells $preproc_init_min_cells \
             --minfeats $preproc_init_min_feats \
@@ -79,4 +80,5 @@ sc_Hunter.R --output $output \
             --samples_to_integrate $samples_to_process \
             --integrate TRUE \
             --saveRDS $saveRDS \
-            --loadRDS $loadRDS
+            --loadRDS $loadRDS \
+            --filter_dataset "$filter_dataset"
