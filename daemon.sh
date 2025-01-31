@@ -47,12 +47,14 @@ fi
 if [ "$module" == "1" ] ; then
     mkdir -p $FULL_RESULTS
     echo Launching workflow
+    echo $ref_filter > $FULL_RESULTS/ref_filter
     while IFS= read sample; do
         echo Launching $sample
         AF_VARS=`echo "
         \\$sample=$sample,
         \\$exp_design=$exp_design,
         \\$read_path=$read_path,
+        \\$FULL_RESULTS=$FULL_RESULTS,
         \\$aux_sh_dir=$CODE_PATH/aux_sh,
         \\$script_dir=$CODE_PATH/scripts,
         \\$report_folder=$output/report,
@@ -82,8 +84,7 @@ if [ "$module" == "1" ] ; then
         \\$reduce=$reduce,
         \\$saveRDS=$saveRDS,
         \\$loadRDS=$loadRDS,
-        \\$filter_dataset=$filter_dataset,
-        \\$ref_filter=$ref_filter
+        \\$ref_filter=$FULL_RESULTS/ref_filter
         " | tr -d [:space:]`
         AutoFlow -w $TEMPLATES -V "$AF_VARS" $aux_opt -o $FULL_RESULTS/$sample $RESOURCES
     done < $samples_to_process
@@ -102,6 +103,7 @@ elif [ "$module" == "1c" ] ; then
         \\$sample=$sample,
         \\$exp_design=$exp_design,
         \\$read_path=$read_path,
+        \\$FULL_RESULTS=$FULL_RESULTS,
         \\$aux_sh_dir=$CODE_PATH/aux_sh,
         \\$script_dir=$CODE_PATH/scripts,
         \\$report_folder=$output/report,

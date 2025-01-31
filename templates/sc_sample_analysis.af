@@ -30,8 +30,8 @@ sc_sample_analysis){
                    --cpu [cpu] \
                    --saveRDS $saveRDS \
                    --loadRDS $loadRDS \
-                   --ref_filter "$ref_filter" \
-                   --filter_dataset "$filter_dataset"
+                   --ref_filter "$FULL_RESULTS/ref_filter" \
+                   --filter_dataset ""
        retVal=$?
        if [ $retVal -ne 0 ]; then
            echo ERROR: Last command exited with code $retVal
