@@ -19,6 +19,8 @@ export cell_annotation="$exp_data_folder/canon.tsv"
 export imported_counts=""	# Imported counts directory containing cellranger output files. If not empty, daemon 2 will load these files instead of output of daemon 1.
 export filter_dataset="" # Filter to apply when importing counts. Program will handle parsing. Leave empty ("") to apply no filter.
 export reduce=FALSE # If TRUE, dataset seurat object will be randomly downsampled to 3000 cells. Useful in testing.
+export refs_path="/mnt2/fscratch/users/bio_267_uma/aestebanm/resources/SingleR_references/"
+export ref_origin=$refs_path"/path/to/ref"	#-------#	Database from where reference will be retrieved ("celldex", "scRNAseq"). Can also be an SCP code, in which case it will be retrieved from refs_path.
 export SingleR_ref="reference_name"		#-------#    Name of reference to use, will be loaded as a SummarizedExperiment object. If empty (""), no SingleR annotation will be performed.
 export ref_filter="" # Filter to apply to reference dataset. Write it naturally, program will handle parsing. Leave empty ("") to disable filtering.
 export ref_label="cell_types" #------#	Column of reference metadata to use in annotation. For celldex references: "label.main", "label.fine", "label.ont". Dataset-specific otherwise.
@@ -30,6 +32,8 @@ export target_genes="path/to/targets/file" # Path to target genes file, or list 
 ######  EXECUTION VARIABLES #######
 
 export RESOURCES="--cpu 10 --time '1-00:00:00' --memory '30gb'"                          # Global AutoFlow resources 
+#export int_cpu=128	# CPUs to use in integrative analysis
+#export int_mem="600gb"	# Memory to use in integrative analysis
 export launch_login=FALSE                                                   # TRUE: use batch execution. FALSE: send to slurm.
 export experiment_folder=$FSCRATCH"/NGS_projects/"$experiment_name                 # Execution directory
 export FULL_RESULTS=$experiment_folder"/full_results"                       # Count execution path
