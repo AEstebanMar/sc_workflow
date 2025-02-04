@@ -16,7 +16,10 @@ if [ -z $SLURM_CPUS_PER_TASK ]; then
 else
     CPU=$SLURM_CPUS_PER_TASK
 fi
+
+source ~soft_bio_267/initializes/init_R
+
 get_SingleR_ref.R --reference "$SingleR_ref" --version "$ref_version" \
                   --output $refs_path --verbose $verbose \
                   --quiet $quiet --database "$ref_origin" \
-                  --ref_label $ref_label --cpu $CPU $aux_opt
+                  --ref_label "$ref_label" --cpu $CPU $aux_opt
