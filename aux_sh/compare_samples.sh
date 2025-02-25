@@ -4,10 +4,10 @@
 # STAGE 2 SAMPLES COMPARISON
 
 #SBATCH -J compare_samples.sh
-#SBATCH --cpus-per-task=48
-#SBATCH --mem='600gb'
+#SBATCH --cpus-per-task=12
+#SBATCH --mem='200gb'
 #SBATCH --constraint=cal
-#SBATCH --time=6-23:59:59
+#SBATCH --time=0-12:00:00
 #SBATCH --error=job.comp.%J.err
 #SBATCH --output=job.comp.%J.out
 
@@ -79,6 +79,11 @@ sc_Hunter.R --output $output \
             --reduce $reduce \
             --samples_to_integrate $samples_to_process \
             --integrate TRUE \
+            --int_method "$int_method" \
             --saveRDS $saveRDS \
             --loadRDS $loadRDS \
-            --filter_dataset "$filter_dataset"
+            --filter_dataset "$filter_dataset" \
+            --sketch $sketch \
+            --sketch_pct $sketch_pct \
+            --sketch_ncells $sketch_ncells \
+            --sketch_method "$sketch_method" #& process_monitoring.sh R $output/exec_params
