@@ -144,10 +144,12 @@ elif [ "$module" == "1c" ] ; then
 elif [ "$module" == "2" ] ; then
     # STAGE 2 SEURAT ANALYSIS
     echo "Launching stage 2: Samples comparison"
-    if [ $launch_login == TRUE ]; then  
+    ## if load_source is TRUE, we're launching through singularity image, therefore
+    ## sbatch is not available.
+    if [ $launch_login == TRUE ] || [ $load_source == "TRUE" ]; then  
         compare_samples.sh
     else
-        sbatch $CODE_PATH/aux_sh/compare_samples.sh --cpus-per-task $CPU --mem $mem
+        sbatch $CODE_PATH/aux_sh/compare_samples.sh --cpus-per-task $int_cpu --mem $int_mem
     fi
     
 elif [ "$module" == "3" ] ; then
