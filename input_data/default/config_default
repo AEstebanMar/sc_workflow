@@ -69,4 +69,4 @@ export sketch=TRUE # A boolean. Set to FALSE to disable data sketching.
 export sketch_pct=12 # Percentage of cells to select in sketching.
 export sketch_ncells=5000 # Min ncells value in sketching.
 export sketch_method="LeverageScore" # Method for sketching scores calculation. If empty ("")
-export force_ncells=1000 # Force sketching function to select this many cells per sample. Leave empty ("") to disable forcing.
+export force_ncells="" # Force sketching function to select this many cells per sample. Leave empty ("") to disable forcing.
