@@ -4,10 +4,10 @@
 # STAGE 2 SAMPLES COMPARISON
 
 #SBATCH -J compare_samples.sh
-#SBATCH --cpus-per-task=12
-#SBATCH --mem='200gb'
+#SBATCH --cpus-per-task=64
+#SBATCH --mem='1000gb'
 #SBATCH --constraint=cal
-#SBATCH --time=0-12:00:00
+#SBATCH --time=4-22:00:00
 #SBATCH --error=job.comp.%J.err
 #SBATCH --output=job.comp.%J.out
 
@@ -86,4 +86,5 @@ sc_Hunter.R --output $output \
             --sketch $sketch \
             --sketch_pct $sketch_pct \
             --sketch_ncells $sketch_ncells \
-            --sketch_method "$sketch_method" #& process_monitoring.sh R $output/exec_params
+            --sketch_method "$sketch_method"  \
+            --force_ncells $force_ncells #& process_monitoring.sh R $output/exec_params
