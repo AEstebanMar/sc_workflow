@@ -3,10 +3,11 @@
 
 source ~soft_bio_267/initializes/init_singularity
 script_dir=`dirname "$0"`
-export load_source=TRUE
+export singularity=TRUE
+export HTMLREPORT_PATH=~aestebanm/dev_R/htmlreportR
 mode=$1
 command=$2
-#singularity build --sandbox seurat/ /mnt/home/users/pab_001_uma/pedro/proyectos/seurat/seurat.sif
+#singularity build --sandbox seurat/ ./custom_seurat.sif
 #singularity shell --writable seurat/
 #singularity build custom_seurat.sif seurat/
 if [ "$mode" != "shell" ] && [ "$mode" != "exec" ] ; then
