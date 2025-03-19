@@ -60,7 +60,7 @@ sc_Hunter.R --output $output \
             --dimheatmapcells $preproc_pca_n_cells \
             --resolution $preproc_resolution \
             --exp_design $exp_design \
-            --int_columns "$int_columns" \
+            --subset_by "$subset_by" \
             --input $FULL_RESULTS"/*/cellranger_0000/*" \
             --suffix "outs/filtered_feature_bc_matrix" \
             --cluster_annotation "$cluster_annotation" \
@@ -85,6 +85,8 @@ sc_Hunter.R --output $output \
             --filter_dataset "$filter_dataset" \
             --sketch $sketch \
             --sketch_pct $sketch_pct \
-            --sketch_ncells $sketch_ncells \
             --sketch_method "$sketch_method"  \
-            --force_ncells $force_ncells #& process_monitoring.sh R $output/exec_params
+            --force_ncells "$force_ncells" \
+            --DEG_p_val_cutoff "$DEG_p_val_cutoff" \
+            --min_avg_log2FC "$min_avg_log2FC" \
+            --extra_columns "$extra_columns" #& process_monitoring.sh R $output/exec_params
