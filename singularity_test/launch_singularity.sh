@@ -16,4 +16,3 @@ fi
 export config_file=$1
 
 ./seurat.sh exec "../daemon.sh $config_file 2"
-
