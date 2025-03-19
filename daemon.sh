@@ -146,7 +146,7 @@ elif [ "$module" == "2" ] ; then
     echo "Launching stage 2: Samples comparison"
     ## if load_source is TRUE, we're launching through singularity image, therefore
     ## sbatch is not available.
-    if [ $launch_login == TRUE ] || [ "$singularity" == "TRUE" ]; then 
+    if [ "$launch_login" == TRUE ] || [ "$singularity" == "TRUE" ]; then 
         compare_samples.sh
     else
         sbatch $CODE_PATH/aux_sh/compare_samples.sh --cpus-per-task $int_cpu --mem $int_mem
