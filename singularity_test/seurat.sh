@@ -25,5 +25,5 @@ if [ "$mode" == "shell" ] && [ "$command" != "" ]; then
 	unset command
 fi
 
-singularity $mode --bind /mnt2:/mnt2 ./custom_seurat.sif $command
+singularity $mode --bind /mnt2:/mnt2 custom_seurat.sif $command
 
