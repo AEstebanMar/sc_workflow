@@ -17,7 +17,7 @@ export exp_design=$exp_data_folder"/experiment_design.tbl"       #    Experiment
 export cluster_annotation="" 		 #	  Cluster annotation file. If empty (""), cell annotation file will be used to dynamically assign cell types.
 export cell_annotation="$exp_data_folder/canon.tsv"
 export imported_counts=""	# Imported counts directory containing cellranger output files. If not empty, daemon 2 will load these files instead of output of daemon 1.
-export filter_dataset="" # Filter to apply when importing counts. Program will handle parsing. Leave empty ("") to apply no filter.
+export filter_dataset="Age > 3 & Tissue == 'Brain'" # Filter to apply when importing counts. Program will handle parsing. Leave empty ("") to apply no filter. Separate different filters with logical operators. Only supports applying the same operator.
 export reduce=FALSE # If TRUE, dataset seurat object will be randomly downsampled to 3000 cells. Useful in testing.
 export refs_path="/mnt2/fscratch/users/bio_267_uma/aestebanm/resources/SingleR_references/"
 export ref_origin=$refs_path"/path/to/ref"	#-------#	Database from where reference will be retrieved ("celldex", "scRNAseq"). Can also be an SCP code, in which case it will be retrieved from refs_path.
@@ -64,7 +64,7 @@ export preproc_pca_n_cells=500                        #-------#    Heatmap plots
 export p_adj_cutoff=5e-3	#-------#	Adjusted p-value cutoff for marker selection when annotating cell types
 export subset_by=colA,colB                             #-------#    Columns by which to integrate data
 export int_method="RPCA"	#------# Method to use for integration. Values: "CCA", "RPCA", "Harmony", "FastMNN", "scVI"
-export DEG_columns=""	#-------#	Columns contaning factors by which DEG analysis will be performed. If empty, int_columns will be analysed. If "none", no DEG analysis will be performed.
+export DEG_target="DEG_analysis>column:val1,val2"	#-------#	Columns contaning factors by which DEG analysis will be performed. To specify factors to compare, input them next to factor column like so (column:factorA,factorB). You can specify multiple comparisons by separating them with ";". If empty, no DEG analysis will be performed. Separate a comparison from ints name with the ">" symbol. See config_default for an example.
 export extra_columns="" #------# Additional columns to represent in certain plots in the report. Will not be used in analysis, only to provide additional sample information when exploring results. Leave empty ("") to disable.
 export min_avg_log2fc=0.5 # Min log2fc cutoff for significant DEGs
 export DEG_p_val_cutoff=5e-5 # Min p_val cutoff for significant DEGs
