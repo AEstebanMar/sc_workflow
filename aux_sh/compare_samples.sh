@@ -67,7 +67,7 @@ sc_Hunter.R --output $output \
             --target_genes $target_genes \
             --cpu $SLURM_CPUS_PER_TASK \
             --imported_counts "$imported_counts" \
-            --DEG_columns "$DEG_columns" \
+            --DEG_target "$DEG_target" \
             --cell_annotation "$cell_annotation" \
             --SingleR_ref "$refs_path/$SingleR_ref" \
             --ref_version "$ref_version" \
