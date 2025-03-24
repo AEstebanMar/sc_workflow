@@ -7,9 +7,11 @@ export singularity=TRUE
 export HTMLREPORT_PATH=~aestebanm/dev_R/htmlreportR
 mode=$1
 command=$2
-#singularity build --sandbox seurat/ ./custom_seurat.sif
-#singularity shell --writable seurat/
-#singularity build custom_seurat.sif seurat/
+#singularity build --sandbox seurat_image_dir/ ./seurat_image.sif
+#singularity shell --writable seurat_image_dir/
+#singularity build seurat_image.sif seurat_image_dir/
+#echo Build done!
+#exit 0
 if [ "$mode" != "shell" ] && [ "$mode" != "exec" ] ; then
 	echo "ERROR: Please specify a valid singularity mode. Was $mode"
 	exit 1
@@ -25,5 +27,5 @@ if [ "$mode" == "shell" ] && [ "$command" != "" ]; then
 	unset command
 fi
 
-singularity $mode --bind /mnt2:/mnt2 custom_seurat.sif $command
+singularity $mode --bind /mnt2:/mnt2 seurat_image.sif $command
 
