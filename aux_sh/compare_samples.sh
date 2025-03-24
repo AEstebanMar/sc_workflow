@@ -89,4 +89,5 @@ sc_Hunter.R --output $output \
             --force_ncells "$force_ncells" \
             --DEG_p_val_cutoff "$DEG_p_val_cutoff" \
             --min_avg_log2FC "$min_avg_log2FC" \
-            --extra_columns "$extra_columns" #& process_monitoring.sh R $output/exec_params
+            --extra_columns "$extra_columns" \
+            --min_cell_pct $min_cell_pct #& process_monitoring.sh R $output/exec_params
