@@ -5,86 +5,89 @@
 ######## SETUP AND DESIGN ########
 ##################################
 
-export experiment_name=Default    #    Experiment name
-genome=GRCh38 # Genome version. For human, GRCh38. For mouse, mm10.
-export samples_to_process=$exp_data_folder"/samples_to_process.lst"    #    List of sample names. Must match files in input_data (e.g, for sample_A_1.fastq.gz, sample_A_2.fastq.gz and sample_B.fastq.gz, samples are sample_A and sample_B)
-export read_path=$exp_data_folder"/raw_data"                     #    Input file location
-export exp_design=$exp_data_folder"/experiment_design.tbl"       #    Experiment design
-export cluster_annotation="" 		 #	  Cluster annotation file. If empty (""), cell annotation file will be used to dynamically assign cell types.
-export cell_annotation="$exp_data_folder/canon.tsv"
-export imported_counts=""	# Imported counts directory containing cellranger output files. If not empty, daemon 2 will load these files instead of output of daemon 1.
-export filter_dataset="Age > 3 & Tissue == 'Brain'" # Filter to apply when importing counts. Program will handle parsing. Leave empty ("") to apply no filter. Separate different filters with logical operators. Only supports applying the same operator.
-export refs_path="/mnt2/fscratch/users/bio_267_uma/aestebanm/resources/SingleR_references/"
-export ref_origin=$refs_path"/path/to/ref"	#-------#	Database from where reference will be retrieved ("celldex", "scRNAseq"). Can also be an SCP code, in which case it will be retrieved from refs_path.
-export SingleR_ref="reference_name"		#-------#    Name of reference to use, will be loaded as a SummarizedExperiment object. If empty (""), no SingleR annotation will be performed.
-export ref_filter="" # Filter to apply to reference dataset. Write it naturally, program will handle parsing. Leave empty ("") to disable filtering.
-export ref_label="cell_types" #------#	Column of reference metadata to use in annotation. For celldex references: "label.main", "label.fine", "label.ont". Dataset-specific otherwise.
-export ref_de_method=""	#-------#	Method to use for marker calculation in single-cell reference. If not a single-cell reference (e.g. celldex reference), leave empty ("").
-export ref_n=25	#-------#	Top N reference markers to consider in annotation. Higher values provide a more accurate annotation, but increase noise and computational time. Will not be used if ref_de_method is empty.
-export target_genes="path/to/targets/file" # Path to target genes file, or list of semicolon-separated target genes ("target_1;target_2").
+export experiment_name=Default    										 #-------# Experiment name
+genome=GRCh38 															 #-------# Genome version. For human, GRCh38. For mouse, mm10. Only used to set up exported variable.
+export samples_to_process=$exp_data_folder"/samples_to_process.lst" 	 #-------# List of sample names. Must match files in input_data (e.g, for sample_A_1.fastq.gz, sample_A_2.fastq.gz and sample_B.fastq.gz, samples are sample_A and sample_B)
+export read_path=$exp_data_folder"/raw_data"                     		 #-------# Input file location
+export exp_design=$exp_data_folder"/experiment_design.tbl"       		 #-------# Experiment design
+export cluster_annotation="" 		                                	 #-------# Cluster annotation file. If empty (""), cell annotation file will be used to dynamically assign cell types.
+export cell_annotation="$exp_data_folder/canon.tsv" 					 #-------# Path to marker-cell type file
+export imported_counts=""												 #-------# Imported counts directory containing cellranger output files. If not empty, daemon 2 will load these files instead of output of daemon 1.
+export refs_path="/path/to/annotation/dir/" 							 #-------# Base path for annotation references
+export ref_origin=$refs_path"/path/to/ref"								 #-------# Database from where reference will be retrieved ("celldex", "scRNAseq"). Can also be an SCP code, in which case it will be retrieved from refs_path.
+export SingleR_ref="reference_name"										 #-------# Name of reference to use, will be loaded as a SummarizedExperiment object. If empty (""), no SingleR annotation will be performed.
+export ref_filter="" 													 #-------# Filter to apply to reference dataset. Write it naturally, program will handle parsing. Leave empty ("") to disable filtering.
+export ref_label="cell_types" 											 #-------# Column of reference metadata to use in annotation. For celldex references: "label.main", "label.fine", "label.ont". Dataset-specific otherwise.
+export ref_de_method=""													 #-------# Method to use for marker calculation in single-cell reference. If not a single-cell reference (e.g. celldex reference), leave empty ("").
+export ref_n=25															 #-------# Top N reference markers to consider in annotation. Higher values provide a more accurate annotation, but increase noise and computational time. Will not be used if ref_de_method is empty.
+export ref_filter='month == 3' 									    	 #-------# Filter to apply to reference dataset. Write it naturally, program will handle parsing. Leave empty ('') to apply no filter.
+export target_genes="path/to/targets/file" 								 #-------# Path to target genes file, or list of semicolon-separated target genes ("target_1;target_2").
 
 ##################################
 ######## QUALITY CONTROL #########
 ##################################
-export preproc_filter=TRUE                            #-------#    TRUE for using only detected cell-associated barcodes, FALSE for using all detected barcodes
-export preproc_init_min_cells=1                       #-------#    If a feature appears in a number of cells smaller than this, it will not be included in the Seurat object. Recommended for raw data: 3
-export preproc_init_min_feats=1                       #-------#    Cells with a number of features smaller than this will not be used when creating the Seurat object. Recommended for raw data: 200
-export preproc_qc_min_feats=500                       #-------#    Cells with a number of features smaller than this will be filtered out in the QC step.
-export preproc_max_percent_mt=5                       #-------#    Discard cell if MT percentage is higher than this
-export preproc_norm_method=LogNormalize               #-------#    Seurat normalization method: LogNormalize, CLR, RC
-export preproc_scale_factor=10000                     #-------#    Seurat scale factor for cell-level normalization
-export preproc_select_hvgs=2000                       #-------#    Number of HVG to be selected (feature selection)
-export preproc_pca_n_dims=10                          #-------#    Number of PC to use for clustering / UMAP / tSNE
-export preproc_resolution=0.5                         #-------#    Granularity of the clustering (higher values -> greater number of clusters)
-export preproc_pca_n_cells=500                        #-------#    Heatmap plots the 'extreme' cells on both ends of the spectrum -> dramatically speeds plotting for large datasets
-export p_adj_cutoff=5e-3							  #-------#	   Adjusted p-value cutoff for marker selection when annotating cell types
+
+export preproc_filter=TRUE                            					 #-------# TRUE for using only detected cell-associated barcodes, FALSE for using all detected barcodes
+export preproc_init_min_cells=1                       					 #-------# If a feature appears in a number of cells smaller than this, it will not be included in the Seurat object. Recommended for raw data: 3
+export preproc_init_min_feats=1                       					 #-------# Cells with a number of features smaller than this will not be used when creating the Seurat object. Recommended for raw data: 200
+export preproc_qc_min_feats=500                       					 #-------# Cells with a number of features smaller than this will be filtered out in the QC step.
+export preproc_max_percent_mt=5                       					 #-------# Discard cell if MT percentage is higher than this
+export preproc_norm_method=LogNormalize               					 #-------# Seurat normalization method: LogNormalize, CLR, RC
+export preproc_scale_factor=10000                     					 #-------# Seurat scale factor for cell-level normalization
+export preproc_select_hvgs=2000                       					 #-------# Number of HVG to be selected (feature selection)
+export preproc_pca_n_dims=10                          					 #-------# Number of PC to use for clustering / UMAP / tSNE
+export preproc_resolution=0.5                         					 #-------# Granularity of the clustering (higher values -> greater number of clusters)
+export preproc_pca_n_cells=500                        					 #-------# Heatmap plots the 'extreme' cells on both ends of the spectrum -> dramatically speeds plotting for large datasets
+export p_adj_cutoff=5e-3							  					 #-------# Adjusted p-value cutoff for marker selection when annotating cell types
 
 ##################################
 ### SUBSETTING AND INTEGRATION ###
 ##################################
 
-export subset_by=colA,colB                            #-------#   Columns by which to integrate data
-export int_method="RPCA"							  #-------# Method to use for integration. Values: "CCA", "RPCA", "Harmony", "FastMNN", "scVI"
-export extra_columns="" 							  #-------# Additional columns to represent in certain plots in the report. Will not be used in analysis, only to provide additional sample information when exploring results. Leave empty ("") to disable.
+export filter_dataset="Age > 3 & Tissue == 'Brain'"   					 #-------# Filter to apply when importing counts. Program will handle parsing. Leave empty ("") to apply no filter. Separate different filters with logical operators. Only supports applying the same operator.
+export subset_by=colA,colB                            					 #-------# Columns by which to subset data in certain steps of the analysis. Will not reduce dataset, this is a consideration to individually study effects of experimental factors.
+export int_method="RPCA"							  					 #-------# Method to use for integration. Values: "CCA", "RPCA", "Harmony", "FastMNN", "scVI"
+export extra_columns="" 							  					 #-------# Additional columns to represent in certain plots in the report. Will not be used in analysis, only to provide additional sample information when exploring results. Leave empty ("") to disable.
+export k_weight=90 									  					 #-------# Number of neighbors to consider when weighting anchors. Used in integration.
 
 ##################################
 ##### DEG analysis variables #####
 ##################################
 
-export DEG_target="comparison_name>factor:val1,val2"  #-------# Columns contaning factors by which DEG analysis will be performed.
-													  #-------# To specify factors to compare, input them next to factor column like so (column:factorA,factorB).
-													  #-------# You can specify multiple comparisons by separating them with ";". If empty, no DEG analysis will be performed.
-													  #-------# Separate a comparison from its name with the ">" symbol. See config_default for an example.
-export min_avg_log2fc=0.5 							  #-------# Min log2fc cutoff for significant DEGs
-export DEG_p_val_cutoff=5e-5 						  #-------# Min p_val cutoff for significant DEGs
-export min_cell_pct=0.1 							  #-------# Min threshold for percentage of cells expressing gene in either of the DEG analysis groups.
+export DEG_target="comparison_name>factor:val1,val2"  					 #-------# Columns contaning factors by which DEG analysis will be performed.
+													  					 #-------# To specify factors to compare, input them next to factor column like so (column:factorA,factorB).
+													  					 #-------# You can specify multiple comparisons by separating them with ";". If empty, no DEG analysis will be performed.
+													  					 #-------# Separate a comparison from its name with the ">" symbol. See config_default for an example.
+export min_avg_log2fc=0.5 							  					 #-------# Min log2fc cutoff for significant DEGs
+export DEG_p_val_cutoff=5e-5 						  					 #-------# Min p_val cutoff for significant DEGs
+export min_cell_pct=0.1 							  					 #-------# Min threshold for percentage of cells expressing gene in either of the DEG analysis groups.
 
 ##################################
 ##### EXECUTION AND SOFTWARE #####
 ##################################
 
-export exp_data_folder=$CODE_PATH"/input_data/"$experiment_name  #    Project data folder
-export experiment_folder=$FSCRATCH"/NGS_projects/"$experiment_name                 # Execution directory
-export FULL_RESULTS=$experiment_folder"/full_results"                       # Count execution path
-export INTEGRATE_RESULTS_FOLDER=$experiment_folder"/integrate_results"      #-------#    Integration execution path
-export LAB_SCRIPTS="/mnt/home/soft/soft_bio_267/programs/x86_64/scripts"    #-------#    Folder with the lab scripts in Picasso (bio_267)
-export transcriptome=$CODE_PATH"/references/refdata-gex-$genome-2020-A"    #-------#    Transcriptome for reference (MOUSE -> mm10, HUMAN -> GRCh38)
-export REPORT_TEMPLATES_FOLDER=$CODE_PATH'/templates'    #-------#    Report templates path
-export output=$experiment_folder'/results'        #-------#    Report output path
+export exp_data_folder=$CODE_PATH"/input_data/"$experiment_name      	 #-------# Project data folder
+export experiment_folder=$FSCRATCH"/NGS_projects/"$experiment_name  	 #-------# Execution directory
+export FULL_RESULTS=$experiment_folder"/full_results"               	 #-------# Count execution path
+export INTEGRATE_RESULTS_FOLDER=$experiment_folder"/integrate_results"   #-------# Integration execution path
+export LAB_SCRIPTS="/mnt/home/soft/soft_bio_267/programs/x86_64/scripts" #-------# Folder with the lab scripts in Picasso (bio_267)
+export transcriptome=$CODE_PATH"/references/refdata-gex-$genome-2020-A"  #-------# Transcriptome for reference (MOUSE -> mm10, HUMAN -> GRCh38)
+export REPORT_TEMPLATES_FOLDER=$CODE_PATH'/templates'    				 #-------# Report templates path
+export output=$experiment_folder'/results'        						 #-------# Report output path
 
 ##################################
 ######## RUN CONFIGURATION #######
 ##################################
 
-export reduce=FALSE # If TRUE, dataset seurat object will be randomly downsampled to 3000 cells. Useful in testing.
-export RESOURCES="--cpu 10 --time '1-00:00:00' --memory '30gb'"                          # Global AutoFlow resources 
-#export int_cpu=128	# CPUs to use in integrative analysis
-#export int_mem="600gb"	# Memory to use in integrative analysis
-export launch_login=FALSE                                                   # TRUE: use batch execution. FALSE: send to slurm.
-export verbose=FALSE	#-------# Set to TRUE to set "verbose" argument of base Seurat functions to TRUE. Only recommended for debugging, as it bloats the error logs with progress bars. However, it is also the only way to monitor how many clusters have been found by the FindClusters function.
-export saveRDS=FALSE #------# Whether or not to save final seurat object as an RDS file.
-export loadRDS=FALSE #------# If TRUE, processing will be skipped. Processed object will instead be loaded from location where pipeline saves when saveRDS is set to TRUE.
-export sketch=TRUE # A boolean. Set to FALSE to disable data sketching.
-export sketch_pct=25 # Percentage of cells to select in sketching.
-export sketch_method="LeverageScore" # Method for sketching scores calculation. If empty ("")
-export force_ncells="" # Force sketching function to select this many cells per sample. Leave empty ("") to disable forcing.
+export reduce=FALSE 													 #-------# If TRUE, dataset seurat object will be randomly downsampled to 3000 cells. Useful in testing.
+export RESOURCES="--cpu 10 --time '1-00:00:00' --memory '30gb'"          #-------# Global AutoFlow resources 
+#export int_cpu=128														  #-------# CPUs to use in integrative analysis
+#export int_mem="600gb"												      #-------# Memory to use in integrative analysis
+export launch_login=FALSE                                                #-------# TRUE: use batch execution. FALSE: send to slurm.
+export verbose=FALSE													 #-------# Set to TRUE to set "verbose" argument of base Seurat functions to TRUE. Only recommended for debugging, as it bloats the error logs with progress bars. However, it is also the only way to monitor how many clusters have been found by the FindClusters function.
+export saveRDS=FALSE 													 #-------# Whether or not to save final seurat object as an RDS file.
+export loadRDS=FALSE 													 #-------# If TRUE, processing will be skipped. Processed object will instead be loaded from location where pipeline saves when saveRDS is set to TRUE.
+export sketch=TRUE 													 	 #-------# A boolean. Set to FALSE to disable data sketching.
+export sketch_pct=25 													 #-------# Percentage of cells to select in sketching.
+export sketch_method="LeverageScore" 									 #-------# Method for sketching scores calculation. If empty ("")
+export force_ncells="" 													 #-------# Force sketching function to select this many cells per sample. Leave empty ("") to disable forcing.
