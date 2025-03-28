@@ -4,10 +4,10 @@
 # STAGE 2 SAMPLES COMPARISON
 
 #SBATCH -J compare_samples.sh
-#SBATCH --cpus-per-task=64
+#SBATCH --cpus-per-task=36
 #SBATCH --mem='1000gb'
 #SBATCH --constraint=cal
-#SBATCH --time=4-22:00:00
+#SBATCH --time=0-20:00:00
 #SBATCH --error=job.comp.%J.err
 #SBATCH --output=job.comp.%J.out
 
@@ -45,7 +45,7 @@ if [ "$imported_counts" == "" ]; then
     done
 fi
 
-sc_Hunter.R --output $output \
+annotate_sc.R --output $output \
             --name $experiment_name \
             --doublet_file "$exp_doublet_file" \
             --filter $preproc_filter \
@@ -67,7 +67,6 @@ sc_Hunter.R --output $output \
             --target_genes $target_genes \
             --cpu $SLURM_CPUS_PER_TASK \
             --imported_counts "$imported_counts" \
-            --DEG_target "$DEG_target" \
             --cell_annotation "$cell_annotation" \
             --SingleR_ref "$refs_path/$SingleR_ref" \
             --ref_version "$ref_version" \
@@ -87,7 +86,5 @@ sc_Hunter.R --output $output \
             --sketch_pct $sketch_pct \
             --sketch_method "$sketch_method"  \
             --force_ncells "$force_ncells" \
-            --DEG_p_val_cutoff "$DEG_p_val_cutoff" \
-            --min_avg_log2FC "$min_avg_log2FC" \
             --extra_columns "$extra_columns" \
-            --min_cell_pct $min_cell_pct #& process_monitoring.sh R $output/exec_params
+            --k_weight $k_weight #& process_monitoring.sh R $output/exec_params
