@@ -3,13 +3,13 @@
 
 # STAGE 2 SAMPLES COMPARISON
 
-#SBATCH -J compare_samples.sh
+#SBATCH -J annotate_sc.sh
 #SBATCH --cpus-per-task=36
 #SBATCH --mem='1000gb'
 #SBATCH --constraint=cal
 #SBATCH --time=0-20:00:00
-#SBATCH --error=job.comp.%J.err
-#SBATCH --output=job.comp.%J.out
+#SBATCH --error=job.annot.%J.err
+#SBATCH --output=job.annot.%J.out
 
 # Setup
 
@@ -20,30 +20,9 @@ fi
 . ~soft_bio_267/initializes/init_ruby
 . ~aestebanm/initializes/init_Hunter_dev
 hostname
-
 mkdir -p $output"/report"
 
 exp_doublet_file=""
-
-if [ "$imported_counts" == "" ]; then
-    cat $FULL_RESULTS/*/metrics > $experiment_folder'/metrics'
-    cat $FULL_RESULTS/*/cellranger_metrics > $experiment_folder'/cellranger_metrics'
-    create_metric_table.rb $experiment_folder'/metrics' sample $experiment_folder'/metric_table'
-    create_metric_table.rb $experiment_folder'/cellranger_metrics' sample $experiment_folder'/cellranger_metric_table'
-    compare_samples.R -o $output"/report" \
-                      -m $experiment_folder'/metric_table' \
-                      -l $experiment_folder'/metrics' \
-                      -e $experiment_name \
-                      --cellranger_metrics $experiment_folder'/cellranger_metric_table' \
-                      --cellranger_long_metrics $experiment_folder'/cellranger_metrics'
-    doublet_files=`find $FULL_RESULTS/*/sc_Hunter.R_0000/ -name doublet_list.txt`
-    exp_doublet_file=$experiment_folder/$experiment_name"_doublets.txt"
-    touch $exp_doublet_file
-    truncate -s 0 $exp_doublet_file
-    for doublet_file in $doublet_files; do
-        cat $doublet_file >> $exp_doublet_file
-    done
-fi
 
 annotate_sc.R --output $output \
             --name $experiment_name \
