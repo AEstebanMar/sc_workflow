@@ -11,7 +11,19 @@
 framework_dir=`dirname $0`
 export CODE_PATH=$(readlink -f $framework_dir )
 CONFIG_DAEMON=$1
+
+if [ "$CONFIG_DAEMON" == "" ] ; then
+    echo Please specify a config file.
+    exit 1
+fi
+
 export module=$2 # For setting global vars from config_daemon according to the stage
+
+if [ "$module" == "" ] ; then
+    echo Please specify a module to run.
+    exit 1
+fi
+
 source $CONFIG_DAEMON
 mkdir -p $output/report
 export PATH=$LAB_SCRIPTS:$PATH
@@ -46,7 +58,7 @@ fi
 
 if [ "$module" == "1" ] ; then
     mkdir -p $FULL_RESULTS
-    echo Launching workflow
+    echo Launching sample workflow
     echo $ref_filter > $FULL_RESULTS/ref_filter
     while IFS= read sample; do
         echo Launching $sample
@@ -88,14 +100,12 @@ if [ "$module" == "1" ] ; then
         " | tr -d [:space:]`
         AutoFlow -w $TEMPLATES -V "$AF_VARS" $aux_opt -o $FULL_RESULTS/$sample $RESOURCES
     done < $samples_to_process
-
 elif [ "$module" == "1b" ] ; then
     echo Checking workflow execution
     while IFS= read sample; do
         echo Sample $sample
         flow_logger -e $FULL_RESULTS/$sample -w -r all
     done < $samples_to_process
-
 elif [ "$module" == "1c" ] ; then
     echo Regenerating code
     while IFS= read sample; do
@@ -142,17 +152,48 @@ elif [ "$module" == "1c" ] ; then
     done < $samples_to_process
 
 elif [ "$module" == "2" ] ; then
-    # STAGE 2 SEURAT ANALYSIS
-    echo "Launching stage 2: Samples comparison"
-    ## if load_source is TRUE, we're launching through singularity image, therefore
-    ## sbatch is not available.
-    if [ "$launch_login" == TRUE ] || [ "$singularity" == "TRUE" ]; then 
-        compare_samples.sh
-    else
-        sbatch $CODE_PATH/aux_sh/compare_samples.sh --cpus-per-task $int_cpu --mem $int_mem
-    fi
-    
+    echo "Launching stage 2: Sample comparison"
+    cat $FULL_RESULTS/*/metrics > $experiment_folder'/metrics'
+    cat $FULL_RESULTS/*/cellranger_metrics > $experiment_folder'/cellranger_metrics'
+    create_metric_table.rb $experiment_folder'/metrics' sample $experiment_folder'/metric_table'
+    create_metric_table.rb $experiment_folder'/cellranger_metrics' sample $experiment_folder'/cellranger_metric_table'
+    compare_samples.R -o $output"/report" -m $experiment_folder'/metric_table' \
+                      -l $experiment_folder'/metrics' -e $experiment_name \
+                      --cellranger_metrics $experiment_folder'/cellranger_metric_table' \
+                      --cellranger_long_metrics $experiment_folder'/cellranger_metrics'
+    doublet_files=`find $FULL_RESULTS/*/sc_Hunter.R_0000/ -name doublet_list.txt`
+    exp_doublet_file=$experiment_folder/$experiment_name"_doublets.txt"
+    touch $exp_doublet_file
+    truncate -s 0 $exp_doublet_file
+    for doublet_file in $doublet_files; do
+        cat $doublet_file >> $exp_doublet_file
+    done
+
 elif [ "$module" == "3" ] ; then
+    echo "Launching stage 3: Whole experiment annotation"
+    ## if singularity is TRUE, we're launching through singularity image, therefore
+    ## sbatch is not available.
+    script="$CODE_PATH/aux_sh/annotate_sc.sh"
+    if [ "$sketch" != "TRUE" ]; then
+        script="$CODE_PATH/singularity/launch_singularity.sh $script"
+    fi
+    if [ "$launch_login" == TRUE ]; then 
+        $script
+    else
+        sbatch $script --cpus-per-task $int_cpu --mem $int_mem
+    fi
+
+elif [ "$module" == "4" ] ; then
+    echo "Launching stage 4: DEG analysis"
+    ## if singularity is TRUE, we're launching through singularity image, therefore
+    ## sbatch is not available.
+    if [ "$launch_login" == TRUE ] ; then 
+        sc_DEGs.sh
+    else
+        sbatch $CODE_PATH/aux_sh/get_sc_DEGs.sh --cpus-per-task $int_cpu --mem $int_mem
+    fi  
+
+elif [ "$module" == "5" ] ; then
     # RESULTS PACKAGING
     echo "Creating Single-Cell results pack"
     create_sc_pack.sh
