@@ -14,4 +14,4 @@ if [ "$1" == "" ]; then
 	exit 1
 fi
 
-./seurat.sh exec "$config_file 2"
+$CODE_PATH/singularity/seurat.sh exec $1
