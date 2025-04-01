@@ -26,6 +26,7 @@ fi
 
 source $CONFIG_DAEMON
 mkdir -p $output/report
+mkdir -p $output/embeddings
 export PATH=$LAB_SCRIPTS:$PATH
 export PATH=$CODE_PATH'/scripts:'$PATH
 export PATH=$CODE_PATH'/aux_sh:'$PATH
@@ -153,6 +154,7 @@ elif [ "$module" == "1c" ] ; then
 
 elif [ "$module" == "2" ] ; then
     echo "Launching stage 2: Sample comparison"
+    . ~soft_bio_267/initializes/init_ruby
     cat $FULL_RESULTS/*/metrics > $experiment_folder'/metrics'
     cat $FULL_RESULTS/*/cellranger_metrics > $experiment_folder'/cellranger_metrics'
     create_metric_table.rb $experiment_folder'/metrics' sample $experiment_folder'/metric_table'
@@ -162,31 +164,26 @@ elif [ "$module" == "2" ] ; then
                       --cellranger_metrics $experiment_folder'/cellranger_metric_table' \
                       --cellranger_long_metrics $experiment_folder'/cellranger_metrics'
     doublet_files=`find $FULL_RESULTS/*/sc_Hunter.R_0000/ -name doublet_list.txt`
-    cat $doublet_files >> $experiment_folder/$experiment_name"_doublets.txt"
+    cat $doublet_files > $experiment_folder/$experiment_name"_doublets.txt"
 
-elif [ "$module" == "3" ] ; then
-    echo "Launching stage 3: Whole experiment annotation"
-    ## if singularity is TRUE, we're launching through singularity image, therefore
-    ## sbatch is not available.
-    script="$CODE_PATH/aux_sh/annotate_sc.sh"
-    if [ "$sketch" != "TRUE" ]; then
-        script="$CODE_PATH/singularity/launch_singularity.sh $script"
+elif [ "$module" == "3" ] || [ "$module" == "4" ] ; then
+    if [ "$module" == "3" ]; then
+        echo "Launching stage 3: Single-cell experiment annotation"
+        ## if singularity is TRUE, we're launching through singularity image, therefore
+        ## sbatch is not available.
+        script="$CODE_PATH/aux_sh/annotate_sc.sh"
+        if [ "$sketch" == "TRUE" ]; then
+            script="$CODE_PATH/singularity/launch_singularity.sh $script"
+        fi
+    elif [ "$module" == "4" ]; then
+        echo "Launching stage 4: DEG analysis"
+        script="$CODE_PATH/aux_sh/sc_Hunter.sh"
     fi
     if [ "$launch_login" == TRUE ]; then 
         $script
     else
         sbatch $script --cpus-per-task $int_cpu --mem $int_mem
     fi
-
-elif [ "$module" == "4" ] ; then
-    echo "Launching stage 4: DEG analysis"
-    ## if singularity is TRUE, we're launching through singularity image, therefore
-    ## sbatch is not available.
-    if [ "$launch_login" == TRUE ] ; then 
-        sc_DEGs.sh
-    else
-        sbatch $CODE_PATH/aux_sh/get_sc_DEGs.sh --cpus-per-task $int_cpu --mem $int_mem
-    fi  
 
 elif [ "$module" == "5" ] ; then
     # RESULTS PACKAGING
