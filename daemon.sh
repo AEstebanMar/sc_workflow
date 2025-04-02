@@ -1,12 +1,5 @@
 #! /usr/bin/env bash
 
-# Sergio Alías, 20230323
-# Last modified 20230711
-
-# daemon.sh
-
-# Script for controlling the single-cell Cell Ranger workflow
-
 
 framework_dir=`dirname $0`
 export CODE_PATH=$(readlink -f $framework_dir )
@@ -28,6 +21,7 @@ source $CONFIG_DAEMON
 mkdir -p $output/report
 mkdir -p $output/embeddings
 export PATH=$LAB_SCRIPTS:$PATH
+export PATH=$CODE_PATH'/aux_parsers:'$PATH
 export PATH=$CODE_PATH'/scripts:'$PATH
 export PATH=$CODE_PATH'/aux_sh:'$PATH
 export TEMPLATE_PATH=$CODE_PATH'/templates'
@@ -177,7 +171,11 @@ elif [ "$module" == "3" ] || [ "$module" == "4" ] ; then
         fi
     elif [ "$module" == "4" ]; then
         echo "Launching stage 4: DEG analysis"
+        . ~soft_bio_267/initializes/init_ruby
         script="$CODE_PATH/aux_sh/sc_Hunter.sh"
+        rm -r $TARGETS_FOLDER/*
+        mkdir -p $TARGETS_FOLDER
+        eval "$generate_targets"
     fi
     if [ "$launch_login" == TRUE ]; then 
         $script

@@ -10,6 +10,7 @@ export genome=GRCh38 															 #-------# Genome version. For human, GRCh38
 export samples_to_process=$exp_data_folder"/samples_to_process.lst" 	 #-------# List of sample names. Must match files in input_data (e.g, for sample_A_1.fastq.gz, sample_A_2.fastq.gz and sample_B.fastq.gz, samples are sample_A and sample_B)
 export read_path=$exp_data_folder"/raw_data"                     		 #-------# Input file location
 export exp_design=$exp_data_folder"/experiment_design.tbl"       		 #-------# Experiment design
+export TARGETS_FOLDER=$CODE_PATH'/TARGETS'								 #-------# Set the folder that stores all target files. DEFAULT: TARGETS_FOLDER=$CODE_PATH'/TARGETS'
 export cluster_annotation="" 		                                	 #-------# Cluster annotation file. If empty (""), cell annotation file will be used to dynamically assign cell types.
 export cell_annotation="$exp_data_folder/canon.tsv" 					 #-------# Path to marker-cell type file
 export imported_counts=""												 #-------# Imported counts directory containing cellranger output files. If not empty, daemon 2 will load these files instead of output of daemon 1.
@@ -54,8 +55,10 @@ export k_weight=90 									  					 #-------# Number of neighbors to consider wh
 ##### DEG analysis variables #####
 ##################################
 
-export DEG_target="comparison_name>factor:val1,val2"  					 #-------# Columns contaning factors by which DEG analysis will be performed.
-													  					 #-------# To specify factors to compare, input them next to factor column like so (column:factorA,factorB).
+export generate_targets="
+		generate_targets.rb -e $exp_design -t 'target_name>factorA:control_feature,treatment_feature_1/treatment_feature_2;factorB:control_Feature,treatment_feature' -f factorB=value1 -o $TARGETS_FOLDER
+	"	#------#	Commands to generate target files. Whole string will be interpreted by parser.
+													  					 #-------# To specify factors to compare, input them next to factor column like so (column:factorA,factorB). You can also group two values by separating them with the "/" symbol. For example, column:factorA,factorB/factorC will compare factor A with factors B and C jointly as the same group.
 													  					 #-------# You can specify multiple comparisons by separating them with ";". If empty, no DEG analysis will be performed.
 													  					 #-------# Separate a comparison from its name with the ">" symbol. See config_default for an example.
 export min_avg_log2fc=0.5 							  					 #-------# Min log2fc cutoff for significant DEGs
