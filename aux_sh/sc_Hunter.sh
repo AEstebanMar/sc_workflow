@@ -19,7 +19,7 @@ fi
 hostname
 mkdir -p $output"/report"
 
-sc_Hunter.R --DEG_target $DEG_target \
+sc_Hunter.R --targets_folder $TARGETS_FOLDER \
             --input $output/counts \
             --target_genes $target_genes \
             --p_val_cutoff $DEG_p_val_cutoff \
