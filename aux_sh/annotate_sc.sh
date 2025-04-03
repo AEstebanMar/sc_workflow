@@ -68,3 +68,6 @@ annotate_sc.R --output $output \
               --extra_columns "$extra_columns" \
               --k_weight $k_weight \
               --genome $genome #& process_monitoring.sh R $output/exec_params
+echo "Compressing counts data..."
+gzip $output/counts/barcodes.tsv $output/counts/genes.tsv $output/counts/matrix.mtx
+mv $output/counts/genes.tsv.gz $output/counts/features.tsv.gz
