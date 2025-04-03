@@ -95,3 +95,4 @@ export sketch=TRUE 													 	 #-------# A boolean. Set to FALSE to disable 
 export sketch_pct=25 													 #-------# Percentage of cells to select in sketching.
 export sketch_method="LeverageScore" 									 #-------# Method for sketching scores calculation. If empty ("")
 export force_ncells="" 													 #-------# Force sketching function to select this many cells per sample. Leave empty ("") to disable forcing.
+export sigfig=3 														 #-------# Significant figures by which to round off certain results.
