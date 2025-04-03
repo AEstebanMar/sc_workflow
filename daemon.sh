@@ -184,6 +184,14 @@ elif [ "$module" == "3" ] || [ "$module" == "4" ] ; then
     fi
 
 elif [ "$module" == "5" ] ; then
+    echo "Analyzing query genes"
+        if [ "$launch_login" == TRUE ]; then 
+        analyze_sc_query.sh
+    else
+        sbatch analyze_sc_query.sh --cpus-per-task $int_cpu --mem $int_mem
+    fi
+
+elif [ "$module" == "6" ] ; then
     # RESULTS PACKAGING
     echo "Creating Single-Cell results pack"
     create_sc_pack.sh
