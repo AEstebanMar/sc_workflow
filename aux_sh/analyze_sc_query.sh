@@ -20,15 +20,12 @@ fi
 . ~aestebanm/initializes/init_Hunter_dev
 hostname
 mkdir -p $output"/report"
-
-analyze_sc_query.R --DEG_target $DEG_target \
-            	   --input $output/counts \
+analyze_sc_query.R --input $output"/counts" \
+                   --extra_columns "$extra_columns" \
+                   --embeddings $output"/embeddings" \
             	   --target_genes $target_genes \
-            	   --p_val_cutoff $DEG_p_val_cutoff \
-            	   --min_avg_log2FC $min_avg_log2FC \
-            	   --min_cell_proportion $min_cell_proportion \
-            	   --min_counts $min_counts \
             	   --output $output \
+                   --sigfig $sigfig \
             	   --name $experiment_name \
             	   --verbose $verbose \
             	   --cpu $SLURM_CPUS_PER_TASK
