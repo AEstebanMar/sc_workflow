@@ -5,8 +5,8 @@
 #SBATCH --mem='700gb'
 #SBATCH --constraint=cal
 #SBATCH --time=0-20:00:00
-#SBATCH --error=job.seu.%J.err
-#SBATCH --output=job.seu.%J.out
+#SBATCH --error=job.sing.%J.err
+#SBATCH --output=job.sing.%J.out
 
 
 if [ "$1" == "" ]; then
