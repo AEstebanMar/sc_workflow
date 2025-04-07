@@ -10,8 +10,8 @@
 #SBATCH --mem='300gb'
 #SBATCH --constraint=cal
 #SBATCH --time=0-5:00:00
-#SBATCH --error=job.DEG.%J.err
-#SBATCH --output=job.DEG.%J.out
+#SBATCH --error=job.query.%J.err
+#SBATCH --output=job.query.%J.out
 
 if [ -z $SLURM_CPUS_PER_TASK ]; then
     SLURM_CPUS_PER_TASK=1
@@ -20,9 +20,8 @@ fi
 . ~aestebanm/initializes/init_Hunter_dev
 hostname
 mkdir -p $output"/report"
-analyze_sc_query.R --input $output"/counts" \
+analyze_sc_query.R --input $output \
                    --extra_columns "$extra_columns" \
-                   --embeddings $output"/embeddings" \
             	   --target_genes $target_genes \
             	   --output $output \
                    --sigfig $sigfig \
