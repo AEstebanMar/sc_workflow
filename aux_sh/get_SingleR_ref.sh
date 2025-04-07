@@ -8,8 +8,8 @@
 #SBATCH --mem='400gb'
 #SBATCH --constraint=cal
 #SBATCH --time=0-23:59:59
-#SBATCH --error=job.comp.%J.err
-#SBATCH --output=job.comp.%J.out
+#SBATCH --error=job.ref.%J.err
+#SBATCH --output=job.ref.%J.out
 aux_opt=$1
 if [ -z $SLURM_CPUS_PER_TASK ]; then
     CPU=1
