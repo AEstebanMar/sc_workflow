@@ -7,7 +7,7 @@
 #SBATCH --cpus-per-task=36
 #SBATCH --mem='1000gb'
 #SBATCH --constraint=cal
-#SBATCH --time=0-20:00:00
+#SBATCH --time=6-20:00:00
 #SBATCH --error=job.annot.%J.err
 #SBATCH --output=job.annot.%J.out
 
@@ -16,6 +16,8 @@
 if [ -z $SLURM_CPUS_PER_TASK ]; then
     SLURM_CPUS_PER_TASK=1
 fi
+
+OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
 . ~aestebanm/initializes/init_Hunter_dev
 
@@ -58,8 +60,6 @@ annotate_sc.R --output $output \
               --samples_to_integrate $samples_to_process \
               --integrate TRUE \
               --int_method "$int_method" \
-              --saveRDS $saveRDS \
-              --loadRDS $loadRDS \
               --filter_dataset "$filter_dataset" \
               --sketch $sketch \
               --sketch_pct $sketch_pct \
@@ -68,6 +68,8 @@ annotate_sc.R --output $output \
               --extra_columns "$extra_columns" \
               --k_weight $k_weight \
               --genome $genome #& process_monitoring.sh R $output/exec_params
-echo "Compressing counts data..."
-gzip $output/counts/barcodes.tsv $output/counts/genes.tsv $output/counts/matrix.mtx
-mv $output/counts/genes.tsv.gz $output/counts/features.tsv.gz
+if [ ! -s $output/counts/features.tsv.gz ]; then
+    echo "Compressing counts data..."
+    gzip $output/counts/barcodes.tsv $output/counts/genes.tsv $output/counts/matrix.mtx
+    mv $output/counts/genes.tsv.gz $output/counts/features.tsv.gz
+fi
