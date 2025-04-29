@@ -4,7 +4,7 @@
 #SBATCH --cpus-per-task=12
 #SBATCH --mem='700gb'
 #SBATCH --constraint=cal
-#SBATCH --time=0-20:00:00
+#SBATCH --time=6-20:00:00
 #SBATCH --error=job.sing.%J.err
 #SBATCH --output=job.sing.%J.out
 
@@ -14,4 +14,4 @@ if [ "$1" == "" ]; then
 	exit 1
 fi
 
-$CODE_PATH/singularity/seurat.sh exec $1
+$CODE_PATH/singularity/seurat.sh exec $1 $SLURM_CPUS_PER_TASK
