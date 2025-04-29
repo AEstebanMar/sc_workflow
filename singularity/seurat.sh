@@ -6,6 +6,7 @@ script_dir=`dirname "$0"`
 export HTMLREPORT_PATH=~aestebanm/dev_R/htmlreportR
 mode=$1
 command=$2
+CPU=$3
 
 if [ "$mode" == "rebuild" ]; then
 	singularity build --sandbox seurat_image_dir/ ./seurat_image.sif
@@ -29,4 +30,4 @@ if [ "$mode" == "shell" ] && [ "$command" != "" ]; then
 	unset command
 fi
 
-singularity $mode --bind /mnt2:/mnt2 $CODE_PATH/singularity/seurat_image.sif $command
+singularity $mode --bind /mnt2:/mnt2 $CODE_PATH/singularity/seurat_image.sif $command --cpus $CPU
