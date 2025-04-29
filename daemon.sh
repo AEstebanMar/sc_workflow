@@ -148,6 +148,7 @@ elif [ "$module" == "1c" ] ; then
 
 elif [ "$module" == "2" ] ; then
     echo "Launching stage 2: Sample comparison"
+    . ~soft_bio_267/initializes/init_R
     . ~soft_bio_267/initializes/init_ruby
     cat $FULL_RESULTS/*/metrics > $experiment_folder'/metrics'
     cat $FULL_RESULTS/*/cellranger_metrics > $experiment_folder'/cellranger_metrics'
