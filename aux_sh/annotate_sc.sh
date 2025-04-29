@@ -4,10 +4,10 @@
 # STAGE 3 EXPERIMENT ANNOTATION
 
 #SBATCH -J annotate_sc.sh
-#SBATCH --cpus-per-task=36
-#SBATCH --mem='1000gb'
-#SBATCH --constraint=cal
-#SBATCH --time=6-20:00:00
+#SBATCH --cpus-per-task=52
+#SBATCH --mem='182gb'
+#SBATCH --constraint=sd
+#SBATCH --time=3-20:00:00
 #SBATCH --error=job.annot.%J.err
 #SBATCH --output=job.annot.%J.out
 
@@ -16,8 +16,13 @@
 if [ -z $SLURM_CPUS_PER_TASK ]; then
     SLURM_CPUS_PER_TASK=1
 fi
-
-OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+OMP_NUM_THREADS=1
+OPENBLAS_NUM_THREADS=1
+MKL_NUM_THREADS=1
+echo OMP_NUM_THREADS IS $OMP_NUM_THREADS
+echo OPENBLAS_NUM_THREADS IS $OPENBLAS_NUM_THREADS
+echo MKL_NUM_THREADS IS $MKL_NUM_THREADS
+echo SLURM_CPUS_PER_TASK IS $SLURM_CPUS_PER_TASK
 
 . ~aestebanm/initializes/init_Hunter_dev
 
@@ -54,6 +59,7 @@ annotate_sc.R --output $output \
               --ref_label "$ref_label" \
               --ref_de_method "$ref_de_method" \
               --ref_n "$ref_n" \
+              --ref_filter "$ref_filter" \
               --p_adj_cutoff $p_adj_cutoff \
               --verbose $verbose \
               --reduce $reduce \
