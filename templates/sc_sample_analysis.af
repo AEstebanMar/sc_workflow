@@ -2,7 +2,7 @@ sc_sample_analysis){
        source ~aestebanm/initializes/init_Hunter_dev
        mkdir -p results
        ?
-       sc_Hunter.R --input run_count)/"$sample"/outs \
+       annotate_sc.R --input run_count)/"$sample"/outs \
                    --name $sample \
                    --filter $preproc_filter \
                    --mincells $preproc_init_min_cells \
