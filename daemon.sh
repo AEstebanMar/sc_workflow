@@ -189,7 +189,7 @@ elif [ "$module" == "5" ] ; then
         if [ "$launch_login" == TRUE ]; then 
         analyze_sc_query.sh
     else
-        sbatch analyze_sc_query.sh --cpus-per-task $int_cpu --mem $int_mem
+        sbatch $CODE_PATH"/aux_sh/analyze_sc_query.sh" --cpus-per-task $int_cpu --mem $int_mem
     fi
 
 elif [ "$module" == "6" ] ; then
