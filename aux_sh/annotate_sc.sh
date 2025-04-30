@@ -29,7 +29,7 @@ echo SLURM_CPUS_PER_TASK IS $SLURM_CPUS_PER_TASK
 hostname
 mkdir -p $output"/report"
 
-exp_doublet_file=""
+exp_doublet_file="$experiment_folder/$experiment_name'_doublets.txt'"
 
 annotate_sc.R --output $output \
               --name $experiment_name \
