@@ -19,10 +19,6 @@ fi
 OMP_NUM_THREADS=1
 OPENBLAS_NUM_THREADS=1
 MKL_NUM_THREADS=1
-echo OMP_NUM_THREADS IS $OMP_NUM_THREADS
-echo OPENBLAS_NUM_THREADS IS $OPENBLAS_NUM_THREADS
-echo MKL_NUM_THREADS IS $MKL_NUM_THREADS
-echo SLURM_CPUS_PER_TASK IS $SLURM_CPUS_PER_TASK
 
 . ~aestebanm/initializes/init_Hunter_dev
 
@@ -50,11 +46,10 @@ annotate_sc.R --output $output \
               --input $FULL_RESULTS"/*/cellranger_0000/*" \
               --suffix "outs/filtered_feature_bc_matrix" \
               --cluster_annotation "$cluster_annotation" \
-              --target_genes $target_genes \
               --cpu $SLURM_CPUS_PER_TASK \
               --imported_counts "$imported_counts" \
               --cell_annotation "$cell_annotation" \
-              --SingleR_ref "$refs_path/$SingleR_ref" \
+              --SingleR_ref "$SingleR_ref" \
               --ref_version "$ref_version" \
               --ref_label "$ref_label" \
               --ref_de_method "$ref_de_method" \
