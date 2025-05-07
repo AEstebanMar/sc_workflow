@@ -39,7 +39,6 @@ annotate_sc.R --output $output \
               --scalefactor $preproc_scale_factor \
               --hvgs $preproc_select_hvgs \
               --ndims $preproc_pca_n_dims \
-              --dimheatmapcells $preproc_pca_n_cells \
               --resolution $preproc_resolution \
               --exp_design $exp_design \
               --subset_by "$subset_by" \
