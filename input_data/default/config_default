@@ -1,7 +1,6 @@
 
 # Rename file to config_daemon after setup.
 
-
 ##################################
 ######## SETUP AND DESIGN ########
 ##################################
@@ -9,10 +8,11 @@
 export experiment_name=Default    										 #-------# Experiment name
 export exp_data_folder=$CODE_PATH"/input_data/"$experiment_name      	 #-------# Project data folder
 export experiment_folder=$FSCRATCH"/NGS_projects/"$experiment_name  	 #-------# Execution directory
+export cellranger_mode=""										     	 #-------# Set to "multi" to run cellranger multi (fastq contain more than one sample).
+export cellranger_config=$exp_data_folder"/raw_data/config.csv"			 #-------# Path to cellranger config file, used in cellranger multi mode.
 export FULL_RESULTS=$experiment_folder"/full_results"               	 #-------# Count execution path
-export INTEGRATE_RESULTS_FOLDER=$experiment_folder"/integrate_results"   #-------# Integration execution path
 export LAB_SCRIPTS="/mnt/home/soft/soft_bio_267/programs/x86_64/scripts" #-------# Folder with the lab scripts in Picasso (bio_267)
-export transcriptome=$CODE_PATH"/references/refdata-gex-$genome-2020-A"  #-------# Transcriptome for reference (MOUSE -> mm10, HUMAN -> GRCh38)
+export transcriptome=$CODE_PATH"/references/refdata-gex-GRCh38-2020-A"   #-------# Transcriptome for reference (MOUSE -> mm10, HUMAN -> GRCh38)
 export REPORT_TEMPLATES_FOLDER=$CODE_PATH'/templates'    				 #-------# Report templates path
 export output=$experiment_folder'/results'        						 #-------# Report output path
 export genome=GRCh38 													 #-------# Genome version. For human, GRCh38. For mouse, mm10.
@@ -23,8 +23,8 @@ export TARGETS_FOLDER=$CODE_PATH'/TARGETS'								 #-------# Set the folder that
 export cluster_annotation="" 		                                	 #-------# Cluster annotation file. If empty (""), cell annotation file will be used to dynamically assign cell types.
 export cell_annotation="$exp_data_folder/canon.tsv" 					 #-------# Path to marker-cell type file
 export imported_counts="$exp_data_folder/counts_matrices"				 #-------# Imported counts directory containing cellranger output files. If not empty, daemon 2 will load these files instead of output of daemon 1.
-export ref_origin="/path/to/ref"								 #-------# Database from where reference will be retrieved ("celldex", "scRNAseq"). Can also be path to directory containing a local reference.
-export SingleR_ref="path_to_ref"										 #-------# Name of reference to use, will be loaded as a SummarizedExperiment object. If empty (""), no SingleR annotation will be performed.
+export ref_origin="celldex"								 				 #-------# Database from where reference will be retrieved ("celldex", "scRNAseq"). Can also be path to directory containing a local reference.
+export SingleR_ref="/path/to/SingleR/ref"								 #-------# Name of reference to use, will be loaded as a SummarizedExperiment object. If empty (""), no SingleR annotation will be performed.
 export ref_version="" #-------#    Reference version to use.
 export ref_filter="" 													 #-------# Filter to apply to reference dataset. Write it naturally, program will handle parsing. Leave empty ("") to disable filtering.
 export ref_label="cell_types" 											 #-------# Column of reference metadata to use in annotation. For celldex references: "label.main", "label.fine", "label.ont". Dataset-specific otherwise.
