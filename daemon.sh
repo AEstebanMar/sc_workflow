@@ -30,11 +30,15 @@ aux_opt=$3
 
 if [ "$imported_counts" != "" ]; then
     TEMPLATES=$TEMPLATE_PATH/divide_counts.af
+elif [ "$cellranger_mode" == "multi" ]; then
+    TEMPLATES=$TEMPLATE_PATH/demultiplex_and_count.af
 else
     TEMPLATES=$TEMPLATE_PATH/count_sc.af
 fi
 
 TEMPLATES="$TEMPLATES,$TEMPLATE_PATH/sc_sample_analysis.af"
+
+echo $TEMPLATES
 
 . ~soft_bio_267/initializes/init_autoflow
 
@@ -89,9 +93,9 @@ if [ "$module" == "1" ] ; then
         \\$p_adj_cutoff=$p_adj_cutoff,
         \\$verbose=$verbose,
         \\$reduce=$reduce,
-        \\$saveRDS=$saveRDS,
-        \\$loadRDS=$loadRDS,
-        \\$ref_filter=$FULL_RESULTS/ref_filter
+        \\$ref_filter=$FULL_RESULTS/ref_filter,
+        \\$cellranger_config=$cellranger_config,
+        \\$multi_mem=$multi_mem
         " | tr -d [:space:]`
         AutoFlow -w $TEMPLATES -V "$AF_VARS" $aux_opt -o $FULL_RESULTS/$sample $RESOURCES
     done < $samples_to_process
@@ -133,13 +137,12 @@ elif [ "$module" == "1c" ] ; then
         \\$ref_label=$ref_label,
         \\$ref_de_method=$ref_de_method,
         \\$ref_n=$ref_n,
-        \\$ref_filter=$ref_filter,
         \\$p_adj_cutoff=$p_adj_cutoff,
         \\$verbose=$verbose,
         \\$reduce=$reduce,
-        \\$saveRDS=$saveRDS,
-        \\$loadRDS=$loadRDS,
-        \\$filter_dataset=$filter_dataset
+        \\$ref_filter=$FULL_RESULTS/ref_filter,
+        \\$cellranger_config=$cellranger_config,
+        \\$multi_mem=$multi_mem
         " | tr -d [:space:]`
         AutoFlow -w $TEMPLATES -V "$AF_VARS" $aux_opt -o $FULL_RESULTS/$sample -v $RESOURCES
         echo Launching pending and failed jobs for $sample

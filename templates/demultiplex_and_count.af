@@ -1,0 +1,32 @@
+
+run_count){
+	resources: -c 52 -t 2-00:00:00 -m $multi_mem"gb"
+	module load cellranger/7.0.0
+	line=`grep -n sample_id $cellranger_config | cut -f 1 -d ":"`
+	head -n +$line $cellranger_config > sample_config.csv
+	grep $sample $cellranger_config >> sample_config.csv
+	?
+	cellranger multi --id $experiment_name \
+	              	 --description $sample \
+	              	 --csv sample_config.csv \
+	              	 --localcores [cpu] \
+	              	 --localmem $multi_mem
+	retVal=$?
+    if [ $retVal -ne 0 ]; then
+        echo ERROR: Cellranger exited with code $retVal
+        exit $retVal
+    fi
+}
+
+bam_quality_control){
+	source ~soft_bio_267/initializes/init_qualimap
+	unset DISPLAY # This line disable $DISPLAY definition to avoid errors in Qualimap html report rendering.
+	?
+	qualimap bamqc -nt [cpu] -bam cellranger_multi)/$sample/outs/possorted_genome_bam.bam -outdir results --java-mem-size=20G
+	#rm run_count)/$name/outs/possorted_genome_bam.bam
+	retVal=$?
+    if [ $retVal -ne 0 ]; then
+        echo ERROR: Qualimap exited with code $retVal
+        exit $retVal
+    fi
+}
