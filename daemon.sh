@@ -95,7 +95,10 @@ if [ "$module" == "1" ] ; then
         \\$reduce=$reduce,
         \\$ref_filter=$FULL_RESULTS/ref_filter,
         \\$cellranger_config=$cellranger_config,
-        \\$multi_mem=$multi_mem
+        \\$multi_mem=$multi_mem,
+        \\$multi_cpu=$multi_cpu,
+        \\$multi_time=$multi_time,
+        \\$constraint=$constraint
         " | tr -d [:space:]`
         AutoFlow -w $TEMPLATES -V "$AF_VARS" $aux_opt -o $FULL_RESULTS/$sample $RESOURCES
     done < $samples_to_process
@@ -142,7 +145,10 @@ elif [ "$module" == "1c" ] ; then
         \\$reduce=$reduce,
         \\$ref_filter=$FULL_RESULTS/ref_filter,
         \\$cellranger_config=$cellranger_config,
-        \\$multi_mem=$multi_mem
+        \\$multi_mem=$multi_mem,
+        \\$multi_cpu=$multi_cpu,
+        \\$multi_time=$multi_time,
+        \\$constraint=$constraint
         " | tr -d [:space:]`
         AutoFlow -w $TEMPLATES -V "$AF_VARS" $aux_opt -o $FULL_RESULTS/$sample -v $RESOURCES
         echo Launching pending and failed jobs for $sample
