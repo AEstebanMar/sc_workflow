@@ -20,7 +20,8 @@ run_count){
     	rm -r ./$experiment_name/SC_MULTI_CS ./$experiment_name/_* ./$experiment_name/$experiment_name.mri.tgz ./$experiment_name/outs/multi
     	ln -s `pwd`"/"$experiment_name"/outs/per_sample_outs/"$sample $sample
     	input_file=$sample"/metrics_summary.csv"
-		get_cellranger_metrics.sh $input_file $sample >> ../cellranger_metrics
+    	metrics_file=$FULL_RESULTS/$sample/cellranger_metrics
+		get_cellranger_metrics.sh $input_file $sample $metrics_file "multi"
     fi
 }
 
