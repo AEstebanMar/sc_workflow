@@ -38,8 +38,6 @@ fi
 
 TEMPLATES="$TEMPLATES,$TEMPLATE_PATH/sc_sample_analysis.af"
 
-echo $TEMPLATES
-
 . ~soft_bio_267/initializes/init_autoflow
 
 ## STAGE EXECUTION
@@ -98,7 +96,8 @@ if [ "$module" == "1" ] ; then
         \\$multi_mem=$multi_mem,
         \\$multi_cpu=$multi_cpu,
         \\$multi_time=$multi_time,
-        \\$constraint=$constraint
+        \\$constraint=$constraint,
+        \\$transcriptome=$transcriptome
         " | tr -d [:space:]`
         AutoFlow -w $TEMPLATES -V "$AF_VARS" $aux_opt -o $FULL_RESULTS/$sample $RESOURCES
     done < $samples_to_process
@@ -148,7 +147,8 @@ elif [ "$module" == "1c" ] ; then
         \\$multi_mem=$multi_mem,
         \\$multi_cpu=$multi_cpu,
         \\$multi_time=$multi_time,
-        \\$constraint=$constraint
+        \\$constraint=$constraint,
+        \\$transcriptome=$transcriptome
         " | tr -d [:space:]`
         AutoFlow -w $TEMPLATES -V "$AF_VARS" $aux_opt -o $FULL_RESULTS/$sample -v $RESOURCES
         echo Launching pending and failed jobs for $sample
@@ -158,11 +158,11 @@ elif [ "$module" == "1c" ] ; then
 elif [ "$module" == "2" ] ; then
     echo "Launching stage 2: Sample comparison"
     . ~soft_bio_267/initializes/init_R
-    . ~soft_bio_267/initializes/init_ruby
+    . ~soft_bio_267/initializes/init_python
     cat $FULL_RESULTS/*/metrics > $experiment_folder'/metrics'
     cat $FULL_RESULTS/*/cellranger_metrics > $experiment_folder'/cellranger_metrics'
-    create_metric_table.rb $experiment_folder'/metrics' sample $experiment_folder'/metric_table'
-    create_metric_table.rb $experiment_folder'/cellranger_metrics' sample $experiment_folder'/cellranger_metric_table'
+    create_metric_table $experiment_folder'/metrics' sample $experiment_folder'/metric_table'
+    create_metric_table $experiment_folder'/cellranger_metrics' sample $experiment_folder'/cellranger_metric_table'
     compare_samples.R -o $output"/report" -m $experiment_folder'/metric_table' \
                       -l $experiment_folder'/metrics' -e $experiment_name \
                       --cellranger_metrics $experiment_folder'/cellranger_metric_table' \
