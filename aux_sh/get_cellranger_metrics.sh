@@ -29,4 +29,4 @@ while IFS= read line; do
 	echo -e "$sample\t$line" >> $output
 done < tmp
 
-rm *tmp*
+rm tmp.header tmp.content tmp
