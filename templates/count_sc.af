@@ -21,14 +21,16 @@ before_fastqc){
 
 run_count){
 	resources: -c 52 -t 2-00:00:00 -m '100gb'
-	module load cellranger/7.0.0
+	module load cellranger/8.0.0
+	export PATH=$aux_sh_dir:$PATH
 	?
 	cellranger count --id=$sample \
 	              --sample=$sample \
 	              --transcriptome=$transcriptome \
 	              --fastqs=$read_path \
 	              --localcores=[cpu] \
-	              --localmem=50
+	              --localmem=100 \
+	              --create-bam true
 	retVal=$?
     if [ $retVal -ne 0 ]; then
         echo ERROR: Cellranger exited with code $retVal
