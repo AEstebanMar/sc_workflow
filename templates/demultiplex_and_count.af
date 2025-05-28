@@ -2,10 +2,10 @@
 run_count){
 	resources: -c $multi_cpu -t $multi_time -m $multi_mem"gb" -n $constraint
 	module load cellranger/8.0.0
+	export PATH=$aux_sh_dir:$PATH
 	line=`grep -n sample_id $cellranger_config | cut -f 1 -d ":"`
 	head -n +$line $cellranger_config > sample_config.csv
 	grep $sample $cellranger_config >> sample_config.csv
-	rm -r ./*$experiment_name*
 	?
 	cellranger multi --id $experiment_name \
 	              	 --description $sample \
@@ -16,15 +16,19 @@ run_count){
     if [ $retVal -ne 0 ]; then
         echo ERROR: Cellranger exited with code $retVal
         exit $retVal
+    else
+    	rm -r ./$experiment_name/SC_MULTI_CS ./$experiment_name/_* ./$experiment_name/$experiment_name.mri.tgz ./$experiment_name/outs/multi
+    	ln -s `pwd`"/"$experiment_name"/outs/per_sample_outs/"$sample $sample
+    	input_file=$sample"/metrics_summary.csv"
+		get_cellranger_metrics.sh $input_file $sample >> ../cellranger_metrics
     fi
 }
 
 bam_quality_control){
 	source ~soft_bio_267/initializes/init_qualimap
-	unset DISPLAY # This line disable $DISPLAY definition to avoid errors in Qualimap html report rendering.
+	unset DISPLAY # This line disables $DISPLAY definition to avoid errors in Qualimap html report rendering.
 	?
-	qualimap bamqc -nt [cpu] -bam run_count)/$sample/outs/possorted_genome_bam.bam -outdir results --java-mem-size=20G
-	#rm run_count)/$name/outs/possorted_genome_bam.bam
+	qualimap bamqc -nt [cpu] -bam run_count)/$experiment_name/outs/per_sample_outs/$sample/count/sample_alignments.bam -outdir results --java-mem-size=20G
 	retVal=$?
     if [ $retVal -ne 0 ]; then
         echo ERROR: Qualimap exited with code $retVal
