@@ -9,9 +9,6 @@ output:
     fig_width: 12
 ---
 
-<!-- Sergio Alías, 20230706 -->
-<!-- Last modified 20230928 -->
-
 <style type='text/css'>
     body .main-container {
         max-width: 90%;
@@ -66,10 +63,23 @@ Report of quality of FASTQ files using FastQC and Cell Ranger
 library(patchwork)
 library(ggplot2)
 
-metric_df <- read.table(file = metrics, sep = '\t', header = TRUE)
-long_metric_df <- read.table(file = long_metrics, sep = '\t', header = FALSE)
-cellranger_metric_df <- read.table(file = cellranger_metrics, sep = '\t', header = TRUE)
-cellranger_long_metric_df <- read.table(file = cellranger_long_metrics, sep = '\t', header = FALSE)
+metric_df <- cellranger_metric_df <- NULL
+
+if(file.size(metrics) > 0) {
+  metric_df <- read.table(file = metrics, sep = '\t', header = TRUE)
+  if(nrow(metric_df) < 2) {
+    metric_df <- NULL
+  }
+}
+
+if(file.size(cellranger_metrics) > 0) {
+  cellranger_metric_df <- read.table(file = cellranger_metrics, sep = '\t', header = TRUE)
+  colnames(cellranger_metric_df) <- tolower(gsub("\\.", "_", colnames(cellranger_metric_df)))
+  if(nrow(cellranger_metric_df) < 2) {
+    cellranger_metric_df <- NULL
+  }
+}
+
 ```
 
 <details>
@@ -92,7 +102,7 @@ Metrics from the FASTQ files:
 </details>
 
 <div class="superbigimage">
-```{r initial_total_sequences, eval=TRUE, results='asis', echo=FALSE}
+```{r initial_total_sequences, results='asis', echo=FALSE, eval = !is.null(metric_df)}
 
 cat("\n\n### **Number of sequences**\n\n")
 
@@ -102,7 +112,7 @@ make_barplot(metric_df, "initial_total_sequences")
 </div>
 
 <div class="superbigimage">
-```{r initial_read_max_length, eval=TRUE, results='asis', echo=FALSE}
+```{r initial_read_max_length, results='asis', echo=FALSE, eval = !is.null(metric_df)}
 
 cat("\n\n### **Read maximum length**\n\n")
 
@@ -112,7 +122,7 @@ make_barplot(metric_df, "initial_read_max_length")
 </div>
 
 <div class="superbigimage">
-```{r initial_read_min_length, eval=TRUE, results='asis', echo=FALSE}
+```{r initial_read_min_length, results='asis', echo=FALSE, eval = !is.null(metric_df)}
 
 cat("\n\n### **Read minimum length**\n\n")
 
@@ -122,7 +132,7 @@ make_barplot(metric_df, "initial_read_min_length")
 </div>
 
 <div class="superbigimage">
-```{r initial_gc, eval=TRUE, results='asis', echo=FALSE}
+```{r initial_gc, results='asis', echo=FALSE, eval = !is.null(metric_df)}
 
 cat("\n\n### **GC content**\n\n")
 
@@ -131,22 +141,8 @@ make_barplot(metric_df, "initial_.gc")
 ```
 </div>
 
-<div class="superbigimage">
-```{r quality_scores, eval=TRUE, results='asis', echo=FALSE}
-
-cat("\n\n### **Quality scores for samples - lowest scores (min/10th decile) and weighted average**\n\n")
-
-make_hplot(long_metric_df, 
-           c("initial_mean_qual_per_base",
-             "initial_min_qual_per_base_in_lower_quartile",
-             "initial_min_qual_per_base_in_10th_decile", 
-             "initial_weigthed_qual_per_sequence"))
-
-```
-</div>
-
 <!-- <div class="superbigimage"> -->
-<!-- ```{r initial_mean_indeterminations_per_base, eval=TRUE, results='asis', echo=FALSE} -->
+<!-- ```{r initial_mean_indeterminations_per_base, eval=TRUE, results='asis', echo=FALSE, eval = !is.null(metric_df)} -->
 
 <!-- cat("\n\n### **Mean indeterminations per base**\n\n") -->
 
@@ -156,7 +152,7 @@ make_hplot(long_metric_df,
 <!-- </div> -->
 
 <div class="superbigimage">
-```{r initial_weigthed_read_length, eval=TRUE, results='asis', echo=FALSE}
+```{r initial_weigthed_read_length, eval=TRUE, results='asis', echo=FALSE, eval = !is.null(metric_df)}
 
 cat("\n\n### **Weigthed read length**\n\n")
 
@@ -195,111 +191,81 @@ Metrics from the Cell Ranger alignment/single-cell matrix:
 </details>
 
 <div class="superbigimage">
-```{r Estimated_Number_of_Cells, eval=TRUE, results='asis', echo=FALSE}
+```{r Estimated_Number_of_Cells, results='asis', echo=FALSE, eval = !is.null(cellranger_metric_df)}
 
 cat("\n\n### **Estimated Number of Cells**\n\n")
 
-make_barplot(cellranger_metric_df, "Estimated_Number_of_Cells")
+make_barplot(cellranger_metric_df, "estimated_number_of_cells")
 
 ```
 </div>
 
 <div class="superbigimage">
-```{r Mean_Reads_per_Cell, eval=TRUE, results='asis', echo=FALSE}
+```{r Mean_Reads_per_Cell, results='asis', echo=FALSE, eval = !is.null(cellranger_metric_df)}
 
 cat("\n\n### **Mean Reads per Cell**\n\n")
 
-make_barplot(cellranger_metric_df, "Mean_Reads_per_Cell")
+make_barplot(cellranger_metric_df, "mean_reads_per_cell")
 
 ```
 </div>
 
 <div class="superbigimage">
-```{r Median_Genes_per_Cell, eval=TRUE, results='asis', echo=FALSE}
+```{r Median_Genes_per_Cell, results='asis', echo=FALSE, eval = !is.null(cellranger_metric_df)}
 
 cat("\n\n### **Median Genes per Cell**\n\n")
 
-make_barplot(cellranger_metric_df, "Median_Genes_per_Cell")
+make_barplot(cellranger_metric_df, "median_genes_per_cell")
 
 ```
 </div>
 
 <div class="superbigimage">
-```{r Valid_Barcodes, eval=TRUE, results='asis', echo=FALSE}
+```{r Valid_Barcodes, results='asis', echo=FALSE, eval = !is.null(cellranger_metric_df)}
 
 cat("\n\n### **Valid Barcodes percentage**\n\n")
 
-make_barplot(cellranger_metric_df, "Valid_Barcodes")
+make_barplot(cellranger_metric_df, "valid_barcodes")
 
 ```
 </div>
 
 <div class="superbigimage">
-```{r Sequencing_Saturation, eval=TRUE, results='asis', echo=FALSE}
+```{r Sequencing_Saturation, results='asis', echo=FALSE, eval = !is.null(cellranger_metric_df)}
 
 cat("\n\n### **Sequencing Saturation**\n\n")
 
-make_barplot(cellranger_metric_df, "Sequencing_Saturation")
+make_barplot(cellranger_metric_df, "sequencing_saturation")
 
 ```
 </div>
 
 <div class="superbigimage">
-```{r q30_bases_metrics, eval=TRUE, results='asis', echo=FALSE}
-
-cat("\n\n### **Q30 Bases metrics**\n\n")
-
-make_hplot(cellranger_long_metric_df, 
-           c("Q30_Bases_in_Barcode",
-             "Q30_Bases_in_RNA_Read",
-             "Q30_Bases_in_UMI"))
-
-```
-</div>
-
-<div class="superbigimage">
-```{r mapped_reads_metrics, eval=TRUE, results='asis', echo=FALSE}
-
-cat("\n\n### **Mapped reads metrics**\n\n")
-
-make_hplot(cellranger_long_metric_df, 
-           c("Reads_Mapped_to_Genome",
-             "Reads_Mapped_Confidently_to_Genome",
-             "Reads_Mapped_Confidently_to_Intergenic_Regions",
-             "Reads_Mapped_Confidently_to_Intronic_Regions",
-             "Reads_Mapped_Confidently_to_Exonic_Regions",
-             "Reads_Mapped_Confidently_to_Transcriptome",
-             "Reads_Mapped_Antisense_to_Gene"))
-
-```
-</div>
-
-<div class="superbigimage">
-```{r Fraction_Reads_in_Cells, eval=TRUE, results='asis', echo=FALSE}
+```{r Fraction_Reads_in_Cells, results='asis', echo=FALSE, eval = "fraction_reads_in_cells" %in% colnames(cellranger_metric_df)}
 
 cat("\n\n### **Fraction Reads in Cells**\n\n")
 
-make_barplot(cellranger_metric_df, "Fraction_Reads_in_Cells")
+make_barplot(cellranger_metric_df, "fraction_reads_in_cells")
 
 ```
 </div>
 
 <div class="superbigimage">
-```{r Total_Genes_Detected, eval=TRUE, results='asis', echo=FALSE}
+```{r Total_Genes_Detected, results='asis', echo=FALSE, eval = !is.null(cellranger_metric_df)}
 
 cat("\n\n### **Total Genes Detected**\n\n")
 
-make_barplot(cellranger_metric_df, "Total_Genes_Detected")
+make_barplot(cellranger_metric_df, "total_genes_detected")
 
 ```
 </div>
 
 <div class="superbigimage">
-```{r Median_UMI_Counts_per_Cell, eval=TRUE, results='asis', echo=FALSE}
+```{r Median_UMI_Counts_per_Cell, results='asis', echo=FALSE, eval = !is.null(cellranger_metric_df)}
 
 cat("\n\n### **Median UMI Counts per Cell**\n\n")
 
-make_barplot(cellranger_metric_df, "Median_UMI_Counts_per_Cell")
+make_barplot(cellranger_metric_df, "median_umi_counts_per_cell")
 
 ```
 </div>
