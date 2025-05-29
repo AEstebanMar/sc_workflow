@@ -6,6 +6,7 @@ run_count){
 	line=`grep -n sample_id $cellranger_config | cut -f 1 -d ":"`
 	head -n +$line $cellranger_config > sample_config.csv
 	grep $sample $cellranger_config >> sample_config.csv
+	rm $sample
 	?
 	cellranger multi --id $experiment_name \
 	              	 --description $sample \
