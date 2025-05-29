@@ -14,9 +14,8 @@ template_path <- file.path(root_path, "..", "templates")
 # Load custom libraries
 # devtools::load_all(file.path(root_path))
 
-source_folder <- file.path(root_path, 'lib')
 library(optparse)
-source(file.path(source_folder, "qc_library.R"))
+source(file.path(root_path, "sergio_qc.R"))
 
 ##########################################
 ## OPTPARSE
@@ -25,12 +24,8 @@ source(file.path(source_folder, "qc_library.R"))
 option_list <- list(
   optparse::make_option(c("-m", "--metrics"), type = "character",
               help="Metrics file in wide format"),
-  optparse::make_option(c("-l", "--long_metrics"), type = "character",
-              help="Metrics file in long format"),
   optparse::make_option(c("--cellranger_metrics"), type = "character",
               help="Cell Ranger metrics file in wide format"),
-  optparse::make_option(c("--cellranger_long_metrics"), type = "character",
-              help="Cell Ranger Metrics file in long format"),
   optparse::make_option(c("-o", "--output"), type = "character",
               help="Output folder"),
   optparse::make_option(c("-e", "--experiment_name"), type = "character",
