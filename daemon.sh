@@ -20,6 +20,8 @@ fi
 source $CONFIG_DAEMON
 mkdir -p $output/report
 mkdir -p $output/embeddings
+rm $CODE_PATH/references
+ln -s $cellranger_refs_dir $CODE_PATH/references
 export PATH=$LAB_SCRIPTS:$PATH
 export PATH=$CODE_PATH'/aux_parsers:'$PATH
 export PATH=$CODE_PATH'/scripts:'$PATH
@@ -56,7 +58,10 @@ fi
 if [ "$module" == "1" ] ; then
     mkdir -p $FULL_RESULTS
     echo Launching sample workflow
-    echo $ref_filter > $FULL_RESULTS/ref_filter
+    rm $FULL_RESULTS/ref_filter
+    if [[ "$ref_filter" != "" ]]; then
+        echo $ref_filter > $FULL_RESULTS/ref_filter
+    fi
     while IFS= read sample; do
         echo Launching $sample
         AF_VARS=`echo "
@@ -109,6 +114,11 @@ elif [ "$module" == "1b" ] ; then
     done < $samples_to_process
 elif [ "$module" == "1c" ] ; then
     echo Regenerating code
+    rm $FULL_RESULTS/ref_filter
+    if [[ "$ref_filter" != "" ]]; then
+        echo $ref_filter > $FULL_RESULTS/ref_filter
+    fi
+    echo Launching aborted and pending samples
     while IFS= read sample; do
         AF_VARS=`echo "
         \\$sample=$sample,
@@ -157,18 +167,17 @@ elif [ "$module" == "1c" ] ; then
 
 elif [ "$module" == "2" ] ; then
     echo "Launching stage 2: Sample comparison"
-    . ~soft_bio_267/initializes/init_R
-    . ~soft_bio_267/initializes/init_python
+    source ~soft_bio_267/initializes/init_degenes_hunter
+    source ~soft_bio_267/initializes/init_python
     cat $FULL_RESULTS/*/metrics > $experiment_folder'/metrics'
     cat $FULL_RESULTS/*/cellranger_metrics > $experiment_folder'/cellranger_metrics'
+    doublet_files=`find $FULL_RESULTS/*/sc_Hunter.R_0000/ -name doublet_list.txt`
+    cat $doublet_files > $experiment_folder/$experiment_name"_doublets.txt"
+    echo Building metrics files
     create_metric_table $experiment_folder'/metrics' sample $experiment_folder'/metric_table'
     create_metric_table $experiment_folder'/cellranger_metrics' sample $experiment_folder'/cellranger_metric_table'
     compare_samples.R -o $output"/report" -m $experiment_folder'/metric_table' \
-                      -l $experiment_folder'/metrics' -e $experiment_name \
-                      --cellranger_metrics $experiment_folder'/cellranger_metric_table' \
-                      --cellranger_long_metrics $experiment_folder'/cellranger_metrics'
-    doublet_files=`find $FULL_RESULTS/*/sc_Hunter.R_0000/ -name doublet_list.txt`
-    cat $doublet_files > $experiment_folder/$experiment_name"_doublets.txt"
+                      -e $experiment_name --cellranger_metrics $experiment_folder'/cellranger_metric_table'
 
 elif [ "$module" == "3" ] || [ "$module" == "4" ] ; then
     if [ "$module" == "3" ]; then
