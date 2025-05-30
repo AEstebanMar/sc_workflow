@@ -102,7 +102,8 @@ if [ "$module" == "1" ] ; then
         \\$multi_cpu=$multi_cpu,
         \\$multi_time=$multi_time,
         \\$constraint=$constraint,
-        \\$transcriptome=$transcriptome
+        \\$transcriptome=$transcriptome,
+        \\$extra_columns=$extra_columns
         " | tr -d [:space:]`
         AutoFlow -w $TEMPLATES -V "$AF_VARS" $aux_opt -o $FULL_RESULTS/$sample $RESOURCES
     done < $samples_to_process
@@ -158,7 +159,8 @@ elif [ "$module" == "1c" ] ; then
         \\$multi_cpu=$multi_cpu,
         \\$multi_time=$multi_time,
         \\$constraint=$constraint,
-        \\$transcriptome=$transcriptome
+        \\$transcriptome=$transcriptome,
+        \\$extra_columns=$extra_columns
         " | tr -d [:space:]`
         AutoFlow -w $TEMPLATES -V "$AF_VARS" $aux_opt -o $FULL_RESULTS/$sample -v $RESOURCES
         echo Launching pending and failed jobs for $sample
@@ -171,11 +173,11 @@ elif [ "$module" == "2" ] ; then
     source ~soft_bio_267/initializes/init_python
     cat $FULL_RESULTS/*/metrics > $experiment_folder'/metrics'
     cat $FULL_RESULTS/*/cellranger_metrics > $experiment_folder'/cellranger_metrics'
-    doublet_files=`find $FULL_RESULTS/*/sc_Hunter.R_0000/ -name doublet_list.txt`
-    cat $doublet_files > $experiment_folder/$experiment_name"_doublets.txt"
+    find $FULL_RESULTS/*/sc_Hunter.R_0000/ -name doublet_list.txt | cat > $experiment_folder/$experiment_name"_doublets.txt"
     echo Building metrics files
     create_metric_table $experiment_folder'/metrics' sample $experiment_folder'/metric_table'
     create_metric_table $experiment_folder'/cellranger_metrics' sample $experiment_folder'/cellranger_metric_table'
+    echo Building report
     compare_samples.R -o $output"/report" -m $experiment_folder'/metric_table' \
                       -e $experiment_name --cellranger_metrics $experiment_folder'/cellranger_metric_table'
 
