@@ -6,7 +6,8 @@ run_count){
 	line=`grep -n sample_id $cellranger_config | cut -f 1 -d ":"`
 	head -n +$line $cellranger_config > sample_config.csv
 	grep $sample $cellranger_config >> sample_config.csv
-	rm $sample
+	rm -r $sample
+	mkdir -p $sample"/outs"
 	?
 	cellranger multi --id $experiment_name \
 	              	 --description $sample \
@@ -19,7 +20,9 @@ run_count){
         exit $retVal
     else
     	rm -r ./$experiment_name/SC_MULTI_CS ./$experiment_name/_* ./$experiment_name/$experiment_name.mri.tgz ./$experiment_name/outs/multi
-    	ln -s `pwd`"/"$experiment_name"/outs/per_sample_outs/"$sample $sample
+    	ln -s `pwd`"/"$experiment_name"/outs/per_sample_outs/"$sample"/count/sample_filtered_feature_bc_matrix" $sample"/outs/filtered_feature_bc_matrix"
+    	ln -s `pwd`"/"$experiment_name"/outs/per_sample_outs/"$sample"/count/sample_raw_feature_bc_matrix" $sample"/outs/raw_feature_bc_matrix"
+    	ln -s `pwd`"/"$experiment_name"/outs/per_sample_outs/"$sample"/metrics_summary.csv" $sample"/metrics_summary.csv"
     	input_file=$sample"/metrics_summary.csv"
     	metrics_file=$FULL_RESULTS/$sample/cellranger_metrics
 		get_cellranger_metrics.sh $input_file $sample $metrics_file "multi"
