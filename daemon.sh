@@ -179,7 +179,8 @@ elif [ "$module" == "2" ] ; then
     create_metric_table $experiment_folder'/cellranger_metrics' sample $experiment_folder'/cellranger_metric_table'
     echo Building report
     compare_samples.R -o $output"/report" -m $experiment_folder'/metric_table' \
-                      -e $experiment_name --cellranger_metrics $experiment_folder'/cellranger_metric_table'
+                      -e $experiment_name --cellranger_metrics $experiment_folder'/cellranger_metric_table' \
+                      -d $experiment_folder/$experiment_name"_doublets.txt"
 
 elif [ "$module" == "3" ] || [ "$module" == "4" ] ; then
     if [ "$module" == "3" ]; then
