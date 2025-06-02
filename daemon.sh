@@ -173,7 +173,7 @@ elif [ "$module" == "2" ] ; then
     source ~soft_bio_267/initializes/init_python
     cat $FULL_RESULTS/*/metrics > $experiment_folder'/metrics'
     cat $FULL_RESULTS/*/cellranger_metrics > $experiment_folder'/cellranger_metrics'
-    find $FULL_RESULTS/*/sc_Hunter.R_0000/ -name doublet_list.txt | cat > $experiment_folder/$experiment_name"_doublets.txt"
+    find $FULL_RESULTS/*/annotate_sc.R_0000/ -name *doublet_list.txt | xargs cat > $experiment_folder/$experiment_name"_doublets.txt"
     echo Building metrics files
     create_metric_table $experiment_folder'/metrics' sample $experiment_folder'/metric_table'
     create_metric_table $experiment_folder'/cellranger_metrics' sample $experiment_folder'/cellranger_metric_table'
