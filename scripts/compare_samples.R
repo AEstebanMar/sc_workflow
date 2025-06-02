@@ -29,6 +29,8 @@ option_list <- list(
   optparse::make_option(c("-o", "--output"), type = "character",
               help="Output folder"),
   optparse::make_option(c("-e", "--experiment_name"), type = "character",
+              help="Experiment name"),
+  optparse::make_option(c("-d", "--doublet_file"), type = "character",
               help="Experiment name")
 )  
 
