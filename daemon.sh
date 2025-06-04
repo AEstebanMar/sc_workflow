@@ -177,8 +177,8 @@ elif [ "$module" == "2" ] ; then
     echo Building metrics files
     echo -e experiment_name > $experiment_folder/exec_data
     echo -e $experiment_name >> $experiment_folder/exec_data
-    # create_metric_table $experiment_folder'/metrics' sample $experiment_folder'/metric_table'
-    # create_metric_table $experiment_folder'/cellranger_metrics' sample $experiment_folder'/cellranger_metric_table'
+    create_metric_table $experiment_folder'/metrics' sample $experiment_folder'/metric_table'
+    create_metric_table $experiment_folder'/cellranger_metrics' sample $experiment_folder'/cellranger_metric_table'
     echo Building report
     html_report.R -d "$experiment_folder/*metric_table,$experiment_folder/full_doublet_list.txt,$experiment_folder/exec_data" -t $CODE_PATH/templates/read_and_map_report.txt -o $output"/report/"$experiment_name"_read_map_report.html" && echo Report written in $output"/report/"$experiment_name"_read_map_report.html"
 
