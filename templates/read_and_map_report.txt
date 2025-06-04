@@ -1,44 +1,5 @@
 
 <!--begin.rcode setup, echo = FALSE
-library(patchwork)
-library(ggplot2)
-saveRDS(plotter, "plotter.rds")
-
-make_barplot <- function(metric_df, feature){
-  metric_df <- metric_df[, c("sample", feature)]
-  colnames(metric_df)[2] <- "values"
-  ggplot() +
-    geom_bar(metric_df,
-             mapping = aes(sample, values, fill = sample),
-             width = 0.5,
-             color = "black",
-             stat = "identity") +
-    xlab(NULL) +
-    ylab(feature) +
-    labs(fill = NULL) +
-    scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
-    theme_bw() +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-}
-
-make_hplot <- function(metric_df, features){
-  metric_df <- metric_df[metric_df[[2]] %in% features,]
-  metric_df[[3]] <- as.numeric(metric_df[[3]])
-  ggplot() +
-    geom_line(metric_df,
-             mapping = aes(V1, V3, group = V2, colour = V2)) +
-    geom_point(metric_df,
-              mapping = aes(V1, V3, group = V2, colour = V2)) +
-    xlab(NULL) +
-    ylab(NULL) +
-    labs(fill = NULL) +
-    theme_bw() +
-    scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
-    scale_y_continuous(limits = c(0, NA)) +
-    theme(legend.position="bottom",
-          legend.title=element_blank(),
-          axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-}
 
 exec_data <- plotter$hash_vars$exec_data
 colnames(exec_data) <- exec_data
