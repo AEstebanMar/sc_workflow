@@ -34,7 +34,7 @@ if [ "$mode" == "count" ]; then
 	rm tmp.header tmp.content
 
 elif [ "$mode" == "multi" ]; then
-	cut -f 5- $input -d "," | grep -v "Sample ID" | grep -v "per probe barcode" | tr -d "\"" > tmp
+	cut -f 5- $input -d "," | grep -v "Sample ID" | grep -v "per probe barcode" | tr -d "\"" | tr " " "_" > tmp
 	while IFS= read line; do
 		new_line=`echo $line | sed 's/,/\t/1' | tr -d ","`
 		echo -e $sample"\t""$new_line" >> $output
