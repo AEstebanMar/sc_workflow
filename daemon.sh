@@ -169,18 +169,18 @@ elif [ "$module" == "1c" ] ; then
 
 elif [ "$module" == "2" ] ; then
     echo "Launching stage 2: Sample comparison"
-    source ~soft_bio_267/initializes/init_degenes_hunter
     source ~soft_bio_267/initializes/init_python
+    source ~soft_bio_267/initializes/init_R
     cat $FULL_RESULTS/*/metrics > $experiment_folder'/metrics'
     cat $FULL_RESULTS/*/cellranger_metrics > $experiment_folder'/cellranger_metrics'
-    find $FULL_RESULTS/*/annotate_sc.R_0000/ -name *doublet_list.txt | xargs cat > $experiment_folder/$experiment_name"_doublets.txt"
+    find $FULL_RESULTS/*/annotate_sc.R_0000/ -name *doublet_list.txt | xargs cat > $experiment_folder/"full_doublet_list.txt"
     echo Building metrics files
-    create_metric_table $experiment_folder'/metrics' sample $experiment_folder'/metric_table'
-    create_metric_table $experiment_folder'/cellranger_metrics' sample $experiment_folder'/cellranger_metric_table'
+    echo -e experiment_name > $experiment_folder/exec_data
+    echo -e $experiment_name >> $experiment_folder/exec_data
+    # create_metric_table $experiment_folder'/metrics' sample $experiment_folder'/metric_table'
+    # create_metric_table $experiment_folder'/cellranger_metrics' sample $experiment_folder'/cellranger_metric_table'
     echo Building report
-    compare_samples.R -o $output"/report" -m $experiment_folder'/metric_table' \
-                      -e $experiment_name --cellranger_metrics $experiment_folder'/cellranger_metric_table' \
-                      -d $experiment_folder/$experiment_name"_doublets.txt"
+    html_report.R -d "$experiment_folder/*metric_table,$experiment_folder/full_doublet_list.txt,$experiment_folder/exec_data" -t $CODE_PATH/templates/read_and_map_report.txt -o $output"/report/"$experiment_name"_read_map_report.html" && echo Report written in $output"/report/"$experiment_name"_read_map_report.html"
 
 elif [ "$module" == "3" ] || [ "$module" == "4" ] ; then
     if [ "$module" == "3" ]; then

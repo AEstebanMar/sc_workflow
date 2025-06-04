@@ -1,0 +1,155 @@
+
+<!--begin.rcode setup, echo = FALSE
+library(patchwork)
+library(ggplot2)
+saveRDS(plotter, "plotter.rds")
+
+make_barplot <- function(metric_df, feature){
+  metric_df <- metric_df[, c("sample", feature)]
+  colnames(metric_df)[2] <- "values"
+  ggplot() +
+    geom_bar(metric_df,
+             mapping = aes(sample, values, fill = sample),
+             width = 0.5,
+             color = "black",
+             stat = "identity") +
+    xlab(NULL) +
+    ylab(feature) +
+    labs(fill = NULL) +
+    scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+}
+
+make_hplot <- function(metric_df, features){
+  metric_df <- metric_df[metric_df[[2]] %in% features,]
+  metric_df[[3]] <- as.numeric(metric_df[[3]])
+  ggplot() +
+    geom_line(metric_df,
+             mapping = aes(V1, V3, group = V2, colour = V2)) +
+    geom_point(metric_df,
+              mapping = aes(V1, V3, group = V2, colour = V2)) +
+    xlab(NULL) +
+    ylab(NULL) +
+    labs(fill = NULL) +
+    theme_bw() +
+    scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+    scale_y_continuous(limits = c(0, NA)) +
+    theme(legend.position="bottom",
+          legend.title=element_blank(),
+          axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+}
+
+exec_data <- plotter$hash_vars$exec_data
+colnames(exec_data) <- exec_data
+exec_data <- exec_data[-1, ]
+cellranger_metric_table <- plotter$hash_vars$cellranger_metric_table
+if(nrow(cellranger_metric_table) > 1) {
+  colnames(cellranger_metric_table) <- tolower(cellranger_metric_table[1, ])
+  cellranger_metric_table <- cellranger_metric_table[-1 ,]
+  pcts <- grep("%", cellranger_metric_table)
+  cellranger_metric_table <- data.frame(lapply(cellranger_metric_table, function(column) gsub("%", "", column)))
+  colnames(cellranger_metric_table) <- gsub("\\.", " ", colnames(cellranger_metric_table))
+  colnames(cellranger_metric_table)[pcts] <- paste(colnames(cellranger_metric_table)[pcts], "(pct)")
+  plotter$hash_vars$cellranger_metric_table <- cellranger_metric_table
+} else {
+  plotter$hash_vars$cellranger_metric_table <- NULL
+}
+if(nrow(plotter$hash_vars$metric_table) > 1) {
+  colnames(plotter$hash_vars$metric_table) <- tolower(plotter$hash_vars$metric_table[1, ])
+  plotter$hash_vars$metric_table <- plotter$hash_vars$metric_table[-1 ,]
+} else {
+  plotter$hash_vars$metric_table <- NULL
+}
+
+end.rcode-->
+
+<!--begin.rcode titles
+
+  cat(plotter$create_title(paste0("Cellranger QC report of project ", plotter$hash_vars$opt$experiment_name), hlevel = 1,
+      id = "main_title", indexable = FALSE, clickable = FALSE, t_id = "main_title"))
+  cat("<p>FastQC and Cell Ranger mapping report</p>")
+
+end-rcode-->
+
+<!--begin.rcode fastqc_title, results='asis', echo=FALSE, eval = !is.null(plotter$hash_vars$metric_table)
+  cat(plotter$create_title("FastQC metrics", id = "fastqc_title", hlevel = 2, indexable = TRUE))
+end.rcode-->
+
+<details>
+<br>
+
+Metrics from the FASTQ files:
+
+- <strong>Number of sequences</strong>: Total number of sequences in the FASTQ file. More sequences means more sequencing depth.
+- <strong>Read maximum length</strong>: Maximum read length. It is usual that R2 reads have more length than R1.
+- <strong>Read minimum length</strong>: Minimum read legnth. They do not have to be the same as the maximum reading lengths, but they should be consistent with them.
+- <strong>GC content</strong>: Guanine-cytosine content. Percentage of nitrogenous bases that are either guanine (G) or cytosine (C). We expect values around 50%.
+- <strong>Quality scores - mean quality per base</strong>: Quality is measured with the Phred score (Q), which is typically in the range 2 - 40, but higher and lower values are sometimes used. The higher the Phred score, the higher the quality.
+- <strong>Quality scores - mean quality per base in lower quartile</strong>: Same as the previous one, but focusing in the lower quartile.
+- <strong>Quality scores - mean quality per base in 10th decile</strong>: Same as the previous one, but focusing in the tenth decile.
+- <strong>Quality scores - weigthed quality per sequence</strong>: Same as the previous one, but the mean is calculated by sequence and weighted by sequence length.
+- <strong>Mean indeterminations per base</strong>: Mean of the percent of bases at each position with no base call (N).
+- <strong>Weigthed read length</strong>: Weighted mean of read length.
+
+</details>
+
+<!--begin.rcode fastqc_metrics, eval = !is.null(plotter$hash_vars$metric_table)
+  cat(plotter$create_title("<strong>Number of sequences</strong>", id = "no_of_sequences", hlevel = 3, indexable = TRUE))
+  make_barplot(plotter$hash_vars$metric_table, "initial_total_sequences")
+  cat(plotter$create_title("<strong>Read maximum length</strong>", id = "read_max_length", hlevel = 3, indexable = TRUE))
+  make_barplot(plotter$hash_vars$metric_table, "initial_read_max_length")
+  cat(plotter$create_title("<strong>Read minimum length</strong>", id = "read_min_length", hlevel = 3, indexable = TRUE))
+  make_barplot(plotter$hash_vars$metric_table, "initial_read_min_length")
+  cat(plotter$create_title("<strong>GC content</strong>", id = "gc_content", level = 3, indexable = TRUE))
+  make_barplot(plotter$hash_vars$metric_table, "initial_.gc")
+  cat(plotter$create_title("<strong>Mean indeterminations per base</strong>", id = "indeterminations", hlevel = 3, indexable = TRUE)
+  make_barplot(plotter$hash_vars$metric_table, "initial_mean_indeterminations_per_base")
+  cat(plotter$create_title("<strong>Weigthed read length</strong>", id = "read_length", hlevel = 3, indexable = TRUE))
+  make_barplot(plotter$hash_vars$metric_table, "initial_weigthed_read_length")
+end.rcode-->
+
+<!--begin.rcode cellranger_metrics_and_details, eval = !is.null(plotter$hash_vars$cellranger_metric_table)
+  cat(plotter$create_title("Cell Ranger metrics", id = "cranger_title", hlevel = 2, indexable = TRUE))
+  cat("<details>")
+
+  cat("<p> Metrics from the Cell Ranger alignment/single-cell matrix: </p>")
+
+  cat(make_html_list(c("<strong>Estimated Number of Cells</strong>: Number of barcodes associated with at least one cell.",
+                       "<strong>Mean Reads per Cell</strong>: Total number of sequenced reads divided by the number of barcodes associated with cell-containing partitions.",
+                       "<strong>Median Genes per Cell</strong>: Median number of genes detected per cell-associated barcode. Detection is defined as the presence of at least 1 UMI count.",
+                       "<strong>Valid Barcodes percentage</strong>: Fraction of reads with barcodes that match the whitelist after barcode correction.",
+                       "<strong>Sequencing Saturation</strong>: Fraction of reads originating from an already-observed UMI. This is a function of library complexity and sequencing depth. More specifically, this is the fraction of confidently mapped, valid cell-barcode, valid UMI reads that had a non-unique (cell-barcode, UMI, gene).",
+                       "<strong>Q30 Bases in Barcode</strong>: Fraction of cell barcode bases with Q-score >= 30, excluding very low quality/no-call (Q <= 2) bases from the denominator.",
+                       "<strong>Q30 Bases in RNA Read</strong>: Fraction of RNA read bases with Q-score >= 30, excluding very low quality/no-call (Q <= 2) bases from the denominator.",
+                       "<strong>Q30 Bases in UMI</strong>: Fraction of UMI bases with Q-score >= 30, excluding very low quality/no-call (Q <= 2) bases from the denominator.",
+                       "<strong>Reads Mapped to Genome</strong>: Fraction of reads that mapped to the genome.",
+                       "<strong>Reads Mapped Confidently to Genome</strong>: Fraction of reads that mapped uniquely to the genome. If a gene mapped to exonic loci from a single gene and also to non-exonic loci, it is considered uniquely mapped to one of the exonic loci.",
+                       "<strong>Reads Mapped Confidently to Intergenic Regions</strong>: Fraction of reads that mapped uniquely to an intergenic region of the genome.",
+                       "<strong>Reads Mapped Confidently to Intronic Regions</strong>: Fraction of reads that mapped uniquely to an intronic region of the genome.",
+                       "<strong>Reads Mapped Confidently to Exonic Regions</strong>: Fraction of reads that mapped uniquely to an exonic region of the genome.",
+                       "<strong>Reads Mapped Confidently to Transcriptome</strong>: Fraction of reads that mapped to a unique gene in the transcriptome. The read must be consistent with annotated splice junctions. These reads are considered for UMI counting.",
+                       "<strong>Reads Mapped Antisense to Gene</strong>: Fraction of reads confidently mapped to the transcriptome, but on the opposite strand of their annotated gene. A read is counted as antisense if it has any alignments that are consistent with an exon of a transcript but antisense to it, and has no sense alignments. Ideal < 20%. Rates of up to 40% are common for single nuclei samples. Higher fraction of antisense reads may indicate use of an incorrect chemistry type, or an issue with the reference transcriptome.",
+                       "<strong>Fraction Reads in Cells</strong>: Fraction of valid-barcode, confidently-mapped reads with cell-associated barcodes.",
+                       "<strong>Total Genes Detected</strong>: Number of genes with at least one UMI count in any cell.",
+                       "<strong>Median UMI Counts per Cell</strong>: The median number of UMI counts per %s cell-associated barcode.")))
+  cat("</details>")
+
+end.rcode-->
+<!--begin.rcode Estimated_Number_of_Cells, results='asis', echo=FALSE, eval = !is.null(plotter$hash_vars$cellranger_metric_table)
+  metric_list <- c("estimated number of cells", "mean reads per cell", "median genes per cell", "valid barcodes (pct)",
+                   "sequencing saturation (pct)", "fraction reads in cells (pct)", "total genes detected", "median umi counts per cell")
+  for(metric in metric_list) {
+    field <- which(colnames(plotter$hash_vars$cellranger_metric_table) == metric)
+    if(length(field) < 1) {
+      cat(paste0("<p> Field \"", metric, "\" not present in cellranger metrics."))
+    } else {
+      cat(plotter$prettify_div(plotter$barplot(list(id = "cellranger_metric_table", title = metric, header = NULL, row_names = NULL,
+                                          text = FALSE, text = FALSE, transpose = TRUE, smp_attr = 1,
+                                          yAxisTitle = "Cells", colorBy = "sample", fields = field,
+                                          config = list(graphOrientation = "vertical", showLegend = TRUE,
+                                          smpLabelImage = TRUE, xAxisTitle = "Sample"))), preset = "magic"))
+    }
+  }
+end.rcode-->
+
