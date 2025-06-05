@@ -1,73 +1,80 @@
 
 <!--begin.rcode setup, echo = FALSE
-
+process_metrics <- function(metrics) {
+  colnames(metrics) <- tolower(metrics[1, ])
+  metrics <- metrics[-1 ,]
+  pcts <- grep("%", metrics)
+  metrics <- data.frame(lapply(metrics, function(column) gsub("%", "", column)))
+  colnames(metrics) <- gsub("\\.", " ", colnames(metrics))
+  colnames(metrics)[pcts] <- paste0(colnames(metrics)[pcts], "_(pct)")
+  return(metrics)
+}
 exec_data <- plotter$hash_vars$exec_data
-colnames(exec_data) <- exec_data
+colnames(exec_data) <- exec_data[1, ]
 exec_data <- exec_data[-1, ]
-cellranger_metric_table <- plotter$hash_vars$cellranger_metric_table
-if(nrow(cellranger_metric_table) > 1) {
-  colnames(cellranger_metric_table) <- tolower(cellranger_metric_table[1, ])
-  cellranger_metric_table <- cellranger_metric_table[-1 ,]
-  pcts <- grep("%", cellranger_metric_table)
-  cellranger_metric_table <- data.frame(lapply(cellranger_metric_table, function(column) gsub("%", "", column)))
-  colnames(cellranger_metric_table) <- gsub("\\.", " ", colnames(cellranger_metric_table))
-  colnames(cellranger_metric_table)[pcts] <- paste(colnames(cellranger_metric_table)[pcts], "(pct)")
-  plotter$hash_vars$cellranger_metric_table <- cellranger_metric_table
+if(nrow(plotter$hash_vars$cellranger_metric_table) > 1) {
+  plotter$hash_vars$cellranger_metric_table <- process_metrics(plotter$hash_vars$cellranger_metric_table)
 } else {
   plotter$hash_vars$cellranger_metric_table <- NULL
 }
 if(nrow(plotter$hash_vars$metric_table) > 1) {
-  colnames(plotter$hash_vars$metric_table) <- tolower(plotter$hash_vars$metric_table[1, ])
-  plotter$hash_vars$metric_table <- plotter$hash_vars$metric_table[-1 ,]
+  plotter$hash_vars$metric_table <- process_metrics(plotter$hash_vars$metric_table)
 } else {
   plotter$hash_vars$metric_table <- NULL
 }
 
+samples <- unique(plotter$hash_vars$cellranger_metric_table$sample)
+per_sample_doublets <- data.frame(list(sample = samples))
+for(sample in samples) {
+  row <- which(per_sample_doublets$sample == sample)
+  per_sample_doublets[row, "doublets"] <- sum(grepl(sample, plotter$hash_vars$full_doublet_list.txt[[1]]))
+  cranger_row <- which(plotter$hash_vars$cellranger_metric_table$sample == sample)
+  per_sample_doublets[row, "ncells"] <- as.numeric(plotter$hash_vars$cellranger_metric_table[cranger_row, "estimated_number_of_cells"])
+}
+per_sample_doublets$ratio <- per_sample_doublets$doublets / per_sample_doublets$ncells * 100
+
+plotter$hash_vars$doublets <- per_sample_doublets
+
 end.rcode-->
 
 <!--begin.rcode titles
-
-  cat(plotter$create_title(paste0("Cellranger QC report of project ", plotter$hash_vars$opt$experiment_name), hlevel = 1,
+  cat(plotter$create_title(paste0("Read and map QC report of project ", exec_data$experiment_name), hlevel = 1,
       id = "main_title", indexable = FALSE, clickable = FALSE, t_id = "main_title"))
   cat("<p>FastQC and Cell Ranger mapping report</p>")
-
-end-rcode-->
-
-<!--begin.rcode fastqc_title, results='asis', echo=FALSE, eval = !is.null(plotter$hash_vars$metric_table)
-  cat(plotter$create_title("FastQC metrics", id = "fastqc_title", hlevel = 2, indexable = TRUE))
 end.rcode-->
 
-<details>
-<br>
-
-Metrics from the FASTQ files:
-
-- <strong>Number of sequences</strong>: Total number of sequences in the FASTQ file. More sequences means more sequencing depth.
-- <strong>Read maximum length</strong>: Maximum read length. It is usual that R2 reads have more length than R1.
-- <strong>Read minimum length</strong>: Minimum read legnth. They do not have to be the same as the maximum reading lengths, but they should be consistent with them.
-- <strong>GC content</strong>: Guanine-cytosine content. Percentage of nitrogenous bases that are either guanine (G) or cytosine (C). We expect values around 50%.
-- <strong>Quality scores - mean quality per base</strong>: Quality is measured with the Phred score (Q), which is typically in the range 2 - 40, but higher and lower values are sometimes used. The higher the Phred score, the higher the quality.
-- <strong>Quality scores - mean quality per base in lower quartile</strong>: Same as the previous one, but focusing in the lower quartile.
-- <strong>Quality scores - mean quality per base in 10th decile</strong>: Same as the previous one, but focusing in the tenth decile.
-- <strong>Quality scores - weigthed quality per sequence</strong>: Same as the previous one, but the mean is calculated by sequence and weighted by sequence length.
-- <strong>Mean indeterminations per base</strong>: Mean of the percent of bases at each position with no base call (N).
-- <strong>Weigthed read length</strong>: Weighted mean of read length.
-
-</details>
+<!--begin.rcode fastqc_title_and_details, results='asis', echo=FALSE, eval = !is.null(plotter$hash_vars$metric_table)
+  cat(plotter$create_title("FastQC metrics", id = "fastqc_title", hlevel = 2, indexable = TRUE))
+  cat("<details>")
+  cat("Metrics from the FASTQ files")
+  cat(make_html_list(c("<strong>Number of sequences</strong>: Total number of sequences in the FASTQ file. More sequences means more sequencing depth.",
+                       "<strong>Read maximum length</strong>: Maximum read length. It is usual that R2 reads have more length than R1.",
+                       "<strong>Read minimum length</strong>: Minimum read legnth. They do not have to be the same as the maximum reading lengths, but they should be consistent with them.",
+                       "<strong>GC content</strong>: Guanine-cytosine content. Percentage of nitrogenous bases that are either guanine (G) or cytosine (C). We expect values around 50%.",
+                       "<strong>Quality scores - mean quality per base</strong>: Quality is measured with the Phred score (Q), which is typically in the range 2 - 40, but higher and lower values are sometimes used. The higher the Phred score, the higher the quality.",
+                       "<strong>Quality scores - mean quality per base in lower quartile</strong>: Same as the previous one, but focusing in the lower quartile.",
+                       "<strong>Quality scores - mean quality per base in 10th decile</strong>: Same as the previous one, but focusing in the tenth decile.",
+                       "<strong>Quality scores - weigthed quality per sequence</strong>: Same as the previous one, but the mean is calculated by sequence and weighted by sequence length.",
+                       "<strong>Mean indeterminations per base</strong>: Mean of the percent of bases at each position with no base call (N).",
+                       "<strong>Weigthed read length</strong>: Weighted mean of read length.")))
+  cat("</details>")
+end.rcode-->
 
 <!--begin.rcode fastqc_metrics, eval = !is.null(plotter$hash_vars$metric_table)
-  cat(plotter$create_title("<strong>Number of sequences</strong>", id = "no_of_sequences", hlevel = 3, indexable = TRUE))
-  make_barplot(plotter$hash_vars$metric_table, "initial_total_sequences")
-  cat(plotter$create_title("<strong>Read maximum length</strong>", id = "read_max_length", hlevel = 3, indexable = TRUE))
-  make_barplot(plotter$hash_vars$metric_table, "initial_read_max_length")
-  cat(plotter$create_title("<strong>Read minimum length</strong>", id = "read_min_length", hlevel = 3, indexable = TRUE))
-  make_barplot(plotter$hash_vars$metric_table, "initial_read_min_length")
-  cat(plotter$create_title("<strong>GC content</strong>", id = "gc_content", level = 3, indexable = TRUE))
-  make_barplot(plotter$hash_vars$metric_table, "initial_.gc")
-  cat(plotter$create_title("<strong>Mean indeterminations per base</strong>", id = "indeterminations", hlevel = 3, indexable = TRUE)
-  make_barplot(plotter$hash_vars$metric_table, "initial_mean_indeterminations_per_base")
-  cat(plotter$create_title("<strong>Weigthed read length</strong>", id = "read_length", hlevel = 3, indexable = TRUE))
-  make_barplot(plotter$hash_vars$metric_table, "initial_weigthed_read_length")
+  metric_list <- c("initial_total_sequences", "initial_read_max_length", "initial_read_min_length", "initial_ gc",
+                   "initial_mean_indeterminations_per_base", "initial_weigthed_read_length")
+  for(metric in metric_list) {
+    field <- which(colnames(plotter$hash_vars$metric_table) == metric)
+    if(length(field) < 1) {
+      cat(paste0("<p> Field \"", metric, "\" not present in cellranger metrics."))
+    } else {
+      cat(plotter$prettify_div(plotter$barplot(list(id = "metric_table", title = gsub("_", " ", metric),
+                                  header = NULL, row_names = NULL, text = FALSE, transpose = TRUE,
+                                  smp_attr = 1, yAxisTitle = "Cells", colorBy = "sample", fields = field,
+                                  config = list(graphOrientation = "vertical", showLegend = TRUE,
+                                  smpLabelImage = TRUE, xAxisTitle = "Sample"))), preset = "magic"))
+    }
+  }
 end.rcode-->
 
 <!--begin.rcode cellranger_metrics_and_details, eval = !is.null(plotter$hash_vars$cellranger_metric_table)
@@ -98,19 +105,34 @@ end.rcode-->
 
 end.rcode-->
 <!--begin.rcode Estimated_Number_of_Cells, results='asis', echo=FALSE, eval = !is.null(plotter$hash_vars$cellranger_metric_table)
-  metric_list <- c("estimated number of cells", "mean reads per cell", "median genes per cell", "valid barcodes (pct)",
-                   "sequencing saturation (pct)", "fraction reads in cells (pct)", "total genes detected", "median umi counts per cell")
+  if(exec_data$cellranger_mode == "sample") { 
+    metric_list <- c("estimated_number_of_cells", "mean_reads_per_cell", "median_genes_per_cell", "valid_barcodes",
+                     "sequencing_saturation", "fraction_reads_in_cells", "total_genes_detected", "median_umi_counts_per_cell")
+    } else {
+    metric_list <- c("estimated_number_of_cells", "mean_reads_per_cell", "median_genes_per_cell", "valid_barcodes_(pct)",
+                     "sequencing_saturation_(pct)", "total_genes_detected", "median_umi_counts_per_cell")
+    }
   for(metric in metric_list) {
     field <- which(colnames(plotter$hash_vars$cellranger_metric_table) == metric)
     if(length(field) < 1) {
       cat(paste0("<p> Field \"", metric, "\" not present in cellranger metrics."))
     } else {
-      cat(plotter$prettify_div(plotter$barplot(list(id = "cellranger_metric_table", title = metric, header = NULL, row_names = NULL,
-                                          text = FALSE, text = FALSE, transpose = TRUE, smp_attr = 1,
-                                          yAxisTitle = "Cells", colorBy = "sample", fields = field,
-                                          config = list(graphOrientation = "vertical", showLegend = TRUE,
-                                          smpLabelImage = TRUE, xAxisTitle = "Sample"))), preset = "magic"))
+      cat(plotter$prettify_div(plotter$barplot(list(id = "cellranger_metric_table", title = gsub("_", " ", metric),
+                                  header = NULL, row_names = NULL, text = FALSE, transpose = TRUE,
+                                  smp_attr = 1, yAxisTitle = "Cells", colorBy = "sample", fields = field,
+                                  config = list(graphOrientation = "vertical", showLegend = TRUE,
+                                  smpLabelImage = TRUE, xAxisTitle = "Sample"))), preset = "magic"))
     }
   }
+end.rcode-->
+
+<!--begin.rcode doublets, eval = !is.null(plotter$hash_vars$doublets)
+    cat(plotter$create_title("Doublet analysis", hlevel = 2,
+        id = "doublet_title", indexable = TRUE, clickable = FALSE, t_id = "doublet_title"))
+    cat(plotter$prettify_div(plotter$barplot(list(id = "doublets", title = "Doublet distribution across samples",
+                                header = NULL, row_names = NULL, text = FALSE, transpose = TRUE, fields = 4,
+                                smp_attr = 1, yAxisTitle = "Doublet %", colorBy = "sample",
+                                config = list(graphOrientation = "vertical", showLegend = TRUE,
+                                smpLabelImage = TRUE, xAxisTitle = "Sample"))), preset = "magic"))
 end.rcode-->
 
