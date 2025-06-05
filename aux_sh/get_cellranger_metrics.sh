@@ -23,9 +23,9 @@ fi
 
 rm $output
 
-if [ "$mode" == "count" ]; then
-	head -n 1 $input | tr "," "\n" > tmp.header
-	tail -n 1 $input | sed 's/\%,/\n/g' | sed 's/\",/\n/g' | tr -d "\"" > tmp.content
+if [ "$mode" == "sample" ]; then
+	head -n 1 $input | tr "," "\n" | tr " " "_" > tmp.header
+	tail -n 1 $input | sed 's/\%,/\n/g' | sed 's/\",/\n/g' | tr -d "," | tr -d "\"" | tr " " "_" > tmp.content
 	paste tmp.header tmp.content -d "\t" > tmp
 
 	while IFS= read line; do
@@ -40,7 +40,7 @@ elif [ "$mode" == "multi" ]; then
 		echo -e $sample"\t""$new_line" >> $output
 	done < tmp
 else
-	echo "Unrecognized mode value. Must be \"count\" or \"multi\", was \"$mode\""
+	echo "Unrecognized mode value. Must be \"sample\" or \"multi\", was \"$mode\""
 	exit 1
 fi
 
