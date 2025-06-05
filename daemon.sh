@@ -175,8 +175,8 @@ elif [ "$module" == "2" ] ; then
     cat $FULL_RESULTS/*/cellranger_metrics > $experiment_folder'/cellranger_metrics'
     find $FULL_RESULTS/*/annotate_sc.R_0000/ -name *doublet_list.txt | xargs cat > $experiment_folder/"full_doublet_list.txt"
     echo Building metrics files
-    echo -e experiment_name > $experiment_folder/exec_data
-    echo -e $experiment_name >> $experiment_folder/exec_data
+    echo -e "experiment_name\tcellranger_mode" > $experiment_folder/exec_data
+    echo -e "$experiment_name\t$cellranger_mode" >> $experiment_folder/exec_data
     create_metric_table $experiment_folder'/metrics' sample $experiment_folder'/metric_table'
     create_metric_table $experiment_folder'/cellranger_metrics' sample $experiment_folder'/cellranger_metric_table'
     echo Building report
