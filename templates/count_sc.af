@@ -38,7 +38,7 @@ run_count){
     fi
 	input_file="$sample/outs/metrics_summary.csv"
 	metrics_file=$FULL_RESULTS/$sample/cellranger_metrics
-	get_cellranger_metrics.sh $input_file $sample $metrics_file "count"
+	get_cellranger_metrics.sh $input_file $sample $metrics_file "sample"
 	rm -rf ./*/SC_RNA_COUNTER_CS
 }
 
