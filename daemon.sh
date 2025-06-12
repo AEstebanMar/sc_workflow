@@ -20,8 +20,6 @@ fi
 source $CONFIG_DAEMON
 mkdir -p $output/report
 mkdir -p $output/embeddings
-rm $CODE_PATH/references
-ln -s $cellranger_refs_dir $CODE_PATH/references
 export PATH=$LAB_SCRIPTS:$PATH
 export PATH=$CODE_PATH'/aux_parsers:'$PATH
 export PATH=$CODE_PATH'/scripts:'$PATH
@@ -59,6 +57,7 @@ if [ "$module" == "1" ] ; then
     mkdir -p $FULL_RESULTS
     echo Launching sample workflow
     rm $FULL_RESULTS/ref_filter
+    ln -s $cellranger_refs_dir $CODE_PATH/references
     if [[ "$ref_filter" != "" ]]; then
         echo $ref_filter > $FULL_RESULTS/ref_filter
     fi
@@ -116,6 +115,7 @@ elif [ "$module" == "1b" ] ; then
 elif [ "$module" == "1c" ] ; then
     echo Regenerating code
     rm $FULL_RESULTS/ref_filter
+    ln -s $cellranger_refs_dir $CODE_PATH/references
     if [[ "$ref_filter" != "" ]]; then
         echo $ref_filter > $FULL_RESULTS/ref_filter
     fi
@@ -164,7 +164,7 @@ elif [ "$module" == "1c" ] ; then
         " | tr -d [:space:]`
         AutoFlow -w $TEMPLATES -V "$AF_VARS" $aux_opt -o $FULL_RESULTS/$sample -v $RESOURCES
         echo Launching pending and failed jobs for $sample
-        flow_logger -e $FULL_RESULTS/$sample -w -l -p
+        flow_logger -e $FULL_RESULTS/$sample -w -l -p $aux_opt
     done < $samples_to_process
 
 elif [ "$module" == "2" ] ; then
@@ -188,7 +188,8 @@ elif [ "$module" == "3" ] || [ "$module" == "4" ] ; then
         ## if singularity is TRUE, we're launching through singularity image, therefore
         ## sbatch is not available.
         script="$CODE_PATH/aux_sh/annotate_sc.sh"
-        if [ "$sketch" == "TRUE" ]; then
+        if [ "$module" == "3" && "$sketch" == "TRUE" ]; then
+            source ~aestebanm/initializes/init_htmlreportR
             script="$CODE_PATH/singularity/launch_singularity.sh $script"
         fi
     elif [ "$module" == "4" ]; then
