@@ -4,6 +4,7 @@
 source ~soft_bio_267/initializes/init_singularity
 script_dir=`dirname "$0"`
 export HTMLREPORT_PATH=~aestebanm/dev_R/htmlreportR
+export integrate=TRUE
 mode=$1
 command=$2
 CPU=$3
