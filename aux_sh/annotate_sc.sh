@@ -20,7 +20,13 @@ OMP_NUM_THREADS=1
 OPENBLAS_NUM_THREADS=1
 MKL_NUM_THREADS=1
 
-. ~aestebanm/initializes/init_Hunter_dev
+if  [ "$sketch" != "TRUE" ]; then
+    . ~aestebanm/initializes/init_Hunter_dev
+    else
+        export DEGHUNTER_MODE=DEVELOPMENT
+        export PATH=~aestebanm/dev_R/ExpHunterSuite/inst/scripts:$PATH
+fi
+
 
 hostname
 mkdir -p $output"/report"
