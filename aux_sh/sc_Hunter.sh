@@ -23,7 +23,7 @@ sc_Hunter.R --targets_folder $TARGETS_FOLDER \
             --input $output/counts \
             --target_genes $target_genes \
             --p_val_cutoff $DEG_p_val_cutoff \
-            --min_avg_log2FC $min_avg_log2FC \
+            --min_avg_log2FC $min_avg_log2fc \
             --min_cell_proportion $min_cell_proportion \
             --min_counts $min_counts \
             --output $output \
