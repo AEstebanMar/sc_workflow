@@ -188,7 +188,7 @@ elif [ "$module" == "3" ] || [ "$module" == "4" ] ; then
         ## if singularity is TRUE, we're launching through singularity image, therefore
         ## sbatch is not available.
         script="$CODE_PATH/aux_sh/annotate_sc.sh"
-        if [ "$module" == "3" && "$sketch" == "TRUE" ]; then
+        if [ "$module" == "3" ] && [ "$sketch" == "TRUE" ]; then
             source ~aestebanm/initializes/init_htmlreportR
             script="$CODE_PATH/singularity/launch_singularity.sh $script"
         fi
