@@ -30,7 +30,8 @@ run_count){
 	              --fastqs=$read_path \
 	              --localcores=[cpu] \
 	              --localmem=100 \
-	              --create-bam true
+	              --create-bam true \
+	              --nosecondary
 	retVal=$?
     if [ $retVal -ne 0 ]; then
         echo ERROR: Cellranger exited with code $retVal
