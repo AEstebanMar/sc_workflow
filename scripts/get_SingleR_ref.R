@@ -1,5 +1,29 @@
 #! /usr/bin/env Rscript
 
+if( Sys.getenv('DEGHUNTER_MODE') == 'DEVELOPMENT' ){
+  # Obtain this script directory
+  full.fpath <- tryCatch(normalizePath(parent.frame(2)$ofile), 
+                 error=function(e) # works when using R CMD
+                normalizePath(unlist(strsplit(commandArgs()[grep('^--file=', 
+                  commandArgs())], '='))[2]))
+  main_path_script <- dirname(full.fpath)
+  root_path <- file.path(main_path_script, '..', '..')
+  # Load custom libraries
+  devtools::load_all(root_path)
+  template_folder <- file.path(root_path, 'inst', 'templates')
+}else{
+  require('ExpHunterSuite')
+  root_path <- find.package('ExpHunterSuite')
+  template_folder <- file.path(root_path, 'templates')
+}
+
+# Auxiliary function
+
+col_to_table <- function(column, col_names) {
+  res <- as.data.frame(table(column))
+  colnames(res) <- col_names
+  return(res)
+}
 
 option_list <- list(
   optparse::make_option(c("-r", "--reference"), type = "character",
@@ -23,6 +47,7 @@ option_list <- list(
 )  
 
 opt <- optparse::parse_args(optparse::OptionParser(option_list = option_list))
+opt$name <- opt$reference
 output <- file.path(opt$output, paste(opt$reference))
 if(opt$version != "") {
   output <- paste(output, opt$version, sep = "_")
@@ -106,3 +131,13 @@ HDF5Array::saveHDF5SummarizedExperiment(x = ref, dir = output, verbose = opt$ver
 										replace = opt$replace)
 
 message(paste0("Reference saved successfully in ", output))
+
+message("Preparing report showcasing selected reference")
+
+tables <- lapply(ref@colData, col_to_table, col_names = c("Type", "Frequency"))
+names(tables) <- colnames(ref@colData)
+tables <- list(tables = tables)
+
+write_sc_report(final_results = tables, template_folder = template_folder,
+                output = getwd(), template = "sc_ref_showcase.txt",
+                out_suffix = "ref_showcase.html", opt = opt)
