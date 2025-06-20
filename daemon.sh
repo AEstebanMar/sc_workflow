@@ -45,9 +45,9 @@ TEMPLATES="$TEMPLATES,$TEMPLATE_PATH/sc_sample_analysis.af"
 
 if [ "$module" == "0" ] ; then
     # STAGE 0: REFERENCE PREPARATION
-    echo "Generating reference from specified database"
+    echo "Launching SingleR reference script"
     . ~aestebanm/initializes/init_Hunter_dev
-    if [ -d "$ref_origin" ]; then
+    if [ -d "$ref_origin" ] && [ "$aux_opt" != "--only_showcase" ]; then
         sbatch $CODE_PATH/aux_sh/get_SingleR_ref.sh $aux_opt
     else
         get_SingleR_ref.sh $aux_opt
