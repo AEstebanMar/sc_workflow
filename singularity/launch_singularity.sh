@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-#SBATCH -J seurat.sh
+#SBATCH -J sketch_sc.sh
 #SBATCH --cpus-per-task=12
 #SBATCH --mem='700gb'
 #SBATCH --constraint=cal
@@ -14,4 +14,4 @@ if [ "$1" == "" ]; then
 	exit 1
 fi
 
-$CODE_PATH/singularity/seurat.sh exec $1 $SLURM_CPUS_PER_TASK
+$CODE_PATH/singularity/seurat_image.sh exec $1 $SLURM_CPUS_PER_TASK
