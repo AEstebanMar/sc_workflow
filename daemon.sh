@@ -201,7 +201,7 @@ elif [ "$module" == "3" ] || [ "$module" == "4" ] ; then
         mkdir -p $TARGETS_FOLDER
         eval "$generate_targets"
     fi
-    if [ "$launch_login" == TRUE ]; then 
+    if [ "$launch_login" == TRUE ]; then
         $script
     else
         sbatch $script --cpus-per-task $int_cpu --mem $int_mem
