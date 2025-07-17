@@ -32,6 +32,8 @@ export ref_label="" 											 		#-------# Column of reference metadata to use 
 export ref_de_method=""													 		#-------# Method to use for marker calculation in single-cell reference. If not a single-cell reference (e.g. celldex reference), leave empty ("").
 export ref_n=25															 		#-------# Top N reference markers to consider in annotation. Higher values provide a more accurate annotation, but increase noise and computational time. Will not be used if ref_de_method is empty.
 export ref_filter='' 									    	 		#-------# Filter to apply to reference dataset. Write it naturally, program will handle parsing. Leave empty ('') to apply no filter. Example: 'month == 3'
+export fine_tune=TRUE													 #-------# Controls SingleR fine tuning. We recommend leaving it to TRUE. FALSE will accelerate analysis but at great cost to annotation results. Useful in development or in dataset exploration, but not in proper analyses.
+export aggr_ref=FALSE 													 #-------# Controls SingleR reference aggregation. We recommend leaving it to FALSE. TRUE will accelerate analysis but at some cost to annotation results. Useful in development or in dataset exploration, but might result in lower-quality annotation.
 export target_genes="" 								 		#-------# List of semicolon-separated target genes ("target_1;target_2").
 
 ##################################
@@ -50,6 +52,7 @@ export preproc_pca_n_dims=10                          					 		#-------# Number o
 export preproc_resolution=0.33                         					 		#-------# Granularity of the clustering (higher values -> greater number of clusters)
 export preproc_pca_n_cells=500                        					 		#-------# Heatmap plots the 'extreme' cells on both ends of the spectrum -> dramatically speeds plotting for large datasets
 export p_adj_cutoff=5e-3							  					 		#-------# Adjusted p-value cutoff for marker selection when annotating cell types
+export min_cells_per_sample=500											 #-------# Samples with a number of cells smaller than this will be discarded.
 
 ##################################
 ### SUBSETTING AND INTEGRATION ###
@@ -61,9 +64,9 @@ export int_method="RPCA"							  					 		#-------# Method to use for integration
 export extra_columns="" 							  					#-------# Additional columns to represent in certain plots in the report. Will not be used in analysis, only to provide additional sample information when exploring results. Leave empty ("") to disable. Example: "age;region"
 export k_weight=90 									  					 		#-------# Number of neighbors to consider when weighting anchors. Used in integration.
 
-##################################
-##### DEG analysis variables #####
-##################################
+#############################################
+##### DEG and marker analysis variables #####
+#############################################
 
 export generate_targets="
 		generate_targets.rb -e $exp_design -t 'target_name>factorA:control_feature,treatment_feature_1/treatment_feature_2;factorB:control_Feature,treatment_feature' -f factorB=value1 -o $TARGETS_FOLDER
@@ -75,6 +78,7 @@ export min_avg_log2fc=1.5 							  					 		#-------# Min log2fc cutoff for signi
 export DEG_p_val_cutoff=1e-5 						  					 		#-------# Min p_val cutoff for significant DEGs
 export min_cell_proportion=0.1 							  				 		#-------# Min threshold for percentage of cells expressing gene in either of the DEG analysis groups.
 export min_counts=10 													 		#-------# Min counts threshold to consider a gene is expressed in a cell.
+export log2fc_threshold=0.25													#-------# Min log2fc threshold to consider a gene as DE.
 
 ##################################
 ######## RUN CONFIGURATION #######
