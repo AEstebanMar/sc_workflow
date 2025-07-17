@@ -4,9 +4,9 @@
 # STAGE 3 EXPERIMENT ANNOTATION
 
 #SBATCH -J annotate_sc.sh
-#SBATCH --cpus-per-task=52
-#SBATCH --mem='182gb'
-#SBATCH --constraint=sd
+#SBATCH --cpus-per-task=24
+#SBATCH --mem='600gb'
+#SBATCH --constraint=cal
 #SBATCH --time=3-20:00:00
 #SBATCH --error=job.annot.%J.err
 #SBATCH --output=job.annot.%J.out
@@ -22,11 +22,10 @@ MKL_NUM_THREADS=1
 
 if  [ "$sketch" != "TRUE" ]; then
     . ~aestebanm/initializes/init_Hunter_dev
-    else
+else
         export DEGHUNTER_MODE=DEVELOPMENT
         export PATH=~aestebanm/dev_R/ExpHunterSuite/inst/scripts:$PATH
 fi
-
 
 hostname
 mkdir -p $output"/report"
@@ -59,6 +58,8 @@ annotate_sc.R --output $output \
               --ref_label "$ref_label" \
               --ref_de_method "$ref_de_method" \
               --ref_n "$ref_n" \
+              --fine_tune $fine_tune \
+              --aggr_ref $aggr_ref \
               --ref_filter "$ref_filter" \
               --p_adj_cutoff $p_adj_cutoff \
               --verbose $verbose \
@@ -73,7 +74,9 @@ annotate_sc.R --output $output \
               --force_ncells "$force_ncells" \
               --extra_columns "$extra_columns" \
               --k_weight $k_weight \
-              --genome $genome #& process_monitoring.sh R $output/exec_params
+              --genome $genome \
+              --min_cell_proportion $min_cell_proportion \
+              --min_cells_per_sample $min_cells_per_sample #& process_monitoring.sh R $output/exec_params
 if [ ! -s $output/counts/features.tsv.gz ]; then
     echo "Compressing counts data..."
     gzip $output/counts/barcodes.tsv $output/counts/genes.tsv $output/counts/matrix.mtx
