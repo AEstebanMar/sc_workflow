@@ -34,6 +34,8 @@ export ref_n=25															 		#-------# Top N reference markers to consider i
 export ref_filter='' 									    	 		#-------# Filter to apply to reference dataset. Write it naturally, program will handle parsing. Leave empty ('') to apply no filter. Example: 'month == 3'
 export fine_tune=TRUE													 #-------# Controls SingleR fine tuning. We recommend leaving it to TRUE. FALSE will accelerate analysis but at great cost to annotation results. Useful in development or in dataset exploration, but not in proper analyses.
 export aggr_ref=FALSE 													 #-------# Controls SingleR reference aggregation. We recommend leaving it to FALSE. TRUE will accelerate analysis but at some cost to annotation results. Useful in development or in dataset exploration, but might result in lower-quality annotation.
+export save_trained_object=FALSE									    		#-------# Whether or not trained SingleR object should be saved to disk. Will be saved in output/trained_SingleR.R
+export load_trained_object=FALSE									    		#-------# Whether or not trained SingleR object should be loaded from disk. Will be loaded from output/trained_SingleR.R
 export target_genes="" 								 		#-------# List of semicolon-separated target genes ("target_1;target_2").
 
 ##################################

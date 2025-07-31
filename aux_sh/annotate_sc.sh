@@ -76,7 +76,9 @@ annotate_sc.R --output $output \
               --k_weight $k_weight \
               --genome $genome \
               --min_cell_proportion $min_cell_proportion \
-              --min_cells_per_sample $min_cells_per_sample #& process_monitoring.sh R $output/exec_params
+              --min_cells_per_sample $min_cells_per_sample \
+              --save_trained_object $save_trained_object \
+              --load_trained_object $load_trained_object #& process_monitoring.sh R $output/exec_params
 if [ ! -s $output/counts/features.tsv.gz ]; then
     echo "Compressing counts data..."
     gzip $output/counts/barcodes.tsv $output/counts/genes.tsv $output/counts/matrix.mtx
