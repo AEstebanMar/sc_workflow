@@ -20,6 +20,6 @@ fi
 source ~soft_bio_267/initializes/init_R
 
 get_SingleR_ref.R --reference "$SingleR_ref" --version "$ref_version" \
-                  --verbose $verbose \
-                  --quiet $quiet --database "$ref_origin" \
+                  --verbose $verbose --output "$ref_origin" \
+                  --quiet $quiet --database "$ref_to_process" \
                   --ref_label "$ref_label" --cpu $CPU $aux_opt
