@@ -9,6 +9,16 @@ mode=$1
 command=$2
 CPU=$3
 
+if [ "$mode" != "shell" ] && [ "$mode" != "exec" ] && [ "$mode" != "rebuild" ]; then
+	echo "ERROR: Please specify a valid singularity mode. Was \"$mode\""
+	echo "Valid modes are:"
+	echo "	* shell, launches in interactive mode."
+	echo "	* exec, executes a command (passed as second argument in string form)"
+	echo "	* rebuild, uncompresses seurat_image.sif, starts interactive mode,
+						   then rebuilds the image."
+	exit 1
+fi
+
 if [ "$mode" == "rebuild" ]; then
 	singularity build --sandbox seurat_image_dir/ ./seurat_image.sif
 	singularity shell --writable seurat_image_dir/
@@ -16,18 +26,14 @@ if [ "$mode" == "rebuild" ]; then
 	echo Build done!
 	exit 0
 fi
-if [ "$mode" != "shell" ] && [ "$mode" != "exec" ] ; then
-	echo "ERROR: Please specify a valid singularity mode. Was $mode"
-	exit 1
-fi
 
 if [ "$mode" == "exec" ] && [ "$command" == "" ] ; then
 	echo "ERROR: EXEC MODE SPECIFIED BUT NO COMMAND SUPPLIED."
 	exit 1
 fi
 
-if [ "$mode" == "shell" ] && [ "$command" != "" ]; then
-	echo "WARNING: SHELL MODE SPECIFIED BUT COMMAND SUPPLIED. IGNORING IT."
+if [ "$mode" != "exec" ] && [ "$command" != "" ]; then
+	echo "WARNING: NON-EXEC MODE SPECIFIED BUT COMMAND SUPPLIED. IGNORING THE LATTER."
 	unset command
 fi
 
