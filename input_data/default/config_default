@@ -24,20 +24,25 @@ export TARGETS_FOLDER=$CODE_PATH'/TARGETS'								 		#-------# Set the folder th
 export cluster_annotation="" 		                                	 		#-------# Cluster annotation file. If empty (""), cell annotation file will be used to dynamically assign cell types.
 export cell_annotation="$exp_data_folder/canon.tsv" 					 		#-------# Path to marker-cell type file
 export imported_counts="$exp_data_folder/counts_matrices"				 		#-------# Imported counts directory containing cellranger output files. If not empty, daemon 2 will load these files instead of output of daemon 1.
-export ref_to_process="celldex"					#-------# Database from where data will be consulted to build and locally save reference. Values: "celldex" and "scRNAseq" for reference packages, or path to locally downloaded dataset with which to build reference.
-export ref_origin="celldex"								 				 		#-------# Database from where reference will be retrieved ("celldex", "scRNAseq"). Can also be path to directory containing a local reference. In module 0 (reference building/downloading), path where reference will be saved.
-export SingleR_ref=""								 		#-------# Name of reference to use, will be loaded as a SummarizedExperiment object. If empty (""), no SingleR annotation will be performed.
-export ref_version="" #-------#    Reference version to use.
+export meta_file=""							 									#-------# Path to imported metadata file. If left empty, it will be assumed to be located in "$imported_counts/meta.tsv"
+export SingleR_ref=""								 							#-------# Name of reference to use. If empty (""), no SingleR annotation will be performed. WARNING: It looks like this no longer works when launching small datasets in parallel. Not sure still, but bear it in mind.
 export ref_filter="" 													 		#-------# Filter to apply to reference dataset. Write it naturally, program will handle parsing. Leave empty ("") to disable filtering.
-export ref_label="" 											 		#-------# Column of reference metadata to use in annotation. For celldex references: "label.main", "label.fine", "label.ont". Dataset-specific otherwise.
+export ref_label="" 											 				#-------# Column of reference metadata to use in annotation. For celldex references: "label.main", "label.fine", "label.ont". Dataset-specific otherwise.
 export ref_de_method=""													 		#-------# Method to use for marker calculation in single-cell reference. If not a single-cell reference (e.g. celldex reference), leave empty ("").
 export ref_n=25															 		#-------# Top N reference markers to consider in annotation. Higher values provide a more accurate annotation, but increase noise and computational time. Will not be used if ref_de_method is empty.
-export ref_filter='' 									    	 		#-------# Filter to apply to reference dataset. Write it naturally, program will handle parsing. Leave empty ('') to apply no filter. Example: 'month == 3'
-export fine_tune=TRUE													 #-------# Controls SingleR fine tuning. We recommend leaving it to TRUE. FALSE will accelerate analysis but at great cost to annotation results. Useful in development or in dataset exploration, but not in proper analyses.
-export aggr_ref=FALSE 													 #-------# Controls SingleR reference aggregation. We recommend leaving it to FALSE. TRUE will accelerate analysis but at some cost to annotation results. Useful in development or in dataset exploration, but might result in lower-quality annotation.
+export fine_tune=TRUE													 		#-------# Controls SingleR fine tuning. We recommend leaving it to TRUE. FALSE will accelerate analysis but at great cost to annotation results. Useful in development or in dataset exploration, but not in proper analyses.
+export aggr_ref=FALSE 													 		#-------# Controls SingleR reference aggregation. We recommend leaving it to FALSE. TRUE will accelerate analysis but at some cost to annotation results. Useful in development or in dataset exploration, but might result in lower-quality annotation.
 export save_trained_object=FALSE									    		#-------# Whether or not trained SingleR object should be saved to disk. Will be saved in output/trained_SingleR.R
 export load_trained_object=FALSE									    		#-------# Whether or not trained SingleR object should be loaded from disk. Will be loaded from output/trained_SingleR.R
-export target_genes="" 								 		#-------# List of semicolon-separated target genes ("target_1;target_2").
+export target_genes="" 								 							#-------# List of semicolon-separated target genes ("target_1;target_2").
+
+######  REFERENCE CREATION VARIABLES #######
+
+export ref_to_process="scRNAseq"												#-------# Database from where data will be consulted to build and locally save reference. Values: "celldex" and "scRNAseq" for reference packages, or path to locally downloaded reference.
+export ref_name=""        														#-------# Reference name, required field in scRNAseq and celldex databases. Otherwise, arbitrary name you wish to give the reference, relevant in showcase report.
+export ref_version=""     														#-------#    Reference version to use. In scRNAseq and celldex databases, this is a required field. Leave empty ("") otherwise.
+export ref_output_path="" 														#-------# Path where reference will be saved.
+export label_to_trim=""	  														#-------# When creating a SingleR reference, some labels often come with NA values that need to be trimmed.
 
 ##################################
 ######## QUALITY CONTROL #########
@@ -55,7 +60,8 @@ export preproc_pca_n_dims=10                          					 		#-------# Number o
 export preproc_resolution=0.33                         					 		#-------# Granularity of the clustering (higher values -> greater number of clusters)
 export preproc_pca_n_cells=500                        					 		#-------# Heatmap plots the 'extreme' cells on both ends of the spectrum -> dramatically speeds plotting for large datasets
 export p_adj_cutoff=5e-3							  					 		#-------# Adjusted p-value cutoff for marker selection when annotating cell types
-export min_cells_per_sample=500											 #-------# Samples with a number of cells smaller than this will be discarded.
+export min_cells_per_sample=500											 		#-------# Samples with a number of cells smaller than this will be discarded.
+export min_counts=10															#-------# Min counts threshold to consider a gene as expressed in quality control.
 
 ##################################
 ### SUBSETTING AND INTEGRATION ###
@@ -73,7 +79,7 @@ export k_weight=90 									  					 		#-------# Number of neighbors to consider 
 
 export generate_targets="
 		generate_targets.rb -e $exp_design -t 'target_name>factorA:control_feature,treatment_feature_1/treatment_feature_2;factorB:control_Feature,treatment_feature' -f factorB=value1 -o $TARGETS_FOLDER
-	"																			#------#	Commands to generate target files. Whole string will be interpreted by parser.
+	"																			#-------# Commands to generate target files. Whole string will be interpreted by parser. Include a call to generate_targets.rb in string for every target you wish to generate.
 													  					 		#-------# To specify factors to compare, input them next to factor column like so (column:factorA,factorB). You can also group two values by separating them with the "/" symbol. For example, column:factorA,factorB/factorC will compare factor A with factors B and C jointly as the same group.
 													  					 		#-------# You can specify multiple comparisons by separating them with ";". If empty, no DEG analysis will be performed.
 													  					 		#-------# Separate a comparison from its name with the ">" symbol. See config_default for an example.
