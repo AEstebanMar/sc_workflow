@@ -47,7 +47,7 @@ if [ "$module" == "0" ] ; then
     # STAGE 0: REFERENCE PREPARATION
     echo "Launching SingleR reference script"
     . ~aestebanm/initializes/init_Hunter_dev
-    if [ -d "$ref_origin" ] && [ "$aux_opt" != "--only_showcase" ]; then
+    if [ -d "$ref_to_process" ] && [ "$aux_opt" != "--only_showcase" ]; then
         sbatch $CODE_PATH/aux_sh/get_SingleR_ref.sh $aux_opt
     else
         get_SingleR_ref.sh $aux_opt
@@ -171,7 +171,7 @@ elif [ "$module" == "1c" ] ; then
 elif [ "$module" == "2" ] ; then
     echo "Launching stage 2: Sample comparison"
     source ~soft_bio_267/initializes/init_python
-    source ~soft_bio_267/initializes/init_R
+    source ~soft_bio_267/initializes/init_R45
     cat $FULL_RESULTS/*/metrics > $experiment_folder'/metrics'
     cat $FULL_RESULTS/*/cellranger_metrics > $experiment_folder'/cellranger_metrics'
     find $FULL_RESULTS/*/annotate_sc.R_0000/ -name *doublet_list.txt | xargs cat > $experiment_folder/"full_doublet_list.txt"
