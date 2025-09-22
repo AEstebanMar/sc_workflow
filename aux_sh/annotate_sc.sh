@@ -4,10 +4,10 @@
 # STAGE 3 EXPERIMENT ANNOTATION
 
 #SBATCH -J annotate_sc.sh
-#SBATCH --cpus-per-task=24
-#SBATCH --mem='600gb'
+#SBATCH --cpus-per-task=48
+#SBATCH --mem='1000gb'
 #SBATCH --constraint=cal
-#SBATCH --time=3-20:00:00
+#SBATCH --time=2-22:00:00
 #SBATCH --error=job.annot.%J.err
 #SBATCH --output=job.annot.%J.out
 
@@ -52,6 +52,7 @@ annotate_sc.R --output $output \
               --cluster_annotation "$cluster_annotation" \
               --cpu $SLURM_CPUS_PER_TASK \
               --imported_counts "$imported_counts" \
+              --meta_file "$meta_file" \
               --cell_annotation "$cell_annotation" \
               --SingleR_ref "$SingleR_ref" \
               --ref_version "$ref_version" \
@@ -77,6 +78,7 @@ annotate_sc.R --output $output \
               --genome $genome \
               --min_cell_proportion $min_cell_proportion \
               --min_cells_per_sample $min_cells_per_sample \
+              --min_counts $min_counts \
               --save_trained_object $save_trained_object \
               --load_trained_object $load_trained_object #& process_monitoring.sh R $output/exec_params
 if [ ! -s $output/counts/features.tsv.gz ]; then
