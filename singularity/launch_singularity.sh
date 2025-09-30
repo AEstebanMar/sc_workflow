@@ -1,10 +1,10 @@
 #! /usr/bin/env bash
 
 #SBATCH -J sketch_sc.sh
-#SBATCH --cpus-per-task=12
-#SBATCH --mem='700gb'
+#SBATCH --cpus-per-task=24
+#SBATCH --mem='400gb'
 #SBATCH --constraint=cal
-#SBATCH --time=6-20:00:00
+#SBATCH --time=1-00:00:00
 #SBATCH --error=job.sing.%J.err
 #SBATCH --output=job.sing.%J.out
 
