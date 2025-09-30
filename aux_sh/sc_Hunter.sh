@@ -29,4 +29,5 @@ sc_Hunter.R --targets_folder $TARGETS_FOLDER \
             --output $output \
             --name $experiment_name \
             --verbose $verbose \
-            --cpu $SLURM_CPUS_PER_TASK
+            --cpu $SLURM_CPUS_PER_TASK \
+            --top_N $top_N
