@@ -86,8 +86,8 @@ export generate_targets="
 export min_avg_log2fc=1.5 							  					 		#-------# Min log2fc cutoff for significant DEGs
 export DEG_p_val_cutoff=1e-5 						  					 		#-------# Min p_val cutoff for significant DEGs
 export min_cell_proportion=0.1 							  				 		#-------# Min threshold for percentage of cells expressing gene in either of the DEG analysis groups.
+export top_N=10 																#-------# Top DEGs to represent in certain plots. We recommend leaving this set to Inf, but it can be useful in test datasets.
 export min_counts=10 													 		#-------# Min counts threshold to consider a gene is expressed in a cell.
-export log2fc_threshold=0.25													#-------# Min log2fc threshold to consider a gene as DE.
 
 ##################################
 ######## RUN CONFIGURATION #######
