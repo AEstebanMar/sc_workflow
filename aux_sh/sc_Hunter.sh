@@ -25,6 +25,7 @@ sc_Hunter.R --targets_folder $TARGETS_FOLDER \
             --p_val_cutoff $DEG_p_val_cutoff \
             --min_avg_log2FC $min_avg_log2fc \
             --min_cell_proportion $min_cell_proportion \
+            --simple_DEG_pct $simple_DEG_pct \
             --min_counts $min_counts \
             --output $output \
             --name $experiment_name \
