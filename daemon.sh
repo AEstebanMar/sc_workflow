@@ -13,7 +13,19 @@ fi
 export module=$2 # For setting global vars from config_daemon according to the stage
 
 if [ "$module" == "" ] ; then
-    echo Please specify a module to run.
+    message="Please specify a module to run. Valid values:
+        * ref: build SingleR reference.
+        * cnt: create count tables from Single-Cell fastq files.
+            * cntb: check workflow execution.
+            * cntc: rescue workflow execution.
+        * smp: per-sample annotation and quality control.
+        * ann: whole experiment annotation analysis.
+        * DEG: whole experiment DE analysis.
+        * qry: explore expression of query genes in annotated experiment.
+        * fun: functional analysis of DEGenes list (not yet implemented).
+        * pkg: create results package.
+    "
+    echo "$message"
     exit 1
 fi
 
@@ -43,9 +55,9 @@ TEMPLATES="$TEMPLATES,$TEMPLATE_PATH/sc_sample_analysis.af"
 ## STAGE EXECUTION
 #######################################################################
 
-if [ "$module" == "0" ] ; then
+if [ "$module" == "ref" ] ; then
     # STAGE 0: REFERENCE PREPARATION
-    echo "Launching SingleR reference script"
+    echo "Launching SingleR reference generation"
     . ~aestebanm/initializes/init_Hunter_dev
     if [ -d "$ref_to_process" ] && [ "$aux_opt" != "--only_showcase" ]; then
         sbatch $CODE_PATH/aux_sh/get_SingleR_ref.sh $aux_opt
@@ -54,9 +66,9 @@ if [ "$module" == "0" ] ; then
     fi
 fi
 
-if [ "$module" == "1" ] ; then
+if [ "$module" == "cnt" ] ; then
     mkdir -p $FULL_RESULTS
-    echo Launching sample workflow
+    echo Launching count workflow
     rm $FULL_RESULTS/ref_filter
     ln -s $cellranger_refs_dir $CODE_PATH/references
     if [[ "$ref_filter" != "" ]]; then
@@ -107,13 +119,13 @@ if [ "$module" == "1" ] ; then
         " | tr -d [:space:]`
         AutoFlow -w $TEMPLATES -V "$AF_VARS" $aux_opt -o $FULL_RESULTS/$sample $RESOURCES
     done < $samples_to_process
-elif [ "$module" == "1b" ] ; then
+elif [ "$module" == "cntb" ] ; then
     echo Checking workflow execution
     while IFS= read sample; do
         echo Sample $sample
         flow_logger -e $FULL_RESULTS/$sample -w -r all
     done < $samples_to_process
-elif [ "$module" == "1c" ] ; then
+elif [ "$module" == "cntc" ] ; then
     echo Regenerating code
     rm $FULL_RESULTS/ref_filter
     ln -s $cellranger_refs_dir $CODE_PATH/references
@@ -168,8 +180,8 @@ elif [ "$module" == "1c" ] ; then
         flow_logger -e $FULL_RESULTS/$sample -w -l -p $aux_opt
     done < $samples_to_process
 
-elif [ "$module" == "2" ] ; then
-    echo "Launching stage 2: Sample comparison"
+elif [ "$module" == "smp" ] ; then
+    echo "Launching stage Sample comparison"
     source ~soft_bio_267/initializes/init_python
     source ~soft_bio_267/initializes/init_R45
     cat $FULL_RESULTS/*/metrics > $experiment_folder'/metrics'
@@ -183,9 +195,9 @@ elif [ "$module" == "2" ] ; then
     echo Building report
     html_report.R -d "$experiment_folder/*metric_table,$experiment_folder/full_doublet_list.txt,$experiment_folder/exec_data" -t $CODE_PATH/templates/read_and_map_report.txt -o $output"/report/"$experiment_name"_read_map_report.html" && echo Report written in $output"/report/"$experiment_name"_read_map_report.html"
 
-elif [ "$module" == "3" ] || [ "$module" == "4" ] ; then
-    if [ "$module" == "3" ]; then
-        echo "Launching stage 3: Single-cell experiment annotation"
+elif [ "$module" == "cnt" ] || [ "$module" == "deg" ] ; then
+    if [ "$module" == "cnt" ]; then
+        echo "Launching Single-cell experiment annotation"
         ## if singularity is TRUE, we're launching through singularity image, therefore
         ## sbatch is not available.
         script="$CODE_PATH/aux_sh/annotate_sc.sh"
@@ -193,8 +205,8 @@ elif [ "$module" == "3" ] || [ "$module" == "4" ] ; then
             source ~aestebanm/initializes/init_htmlreportR
             script="$CODE_PATH/singularity/launch_singularity.sh $script"
         fi
-    elif [ "$module" == "4" ]; then
-        echo "Launching stage 4: DEG analysis"
+    elif [ "$module" == "deg" ]; then
+        echo "Launching DEG analysis"
         . ~soft_bio_267/initializes/init_ruby
         script="$CODE_PATH/aux_sh/sc_Hunter.sh"
         rm -r $TARGETS_FOLDER/*
@@ -207,7 +219,7 @@ elif [ "$module" == "3" ] || [ "$module" == "4" ] ; then
         sbatch $script --cpus-per-task $int_cpu --mem $int_mem
     fi
 
-elif [ "$module" == "5" ] ; then
+elif [ "$module" == "qry" ] ; then
     echo "Analyzing query genes"
         if [ "$launch_login" == TRUE ]; then 
         analyze_sc_query.sh
@@ -215,7 +227,7 @@ elif [ "$module" == "5" ] ; then
         sbatch $CODE_PATH"/aux_sh/analyze_sc_query.sh" --cpus-per-task $int_cpu --mem $int_mem
     fi
 
-elif [ "$module" == "6" ] ; then
+elif [ "$module" == "pkg" ] ; then
     # RESULTS PACKAGING
     echo "Creating Single-Cell results pack"
     create_sc_pack.sh
