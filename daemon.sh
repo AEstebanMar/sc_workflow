@@ -195,8 +195,8 @@ elif [ "$module" == "smp" ] ; then
     echo Building report
     html_report.R -d "$experiment_folder/*metric_table,$experiment_folder/full_doublet_list.txt,$experiment_folder/exec_data" -t $CODE_PATH/templates/read_and_map_report.txt -o $output"/report/"$experiment_name"_read_map_report.html" && echo Report written in $output"/report/"$experiment_name"_read_map_report.html"
 
-elif [ "$module" == "cnt" ] || [ "$module" == "deg" ] ; then
-    if [ "$module" == "cnt" ]; then
+elif [ "$module" == "ann" ] || [ "$module" == "deg" ] ; then
+    if [ "$module" == "ann" ]; then
         echo "Launching Single-cell experiment annotation"
         ## if singularity is TRUE, we're launching through singularity image, therefore
         ## sbatch is not available.
