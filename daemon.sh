@@ -115,7 +115,8 @@ if [ "$module" == "cnt" ] ; then
         \\$multi_time=$multi_time,
         \\$constraint=$constraint,
         \\$transcriptome=$transcriptome,
-        \\$extra_columns=$extra_columns
+        \\$extra_columns=$extra_columns,
+        \\$min_counts=$min_counts
         " | tr -d [:space:]`
         AutoFlow -w $TEMPLATES -V "$AF_VARS" $aux_opt -o $FULL_RESULTS/$sample $RESOURCES
     done < $samples_to_process
@@ -201,7 +202,7 @@ elif [ "$module" == "ann" ] || [ "$module" == "deg" ] ; then
         ## if singularity is TRUE, we're launching through singularity image, therefore
         ## sbatch is not available.
         script="$CODE_PATH/aux_sh/annotate_sc.sh"
-        if [ "$module" == "3" ] && [ "$sketch" == "TRUE" ]; then
+        if [ "$module" == "ann" ] && [ "$sketch" == "TRUE" ]; then
             source ~aestebanm/initializes/init_htmlreportR
             script="$CODE_PATH/singularity/launch_singularity.sh $script"
         fi
