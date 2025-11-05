@@ -21,7 +21,7 @@ before_fastqc){
 
 run_count){
 	resources: -c 52 -t 2-00:00:00 -m '100gb'
-	module load cellranger/8.0.0
+	. ~soft_bio_267/initializes/init_cellranger
 	export PATH=$aux_sh_dir:$PATH
 	?
 	cellranger count --id=$sample \
