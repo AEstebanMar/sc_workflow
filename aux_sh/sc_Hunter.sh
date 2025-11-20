@@ -4,7 +4,7 @@
 # STAGE 4 DEG ANALYSIS
 
 #SBATCH -J sc_Hunter.sh
-#SBATCH --cpus-per-task=12
+#SBATCH --cpus-per-task=36
 #SBATCH --mem='300gb'
 #SBATCH --constraint=cal
 #SBATCH --time=0-5:00:00
@@ -31,4 +31,6 @@ sc_Hunter.R --targets_folder $TARGETS_FOLDER \
             --name $experiment_name \
             --verbose $verbose \
             --cpu $SLURM_CPUS_PER_TASK \
-            --top_N $top_N
+            --top_N $top_N \
+            --DE_method "$ref_de_method" \
+            --minpack_common $minpack_common
