@@ -83,6 +83,8 @@ export generate_targets="
 													  					 		#-------# To specify factors to compare, input them next to factor column like so (column:factorA,factorB). You can also group two values by separating them with the "/" symbol. For example, column:factorA,factorB/factorC will compare factor A with factors B and C jointly as the same group.
 													  					 		#-------# You can specify multiple comparisons by separating them with ";". If empty, no DEG analysis will be performed.
 													  					 		#-------# Separate a comparison from its name with the ">" symbol. See config_default for an example.
+export DEG_modules="w"															#-------# Packages to use for DE analysis, in single-letter format. Example: "w" for wilcoxon test. Specify in format style "wdl" (for "wilcoxon", "limma", "DESeq2", in no particular order). NOT YET FUNCTIONAL
+export minpack_common=0														#-------# Min number of packages that need to agree in order to consider a DEG as prevalent. Setting this to 0 will require every specified method to agree.
 export min_avg_log2fc=1.5 							  					 		#-------# Min log2fc cutoff for significant DEGs
 export DEG_p_val_cutoff=1e-5 						  					 		#-------# Min p_val cutoff for significant DEGs
 export min_cell_proportion=0.1 							  				 		#-------# Min threshold for percentage of cells expressing gene in either of the DEG analysis groups.
