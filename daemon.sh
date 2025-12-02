@@ -18,11 +18,12 @@ if [ "$module" == "" ] ; then
         * cnt: create count tables from Single-Cell fastq files.
             * cntb: check workflow execution.
             * cntc: rescue workflow execution.
-        * smp: per-sample annotation and quality control.
+        * smp: multi-sample quality.
         * ann: whole experiment annotation analysis.
         * DEG: whole experiment DE analysis.
         * qry: explore expression of query genes in annotated experiment.
-        * fun: functional analysis of DEGenes list (not yet implemented).
+        * enra: functional enrichment analysis of whole experiment DEGs.
+        * enrb: functional enrichment analysis of DEGs for every cell type.
         * pkg: create results package.
     "
     echo "$message"
@@ -59,10 +60,10 @@ if [ "$module" == "ref" ] ; then
     # STAGE 0: REFERENCE PREPARATION
     echo "Launching SingleR reference generation"
     . ~aestebanm/initializes/init_Hunter_dev
-    if [ -d "$ref_to_process" ] && [ "$aux_opt" != "--only_showcase" ]; then
-        sbatch $CODE_PATH/aux_sh/get_SingleR_ref.sh $aux_opt
-    else
+    if [ "$launch_login" == TRUE ]; then
         get_SingleR_ref.sh $aux_opt
+    else
+        sbatch $CODE_PATH/aux_sh/get_SingleR_ref.sh $aux_opt
     fi
 fi
 
@@ -182,9 +183,9 @@ elif [ "$module" == "cntc" ] ; then
     done < $samples_to_process
 
 elif [ "$module" == "smp" ] ; then
-    echo "Launching stage Sample comparison"
+    echo "Launching stage Sample comparison for dataset $experiment_name"
     source ~soft_bio_267/initializes/init_python
-    source ~soft_bio_267/initializes/init_R45
+    source ~soft_bio_267/initializes/init_R
     cat $FULL_RESULTS/*/metrics > $experiment_folder'/metrics'
     cat $FULL_RESULTS/*/cellranger_metrics > $experiment_folder'/cellranger_metrics'
     find $FULL_RESULTS/*/annotate_sc.R_0000/ -name *doublet_list.txt | xargs cat > $experiment_folder/"full_doublet_list.txt"
@@ -198,7 +199,7 @@ elif [ "$module" == "smp" ] ; then
 
 elif [ "$module" == "ann" ] || [ "$module" == "deg" ] ; then
     if [ "$module" == "ann" ]; then
-        echo "Launching Single-cell experiment annotation"
+        echo "Launching Single-cell experiment annotation for dataset $experiment_name"
         ## if singularity is TRUE, we're launching through singularity image, therefore
         ## sbatch is not available.
         script="$CODE_PATH/aux_sh/annotate_sc.sh"
@@ -220,8 +221,25 @@ elif [ "$module" == "ann" ] || [ "$module" == "deg" ] ; then
         sbatch $script --cpus-per-task $int_cpu --mem $int_mem
     fi
 
+elif [ "$module" == "enra" ] || [ "$module" = "enrb" ]; then
+    echo "Launching functional enrichment analysis for dataset $experiment_name"
+    export input=$output"/DEG"
+    source ~aestebanm/initializes/init_Hunter_dev
+    source ~soft_bio_267/initializes/init_python
+    script="$CODE_PATH/aux_sh/launch_clust2enrich.sh "
+    if [ "$module" == "enra" ]; then
+        export enr_subset="global"
+    elif [ "$module" == "enrb" ]; then
+        export enr_subset="cell_types"
+    fi
+    if [ "$launch_login" == TRUE ]; then
+        $script
+    else
+        sbatch $script --cpus-per-task $fun_cpu --mem $fun_mem
+    fi
+
 elif [ "$module" == "qry" ] ; then
-    echo "Analyzing query genes"
+    echo "Analyzing query genes for dataset $experiment_name"
         if [ "$launch_login" == TRUE ]; then 
         analyze_sc_query.sh
     else
@@ -230,6 +248,6 @@ elif [ "$module" == "qry" ] ; then
 
 elif [ "$module" == "pkg" ] ; then
     # RESULTS PACKAGING
-    echo "Creating Single-Cell results pack"
+    echo "Creating Single-Cell results pack for dataset $experiment_name"
     create_sc_pack.sh
 fi
