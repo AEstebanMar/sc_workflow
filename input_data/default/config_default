@@ -36,11 +36,12 @@ export save_trained_object=FALSE									    		#-------# Whether or not trained 
 export load_trained_object=FALSE									    		#-------# Whether or not trained SingleR object should be loaded from disk. Will be loaded from output/trained_SingleR.R
 export target_genes="" 								 							#-------# List of semicolon-separated target genes ("target_1;target_2").
 
-######  REFERENCE CREATION VARIABLES #######
-
+##################################
+######  REFERENCE CREATION #######
+##################################
 export ref_to_process="scRNAseq"												#-------# Database from where data will be consulted to build and locally save reference. Values: "celldex" and "scRNAseq" for reference packages, or path to locally downloaded reference.
 export ref_name=""        														#-------# Reference name, required field in scRNAseq and celldex databases. Otherwise, arbitrary name you wish to give the reference, relevant in showcase report.
-export ref_version=""     														#-------#    Reference version to use. In scRNAseq and celldex databases, this is a required field. Leave empty ("") otherwise.
+export ref_version=""     														#-------# Reference version to use. In scRNAseq and celldex databases, this is a required field. Leave empty ("") otherwise.
 export ref_output_path="" 														#-------# Path where reference will be saved.
 export label_to_trim=""	  														#-------# When creating a SingleR reference, some labels often come with NA values that need to be trimmed.
 
@@ -119,7 +120,7 @@ export universe=""																#-------# One column file listing the universe
 export summary_common_name=""													#-------# Name of the term groups. 'significant' to use the most significant term of each group. 'ancestor' to use the common ancestor of the group
 export top_categories=""														#-------# Consider top N results per cluster.
 export description_file=""														#-------# Description of enriched clusters in markdown format.
-export gene_keytype="ENTREZID"													#-------# Gene label type. Valid labels: \"ENTREZID\" (Entrez), \"ENSEMBL\" (Ensembl), \"SYMBOL\" (HGNC).
+export gene_keytype="SYMBOL"													#-------# Gene label type. Valid labels: \"ENTREZID\" (Entrez), \"ENSEMBL\" (Ensembl), \"SYMBOL\" (HGNC).
 export gmt_id="ENTREZID",														#-------# Identifier for genes in custom gmt file.
 export gene_attribute_file=""													#-------# Three-column tabular file describing gene attributes.
 export group_results=FALSE														#-------# Functions are grouped in most frequent words in emaplots.
@@ -129,7 +130,29 @@ export size_category=1															#-------# Size of category labels. Smaller 
 export size_edge=1																#-------# Size of edges. Smaller than 1 values will reduce size, higher than 1 values will increase it.
 export highlight="category"														#-------# Name of category to highlight.
 export highlight_alpha=0.3														#-------# Transparency value that will be applied to categories not highlighted. Must be a value between 0 (completely transparent) and 1 (completely opaque).
-export node_label="category"													#-------# How nodes will be labeled. Possible values: \"category\" (the default), \"group\", \"all\", \"none\".
+export node_label="all"															#-------# How nodes will be labeled. Possible values: \"category\" (the default), \"group\", \"all\", \"none\".
+
+##################################
+##### ENRICHMENT VARIABLES #######
+##################################
+
+export enr_cpu=3																#-------# Number of workers to request for enrichment analysis
+export enr_pval=0.05 															#-------# Cutoff for P value and adjusted P value for enrichments
+export enr_qval=0.2																#-------# Cutoff for Q value for enrichments
+export enr_force=TRUE															#-------# Ignore temporal files
+export clean_parentals=TRUE														#-------# Clean parentals GO terms that appears on the same clusters than child
+if [ "$genome" == "GRCh38" ]; then
+	export organism="Human"
+elif [ "$genome" == "GRCm39" ]; then
+	export organism="Mouse"
+fi
+export sim_thr=0.7																#-------# Similarity cutoff for grouping categories in Summary mode.
+export gene_keytype="SYMBOL"													#-------# Gene label type. Valid labels: \"ENTREZID\" (Entrez), \"ENSEMBL\" (Ensembl), \"SYMBOL\" (HGNC).
+
+####### ADVANCED SECTION #########
+export advanced_resources="--task_size 1"
+export advanced_options="--showCategories 30 --funsys KEGG,Reactome,MF,CC,BP --mode PR --max_genes_plot 200 --group_results FALSE --simplify FALSE"
+export advanced_graphs_options="--size_item 1.5 --size_category 1 --size_edge 0.2 --node_label all"
 
 ##################################
 ####### RUN CONFIGURATION ########
