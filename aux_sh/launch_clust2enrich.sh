@@ -7,7 +7,12 @@ for TARGET in `ls $output"/DEG"`; do
 	func_res_folder=$output"/functional/"$TARGET
 	mkdir -p $func_res_folder
 	mkdir -p $func_res_folder"/"$enr_subset
-	get_columns -i $DEG_table -H -c cell_type,gene -o $func_res_folder"/clusters_file"
+	head -n 1 $DEG_table | tr "\t" "\n" > $func_res_folder"/tmp.txt"
+	fc_col=`grep "avg_log2FC" $func_res_folder"/tmp.txt"`
+	col_vector="cell_type,gene,"$fc_col
+	get_columns -i $DEG_table -H -c $col_vector -o $func_res_folder"/gene_fcs"
+	cut -f 1,2 $func_res_folder"/gene_fcs" > $func_res_folder"/clusters_file"
+	advanced_options="$advanced_options --gene_attribute_file $func_res_folder/clusters_file"
 	temp_clusters=$func_res_folder"/"$enr_subset"/temp_clusters"
 	if [ "$enr_subset" == "global" ]; then
 		grep "$enr_subset" $func_res_folder"/clusters_file" > $temp_clusters
@@ -19,8 +24,8 @@ for TARGET in `ls $output"/DEG"`; do
 	input_clusters=$func_res_folder"/"$enr_subset"/"$enr_subset"_clusters.txt"
 	aggregate_column_data -i $temp_clusters -x 1 -a 2 -s , | tail -n +2 > $input_clusters
 	/usr/bin/time -o $CODE_PATH"/process_data_single_cell_func" clusters_to_enrichment.R -i $input_clusters -w $enr_cpu \
-	-o $output"/report/"$experiment_name"_"$TARGET"_"$enr_subset"_clust_enr" -f $funsys -k $gene_keytype -O $organism --size_item $size_item \
-	--size_category $size_category --size_edge $size_edge --node_label $node_label --hilight $highlight --hilight_alpha $highlight_alpha \
-	--mode $enr_mode -F
+	-o $output"/report/"$experiment_name"_"$TARGET"_"$enr_subset"_clust_enr" -k $gene_keytype -O $organism \
+	--pvalcutoff $enr_pval --qvalcutoff $enr_qval --force $enr_force --clean_parentals $clean_parentals --sim_thr $sim_thr \
+	$advanced_resources $advanced_options $advanced_graph_options
 done
 wait
