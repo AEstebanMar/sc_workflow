@@ -1,5 +1,12 @@
 #! /usr/bin/env bash
 
+# STAGE 3 EXPERIMENT ANNOTATION
+
+#SBATCH -J launch_clust2enrich.sh
+#SBATCH --constraint=cal
+#SBATCH --time=7-00:00:00
+#SBATCH --error=job.enr.%J.err
+#SBATCH --output=job.enr.%J.out
 
 for TARGET in `ls $output"/DEG"`; do
 	# This should be Common_results folder once we introduce compatibility for multiple DEG modes
@@ -12,7 +19,8 @@ for TARGET in `ls $output"/DEG"`; do
 	col_vector="cell_type,gene,"$fc_col
 	get_columns -i $DEG_table -H -c $col_vector -o $func_res_folder"/gene_fcs"
 	cut -f 1,2 $func_res_folder"/gene_fcs" > $func_res_folder"/clusters_file"
-	advanced_options="$advanced_options --gene_attribute_file $func_res_folder/clusters_file"
+	sed -i '1 s/^.*$/cluster\tgeneid\tlog2FC/g' $func_res_folder"/gene_fcs"
+	#advanced_options="$advanced_options --gene_attribute_file $func_res_folder/gene_fcs"
 	temp_clusters=$func_res_folder"/"$enr_subset"/temp_clusters"
 	if [ "$enr_subset" == "global" ]; then
 		grep "$enr_subset" $func_res_folder"/clusters_file" > $temp_clusters
