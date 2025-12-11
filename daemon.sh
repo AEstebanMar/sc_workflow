@@ -218,7 +218,7 @@ elif [ "$module" == "ann" ] || [ "$module" == "deg" ] ; then
     if [ "$launch_login" == TRUE ]; then
         $script
     else
-        sbatch $script --cpus-per-task $int_cpu --mem $int_mem
+        sbatch $script --cpus-per-task $int_cpu --mem $int_mem --constraint "cal"
     fi
 
 elif [ "$module" == "enra" ] || [ "$module" = "enrb" ]; then
@@ -235,7 +235,7 @@ elif [ "$module" == "enra" ] || [ "$module" = "enrb" ]; then
     if [ "$launch_login" == TRUE ]; then
         $script
     else
-        sbatch $script --cpus-per-task $fun_cpu --mem $fun_mem
+        sbatch $script --cpus-per-task $enr_cpu --mem $enr_mem --constraint "cal"
     fi
 
 elif [ "$module" == "qry" ] ; then
@@ -243,7 +243,7 @@ elif [ "$module" == "qry" ] ; then
         if [ "$launch_login" == TRUE ]; then 
         analyze_sc_query.sh
     else
-        sbatch $CODE_PATH"/aux_sh/analyze_sc_query.sh" --cpus-per-task $int_cpu --mem $int_mem
+        sbatch $CODE_PATH"/aux_sh/analyze_sc_query.sh" --cpus-per-task $int_cpu --mem $int_mem --constraint "cal"
     fi
 
 elif [ "$module" == "pkg" ] ; then
