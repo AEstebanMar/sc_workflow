@@ -4,10 +4,10 @@
 # STAGE 3 EXPERIMENT ANNOTATION
 
 #SBATCH -J annotate_sc.sh
-#SBATCH --cpus-per-task=48
-#SBATCH --mem='1000gb'
+#SBATCH --cpus-per-task=42
+#SBATCH --mem='500gb'
 #SBATCH --constraint=cal
-#SBATCH --time=2-22:00:00
+#SBATCH --time=7-00:00:00
 #SBATCH --error=job.annot.%J.err
 #SBATCH --output=job.annot.%J.out
 
@@ -21,7 +21,7 @@ OPENBLAS_NUM_THREADS=1
 MKL_NUM_THREADS=1
 
 if  [ "$sketch" != "TRUE" ]; then
-    . ~aestebanm/initializes/init_Hunter_dev
+    . ~aestebanm/software/inits/init_Hunter_dev
 else
         export DEGHUNTER_MODE=DEVELOPMENT
         export PATH=~aestebanm/dev_R/ExpHunterSuite/inst/scripts:$PATH

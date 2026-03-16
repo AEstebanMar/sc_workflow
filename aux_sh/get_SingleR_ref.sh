@@ -26,7 +26,7 @@ else
     label="$label_to_trim"
 fi
 
-source ~aestebanm/initializes/init_Hunter_dev
+source ~aestebanm/software/inits/init_Hunter_dev
 get_SingleR_ref.R --reference "$reference" --name "$ref_name" --cpu $CPU \
                   --version "$ref_version" --verbose $verbose --quiet $quiet \
                   --output "$ref_output_path" --ref_label "$label" $aux_opt

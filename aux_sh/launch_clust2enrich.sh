@@ -31,9 +31,11 @@ for TARGET in `ls $output"/DEG"`; do
 	sed -i '1s/cell_type/Cluster/g' $temp_clusters
 	input_clusters=$func_res_folder"/"$enr_subset"/"$enr_subset"_clusters.txt"
 	aggregate_column_data -i $temp_clusters -x 1 -a 2 -s , | tail -n +2 > $input_clusters
-	/usr/bin/time -o $CODE_PATH"/process_data_single_cell_func" clusters_to_enrichment.R -i $input_clusters -w $enr_cpu \
+	command="clusters_to_enrichment.R -i $input_clusters -w $enr_cpu \
 	-o $output"/report/"$experiment_name"_"$TARGET"_"$enr_subset"_clust_enr" -k $gene_keytype -O $organism \
 	--pvalcutoff $enr_pval --qvalcutoff $enr_qval --force $enr_force --clean_parentals $clean_parentals --sim_thr $sim_thr \
-	$advanced_resources $advanced_options $advanced_graph_options
+	$advanced_resources $advanced_options $advanced_graph_options"
+	echo Command called: $command
+	/usr/bin/time -o $CODE_PATH"/process_data_single_cell_func" $command
 done
 wait

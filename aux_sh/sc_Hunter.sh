@@ -15,7 +15,7 @@ if [ -z $SLURM_CPUS_PER_TASK ]; then
     SLURM_CPUS_PER_TASK=1
 fi
 
-. ~aestebanm/initializes/init_Hunter_dev
+. ~aestebanm/software/inits/init_Hunter_dev
 hostname
 mkdir -p $output"/report"
 

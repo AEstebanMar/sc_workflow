@@ -1,6 +1,7 @@
 sc_sample_analysis){
        source ~aestebanm/initializes/init_Hunter_dev
        mkdir -p results
+       resources: resources: -c 48 -t 1-10:00:00 -m '500gb'
        ?
        annotate_sc.R --input run_count)/"$sample"/outs \
                    --name $sample \

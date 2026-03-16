@@ -51,7 +51,7 @@ fi
 
 TEMPLATES="$TEMPLATES,$TEMPLATE_PATH/sc_sample_analysis.af"
 
-. ~soft_bio_267/initializes/init_autoflow
+.  ~/dev_py/pytoflow/bin/activate
 
 ## STAGE EXECUTION
 #######################################################################
@@ -59,7 +59,7 @@ TEMPLATES="$TEMPLATES,$TEMPLATE_PATH/sc_sample_analysis.af"
 if [ "$module" == "ref" ] ; then
     # STAGE 0: REFERENCE PREPARATION
     echo "Launching SingleR reference generation"
-    . ~aestebanm/initializes/init_Hunter_dev
+    . ~aestebanm/soft/inits/init_Hunter_dev
     if [ "$launch_login" == TRUE ]; then
         get_SingleR_ref.sh $aux_opt
     else
@@ -175,11 +175,12 @@ elif [ "$module" == "cntc" ] ; then
         \\$multi_time=$multi_time,
         \\$constraint=$constraint,
         \\$transcriptome=$transcriptome,
-        \\$extra_columns=$extra_columns
+        \\$extra_columns=$extra_columns,
+        \\$min_counts=$min_counts
         " | tr -d [:space:]`
         AutoFlow -w $TEMPLATES -V "$AF_VARS" $aux_opt -o $FULL_RESULTS/$sample -v $RESOURCES
         echo Launching pending and failed jobs for $sample
-        flow_logger -e $FULL_RESULTS/$sample -w -l -p $aux_opt
+        flow_logger -e $FULL_RESULTS/$sample -w -l $aux_opt
     done < $samples_to_process
 
 elif [ "$module" == "smp" ] ; then
@@ -224,7 +225,7 @@ elif [ "$module" == "ann" ] || [ "$module" == "deg" ] ; then
 elif [ "$module" == "enra" ] || [ "$module" = "enrb" ]; then
     echo "Launching functional enrichment analysis for dataset $experiment_name"
     export input=$output"/DEG"
-    source ~aestebanm/initializes/init_Hunter_dev
+    source ~aestebanm/software/inits/init_Hunter_dev
     source ~soft_bio_267/initializes/init_python
     script="$CODE_PATH/aux_sh/launch_clust2enrich.sh "
     if [ "$module" == "enra" ]; then
