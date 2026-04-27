@@ -4,6 +4,7 @@
 
 #SBATCH -J launch_clust2enrich.sh
 #SBATCH --constraint=cal
+#SBATCH --mem=50gb
 #SBATCH --time=7-00:00:00
 #SBATCH --error=job.enr.%J.err
 #SBATCH --output=job.enr.%J.out
@@ -17,7 +18,7 @@ for TARGET in `ls $output"/DEG"`; do
 	head -n 1 $DEG_table | tr "\t" "\n" > $func_res_folder"/tmp.txt"
 	fc_col=`grep "avg_log2FC" $func_res_folder"/tmp.txt"`
 	col_vector="cell_type,gene,"$fc_col
-	get_columns -i $DEG_table -H -c $col_vector -o $func_res_folder"/gene_fcs"
+	cmdtabs -i $DEG_table -H --extract_cols $col_vector -o $func_res_folder"/gene_fcs"
 	cut -f 1,2 $func_res_folder"/gene_fcs" > $func_res_folder"/clusters_file"
 	sed -i '1 s/^.*$/cluster\tgeneid\tlog2FC/g' $func_res_folder"/gene_fcs"
 	#advanced_options="$advanced_options --gene_attribute_file $func_res_folder/gene_fcs"
