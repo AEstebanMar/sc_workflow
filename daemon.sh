@@ -71,6 +71,7 @@ if [ "$module" == "cnt" ] ; then
     mkdir -p $FULL_RESULTS
     echo Launching count workflow
     rm $FULL_RESULTS/ref_filter
+    rm $CODE_PATH/references
     ln -s $cellranger_refs_dir $CODE_PATH/references
     if [[ "$ref_filter" != "" ]]; then
         echo $ref_filter > $FULL_RESULTS/ref_filter
@@ -119,7 +120,7 @@ if [ "$module" == "cnt" ] ; then
         \\$extra_columns=$extra_columns,
         \\$min_counts=$min_counts
         " | tr -d [:space:]`
-        AutoFlow -w $TEMPLATES -V "$AF_VARS" $aux_opt -o $FULL_RESULTS/$sample $RESOURCES
+        AutoFlow -e -w $TEMPLATES -V "$AF_VARS" $aux_opt -o $FULL_RESULTS/$sample $RESOURCES
     done < $samples_to_process
 elif [ "$module" == "cntb" ] ; then
     echo Checking workflow execution
@@ -130,6 +131,7 @@ elif [ "$module" == "cntb" ] ; then
 elif [ "$module" == "cntc" ] ; then
     echo Regenerating code
     rm $FULL_RESULTS/ref_filter
+    rm $CODE_PATH/references
     ln -s $cellranger_refs_dir $CODE_PATH/references
     if [[ "$ref_filter" != "" ]]; then
         echo $ref_filter > $FULL_RESULTS/ref_filter
@@ -178,7 +180,7 @@ elif [ "$module" == "cntc" ] ; then
         \\$extra_columns=$extra_columns,
         \\$min_counts=$min_counts
         " | tr -d [:space:]`
-        AutoFlow -w $TEMPLATES -V "$AF_VARS" $aux_opt -o $FULL_RESULTS/$sample -v $RESOURCES
+        AutoFlow -e -w $TEMPLATES -V "$AF_VARS" $aux_opt -o $FULL_RESULTS/$sample -v $RESOURCES
         echo Launching pending and failed jobs for $sample
         flow_logger -e $FULL_RESULTS/$sample -w -l $aux_opt
     done < $samples_to_process
@@ -205,12 +207,13 @@ elif [ "$module" == "ann" ] || [ "$module" == "deg" ] ; then
         ## sbatch is not available.
         script="$CODE_PATH/aux_sh/annotate_sc.sh"
         if [ "$module" == "ann" ] && [ "$sketch" == "TRUE" ]; then
-            source ~aestebanm/initializes/init_htmlreportR
+            source ~aestebanm/software/inits/init_htmlreportR
             script="$CODE_PATH/singularity/launch_singularity.sh $script"
         fi
     elif [ "$module" == "deg" ]; then
         echo "Launching DEG analysis"
-        . ~soft_bio_267/initializes/init_ruby
+        . ~aestebanm/software/inits/init_Hunter_dev
+	source ~aestebanm/software/inits/init_htmlreportR
         script="$CODE_PATH/aux_sh/sc_Hunter.sh"
         rm -r $TARGETS_FOLDER/*
         mkdir -p $TARGETS_FOLDER

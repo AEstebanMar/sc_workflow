@@ -1,5 +1,5 @@
 sc_sample_analysis){
-       source ~aestebanm/initializes/init_Hunter_dev
+       source ~aestebanm/software/inits/init_Hunter_dev
        mkdir -p results
        resources: resources: -c 48 -t 1-10:00:00 -m '500gb'
        ?

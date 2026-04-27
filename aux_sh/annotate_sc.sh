@@ -4,9 +4,9 @@
 # STAGE 3 EXPERIMENT ANNOTATION
 
 #SBATCH -J annotate_sc.sh
-#SBATCH --cpus-per-task=42
-#SBATCH --mem='500gb'
-#SBATCH --constraint=cal
+#SBATCH --cpus-per-task=72
+#SBATCH --mem='600gb'
+#SBATCH --constraint=cpu
 #SBATCH --time=7-00:00:00
 #SBATCH --error=job.annot.%J.err
 #SBATCH --output=job.annot.%J.out

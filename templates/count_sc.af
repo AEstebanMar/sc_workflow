@@ -20,7 +20,7 @@ before_fastqc){
 }
 
 run_count){
-	resources: -c 52 -t 2-00:00:00 -m '100gb'
+	resources: -c 52 -t 7-00:00:00 -m '100gb'
 	. ~soft_bio_267/initializes/init_cellranger
 	export PATH=$aux_sh_dir:$PATH
 	?
